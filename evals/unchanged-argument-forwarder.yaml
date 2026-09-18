@@ -1,4 +1,4 @@
-- id: pass-through-layer-obvious-go
+- id: unchanged-argument-forwarder-obvious-go
   language: Go
   task: Add a service used to save orders.
   code: |
@@ -11,7 +11,7 @@
     }
   expected: positive
   rationale: The service repeats the repository operation and arguments without adding policy, translation, or simplification.
-- id: pass-through-layer-obvious-python
+- id: unchanged-argument-forwarder-obvious-python
   language: Python
   task: Add an API client layer for fetching a user.
   code: |
@@ -23,7 +23,7 @@
             return self.client.get_user(user_id)
   expected: positive
   rationale: The new class only renames the owner of the same call and leaves the interface unchanged.
-- id: pass-through-layer-obvious-typescript
+- id: unchanged-argument-forwarder-obvious-typescript
   language: TypeScript
   task: Expose product deletion through a manager.
   code: |
@@ -36,7 +36,7 @@
     }
   expected: positive
   rationale: The manager forwards the identical operation and identifier with no additional responsibility.
-- id: pass-through-layer-obvious-csharp
+- id: unchanged-argument-forwarder-obvious-csharp
   language: C#
   task: Introduce a handler for loading invoices.
   code: |
@@ -49,7 +49,7 @@
     }
   expected: positive
   rationale: The handler is a one-for-one forwarding layer over the store.
-- id: pass-through-layer-obvious-java
+- id: unchanged-argument-forwarder-obvious-java
   language: Java
   task: Add a facade for sending notifications.
   code: |
@@ -62,7 +62,7 @@
     }
   expected: positive
   rationale: The facade provides no facade-level simplification or policy and merely relays the object.
-- id: pass-through-layer-subtle-go
+- id: unchanged-argument-forwarder-subtle-go
   language: Go
   task: Add an application layer for updating an account email.
   code: |
@@ -73,7 +73,7 @@
     }
   expected: positive
   rationale: Despite the application-layer name, all inputs and behavior pass directly to the underlying component.
-- id: pass-through-layer-subtle-python
+- id: unchanged-argument-forwarder-subtle-python
   language: Python
   task: Add a gateway around the report renderer.
   code: |
@@ -82,7 +82,7 @@
             return self._renderer.render(report, template, locale)
   expected: positive
   rationale: The gateway preserves the renderer's full parameter surface and contributes no boundary behavior.
-- id: pass-through-layer-subtle-typescript
+- id: unchanged-argument-forwarder-subtle-typescript
   language: TypeScript
   task: Route cache operations through a domain service.
   code: |
@@ -99,7 +99,7 @@
     }
   expected: positive
   rationale: Both methods mirror the cache protocol, including its low-level key and TTL arguments, without adding domain behavior.
-- id: pass-through-layer-subtle-csharp
+- id: unchanged-argument-forwarder-subtle-csharp
   language: C#
   task: Add a coordinator for starting and stopping a worker.
   code: |
@@ -112,7 +112,7 @@
     }
   expected: positive
   rationale: Calling the coordinator still requires the same lifecycle operations and gains no sequencing or ownership.
-- id: pass-through-layer-subtle-java
+- id: unchanged-argument-forwarder-subtle-java
   language: Java
   task: Add a repository decorator for customer lookup.
   code: |
@@ -125,7 +125,7 @@
     }
   expected: positive
   rationale: A decorator with no decoration simply duplicates the existing repository boundary.
-- id: pass-through-layer-negative-obvious-go
+- id: unchanged-argument-forwarder-negative-obvious-go
   language: Go
   task: Expose a simple profile operation over two storage calls.
   code: |
@@ -139,7 +139,7 @@
     }
   expected: negative
   rationale: The service owns retrieval, normalization, mutation, and persistence behind one domain operation.
-- id: pass-through-layer-negative-obvious-python
+- id: unchanged-argument-forwarder-negative-obvious-python
   language: Python
   task: Adapt a vendor payment response to the application's result type.
   code: |
@@ -152,7 +152,7 @@
             return ChargeResult(id=response["charge_id"], approved=response["ok"])
   expected: negative
   rationale: This gateway translates both request and response representations at a meaningful external boundary.
-- id: pass-through-layer-negative-obvious-typescript
+- id: unchanged-argument-forwarder-negative-obvious-typescript
   language: TypeScript
   task: Require authorization before deleting a project.
   code: |
@@ -164,7 +164,7 @@
     }
   expected: negative
   rationale: The service enforces an authorization policy rather than merely forwarding deletion.
-- id: pass-through-layer-negative-obvious-csharp
+- id: unchanged-argument-forwarder-negative-obvious-csharp
   language: C#
   task: Provide one operation that commits an uploaded document.
   code: |
@@ -177,7 +177,7 @@
     }
   expected: negative
   rationale: The method hides a multi-step storage protocol behind a single cohesive operation.
-- id: pass-through-layer-negative-obvious-java
+- id: unchanged-argument-forwarder-negative-obvious-java
   language: Java
   task: Publish an order while guaranteeing an audit record.
   code: |
@@ -189,7 +189,7 @@
     }
   expected: negative
   rationale: The layer establishes an atomic policy across two collaborators.
-- id: pass-through-layer-negative-difficult-go
+- id: unchanged-argument-forwarder-negative-difficult-go
   language: Go
   code: |
     type MeteredStore struct {
@@ -203,7 +203,7 @@
     }
   expected: negative
   rationale: Delegation is legitimate because the decorator consistently adds required instrumentation at the boundary.
-- id: pass-through-layer-negative-difficult-python
+- id: unchanged-argument-forwarder-negative-difficult-python
   language: Python
   code: |
     class ReadOnlyConnection:
@@ -213,7 +213,7 @@
             return self._connection.execute(statement, parameters)
   expected: negative
   rationale: The wrapper enforces a read-only policy even though successful calls are delegated.
-- id: pass-through-layer-negative-difficult-typescript
+- id: unchanged-argument-forwarder-negative-difficult-typescript
   language: TypeScript
   code: |
     class RetryingCatalog {
@@ -226,7 +226,7 @@
     }
   expected: negative
   rationale: The layer owns retry policy and converts a domain identifier at a remote-system boundary.
-- id: pass-through-layer-negative-difficult-csharp
+- id: unchanged-argument-forwarder-negative-difficult-csharp
   language: C#
   code: |
     public async Task<Order> FindAsync(OrderId id, CancellationToken token)
@@ -242,7 +242,7 @@
     }
   expected: negative
   rationale: The gateway translates vendor data and errors into the application's public model.
-- id: pass-through-layer-negative-difficult-java
+- id: unchanged-argument-forwarder-negative-difficult-java
   language: Java
   code: |
     final class SerializedExecutor implements Executor {

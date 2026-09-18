@@ -1,0 +1,184 @@
+- id: boolean-mode-parameter-positive-go-1
+  language: Go
+  task: Add a method that writes a report.
+  code: |
+    func WriteReport(report Report, compact bool) error {
+        if compact {
+            return writeSummary(report)
+        }
+        return writeDetailed(report)
+    }
+  expected: positive
+  rationale: The boolean makes callers select between two different writing operations.
+- id: boolean-mode-parameter-positive-python-1
+  language: Python
+  task: Add a user loading operation.
+  code: |
+    def load_user(user_id: str, from_cache: bool):
+        if from_cache:
+            return cache.get(user_id)
+        return database.load(user_id)
+  expected: positive
+  rationale: The caller is asked to choose the operation's internal data source.
+- id: boolean-mode-parameter-positive-typescript-1
+  language: TypeScript
+  task: Send a notification.
+  code: |
+    async function notify(message: Message, asyncMode: boolean) {
+      return asyncMode ? queue.publish(message) : sender.send(message);
+    }
+  expected: positive
+  rationale: One boolean selects two substantially different execution mechanisms.
+- id: boolean-mode-parameter-positive-csharp-1
+  language: C#
+  task: Add an operation that processes an order.
+  code: |
+    public Task ProcessAsync(Order order, bool validateOnly)
+    {
+        return validateOnly ? ValidateAsync(order) : CommitAsync(order);
+    }
+  expected: positive
+  rationale: Validation and committing are distinct operations hidden behind a mode flag.
+- id: boolean-mode-parameter-positive-java-1
+  language: Java
+  task: Export the supplied records.
+  code: |
+    void export(List<Record> records, boolean compressed) {
+        if (compressed) writeZip(records);
+        else writeCsv(records);
+    }
+  expected: positive
+  rationale: The boolean chooses between different export formats and operations.
+- id: boolean-mode-parameter-positive-go-2
+  language: Go
+  task: Add a delete method.
+  code: |
+    func Delete(id string, hard bool) error {
+        if hard {
+            return permanentlyRemove(id)
+        }
+        return markDeleted(id)
+    }
+  expected: positive
+  rationale: Permanent removal and soft deletion should be explicit operations rather than a boolean mode.
+- id: boolean-mode-parameter-positive-python-2
+  language: Python
+  task: Refresh account data.
+  code: |
+    def refresh(account_id: str, force: bool):
+        if force:
+            invalidate_cache(account_id)
+        return fetch(account_id)
+  expected: positive
+  rationale: The flag requires callers to control cache invalidation mechanics.
+- id: boolean-mode-parameter-positive-typescript-2
+  language: TypeScript
+  task: Open a document.
+  code: |
+    function openDocument(path: string, editable: boolean) {
+      return editable ? editor.open(path) : viewer.open(path);
+    }
+  expected: positive
+  rationale: Editing and viewing are distinct behaviors selected through a boolean.
+- id: boolean-mode-parameter-positive-csharp-2
+  language: C#
+  task: Run the import.
+  code: |
+    public Result Import(Stream input, bool dryRun)
+    {
+        return dryRun ? Simulate(input) : Persist(input);
+    }
+  expected: positive
+  rationale: Simulation and persistence are separate operation modes.
+- id: boolean-mode-parameter-positive-java-2
+  language: Java
+  task: Resolve an account.
+  code: |
+    Account resolve(String id, boolean createIfMissing) {
+        Account account = find(id);
+        return account == null && createIfMissing ? create(id) : account;
+    }
+  expected: positive
+  rationale: Lookup and lookup-or-create are different contracts hidden behind a boolean.
+- id: boolean-mode-parameter-negative-go-1
+  language: Go
+  task: Record whether a customer accepted the terms.
+  code: |
+    func SaveConsent(customerID string, accepted bool) error {
+        return store.Save(customerID, accepted)
+    }
+  expected: negative
+  rationale: Acceptance is genuine boolean domain data rather than an execution mode.
+- id: boolean-mode-parameter-negative-python-1
+  language: Python
+  task: Save the checkbox state.
+  code: |
+    def update_preferences(user_id: str, marketing_emails: bool):
+        repository.set_marketing_emails(user_id, marketing_emails)
+  expected: negative
+  rationale: The value directly represents the user's boolean preference.
+- id: boolean-mode-parameter-negative-typescript-1
+  language: TypeScript
+  task: Update whether an account is active.
+  code: |
+    function setActive(accountId: string, active: boolean) {
+      return accounts.update(accountId, { active });
+    }
+  expected: negative
+  rationale: Active is persistent domain state, not a selector for internal behavior.
+- id: boolean-mode-parameter-negative-csharp-1
+  language: C#
+  task: Store the administrator's session-revocation choice.
+  code: |
+    await accounts.ResetPasswordAsync(
+        accountId,
+        newPassword,
+        revokeAllSessions: request.RevokeAllSessions);
+  expected: negative
+  rationale: Revoking sessions is an explicit security policy chosen by the administrator.
+- id: boolean-mode-parameter-negative-java-1
+  language: Java
+  task: Store whether the shipment is fragile.
+  code: |
+    shipment.setFragile(request.isFragile());
+  expected: negative
+  rationale: Fragility is a property of the shipment.
+- id: boolean-mode-parameter-negative-go-2
+  language: Go
+  task: Let the user choose whether symbolic links are followed.
+  code: |
+    err := tree.Walk(root, WalkOptions{
+        FollowSymlinks: request.FollowSymlinks,
+    }, visit)
+  expected: negative
+  rationale: Following links changes observable behavior and safety based on a user-owned choice.
+- id: boolean-mode-parameter-negative-python-2
+  language: Python
+  task: Apply the requested accessibility preference.
+  code: |
+    settings.high_contrast = request.high_contrast
+  expected: negative
+  rationale: High contrast is a genuine user preference.
+- id: boolean-mode-parameter-negative-typescript-2
+  language: TypeScript
+  task: Configure whether the public response may be cached.
+  code: |
+    return respond(body, { cacheable: policy.allowsCaching });
+  expected: negative
+  rationale: Cacheability is an explicit externally observable response policy.
+- id: boolean-mode-parameter-negative-csharp-2
+  language: C#
+  task: Persist the feature's enabled state.
+  code: |
+    feature.Enabled = request.Enabled;
+    await repository.SaveAsync(feature);
+  expected: negative
+  rationale: Enabled is the state being stored, not an internal execution selector.
+- id: boolean-mode-parameter-negative-java-2
+  language: Java
+  task: Respect the user's request to include archived records.
+  code: |
+    SearchOptions options = new SearchOptions(request.includeArchived());
+    return search.find(request.query(), options);
+  expected: negative
+  rationale: Including archived records is an explicit result-selection choice owned by the user.

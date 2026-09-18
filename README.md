@@ -6,13 +6,14 @@
 
 <p align="center"><strong>Semantic lint for coding agents.</strong></p>
 
-Reaper catches engineering problems that normal linters cannot understand, such
-as comments that merely narrate code, shallow or pass-through abstractions,
-leaked implementation details, silent error fallbacks, weakened tests, and
-changes unrelated to the task.
+Reaper catches concrete semantic problems that normal linters cannot understand,
+such as comments that merely narrate code, unchanged-argument forwarders,
+ceremonial abstractions, caller-managed mechanics, exposed implementation
+details, silent error fallbacks, weakened tests, and changes unrelated to the
+task.
 
 ```text
-client.go:84-91: warning [redundant-comment] confidence=0.96
+client.go:84-91: warning [narrating-comment] confidence=0.96
   Comment appears to merely narrate the adjacent implementation.
 ```
 
@@ -120,7 +121,7 @@ reaper check --all
 Full-codebase audits support Go, Python, TypeScript, JavaScript, C#, Java, Ruby,
 Rust, C, C++, Kotlin, Swift, PHP, Scala, Dart, Elixir, Lua, and Objective-C.
 They honor configured exclusions and optional path arguments, and skip
-`weakened-test` and `scope-creep`, which require a before-and-after code change.
+`weakened-test-assertion` and `scope-creep`, which require a before-and-after code change.
 Reaper uses this source-language allowlist, so untracked files and non-source
 files such as Markdown, text, JSON, and YAML are not included. Dependency and
 build directories such as `vendor`, `node_modules`, and `dist` are excluded at
@@ -173,26 +174,35 @@ block by default.
 
 | Rule | Detects |
 |---|---|
-| `redundant-comment` | Comments that merely repeat adjacent code |
-| `speculative-generality` | Abstraction or flexibility without a real need |
-| `pass-through-layer` | Layers that add indirection without a new abstraction |
-| `complexity-pushed-upward` | Complexity imposed on callers that a module could hide |
-| `information-leakage` | Internal design knowledge exposed across module boundaries |
-| `special-general-mixture` | Special-purpose policy embedded in general mechanisms |
-| `shallow-module` | Abstractions with costly interfaces and little hidden complexity |
-| `defensive-fallback` | Fallbacks that hide errors or invalid states |
-| `weakened-test` | Test changes that reduce protection |
+| `narrating-comment` | Changed comments that merely repeat adjacent code |
+| `unchanged-argument-forwarder` | New callables that only relay the same operation and arguments |
+| `ceremonial-abstraction` | New abstractions with visible ceremony and little local behavior |
+| `boolean-mode-parameter` | New boolean inputs that select different execution modes |
+| `caller-managed-mechanics` | Low-level configuration, sequencing, cleanup, or retry duties imposed on callers |
+| `implementation-detail-exposure` | Concrete implementation details added to a visible boundary |
+| `named-special-case` | Named product or workflow exceptions inside reusable mechanisms |
+| `unused-extensibility-point` | Extensibility machinery with no concrete use visible in the patch |
+| `silent-failure-fallback` | Failures visibly replaced with success or default values |
+| `weakened-test-assertion` | Existing test checks that are removed, skipped, or broadened |
 | `scope-creep` | Substantial changes unrelated to the supplied task |
+
+Most rules are intentionally hunk-local: they report only behavior visible in
+the supplied change rather than making repository-wide architectural claims.
+Rules with multiple required signals ask one narrow question per signal and use
+the weakest signal confidence as the final result. A diagnostic therefore fires
+only when every required local observation clears the configured threshold.
+`scope-creep` remains patch-scoped because relatedness can only be judged
+against the complete change and supplied task.
 
 Run `reaper rules` to see the configured defaults.
 
 ## Evaluate the rules
 
-The repository includes 200 labeled examples for measuring rule quality:
+The repository includes 220 labeled examples for measuring rule quality:
 
 ```sh
 reaper eval
-reaper eval --rule redundant-comment
+reaper eval --rule narrating-comment
 reaper eval --format json
 ```
 

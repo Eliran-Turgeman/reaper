@@ -91,14 +91,17 @@ func Run(ctx context.Context, client jev.Client, dir, provider, model, onlyRule 
 		var positives, negatives int
 		for _, example := range examples {
 			state := evalState(example)
-			response, err := client.Evaluate(ctx, jev.EvaluationRequest{
-				Model: model, State: state,
-				Questions: []jev.Question{{ID: rule.ID, Instructions: rule.Instructions}},
-			})
+			request := jev.EvaluationRequest{Model: model, State: state}
+			for _, signal := range rule.Signals {
+				request.Questions = append(request.Questions, jev.Question{
+					ID: rule.QuestionID(signal), Instructions: signal.Instructions,
+				})
+			}
+			response, err := client.Evaluate(ctx, request)
 			if err != nil {
 				return Report{}, fmt.Errorf("evaluate example %s: %w", example.ID, err)
 			}
-			score, ok := response.Probabilities[rule.ID]
+			score, ok := rule.Compose(response.Probabilities)
 			if !ok || score < 0 || score > 1 {
 				return Report{}, fmt.Errorf("invalid probability for example %s", example.ID)
 			}

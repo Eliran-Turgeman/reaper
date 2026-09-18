@@ -18,14 +18,18 @@ type Scope string
 
 const (
 	ScopeHunk  Scope = "hunk"
-	ScopeFile  Scope = "file"
 	ScopePatch Scope = "patch"
 )
+
+type Signal struct {
+	ID           string
+	Instructions string
+}
 
 type Rule struct {
 	ID                  string
 	Description         string
-	Instructions        string
+	Signals             []Signal
 	Message             string
 	Scope               Scope
 	DefaultThreshold    float64
@@ -36,13 +40,37 @@ type Rule struct {
 	Applicable          func(semantic.Unit, string) (bool, string)
 }
 
+func (r Rule) QuestionID(signal Signal) string {
+	return r.ID + ":" + signal.ID
+}
+
+func (r Rule) Compose(probabilities map[string]float64) (float64, bool) {
+	if len(r.Signals) == 0 {
+		return 0, false
+	}
+	score := 1.0
+	for _, signal := range r.Signals {
+		value, ok := probabilities[r.QuestionID(signal)]
+		if !ok {
+			return 0, false
+		}
+		if value < score {
+			score = value
+		}
+	}
+	return score, true
+}
+
 var registry = map[string]Rule{
-	"redundant-comment": {
-		ID: "redundant-comment", Version: 1, Scope: ScopeHunk,
-		Description:      "Detect comments that merely narrate adjacent code.",
+	"narrating-comment": {
+		ID: "narrating-comment", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect changed comments that merely narrate adjacent code.",
 		Message:          "Comment appears to merely narrate the adjacent implementation.",
 		DefaultThreshold: 0.92, DefaultSeverity: SeverityWarning,
-		Instructions: "Return the probability that a comment in the changed code merely restates what immediately adjacent code visibly does, without adding rationale, intent, constraints, invariants, domain information, warnings, or explanation of non-obvious behavior. Do not count public API documentation, required documentation comments, why-comments, security or concurrency rationale, compatibility constraints, links, or non-obvious domain explanations.",
+		Signals: []Signal{{
+			ID:           "restates-visible-code",
+			Instructions: "Return the probability that a comment added or modified in the changed code merely restates what the immediately adjacent code visibly does. Judge only the supplied changed region. Do not count public API documentation, required documentation comments, rationale, intent, constraints, invariants, domain information, warnings, compatibility notes, links, or explanations of non-obvious behavior.",
+		}},
 		Applicable: func(u semantic.Unit, _ string) (bool, string) {
 			if !u.ContainsComments {
 				return false, "changed region contains no comments"
@@ -50,69 +78,169 @@ var registry = map[string]Rule{
 			return true, ""
 		},
 	},
-	"speculative-generality": {
-		ID: "speculative-generality", Version: 1, Scope: ScopeHunk,
-		Description:      "Detect unjustified abstraction or extensibility.",
-		Message:          "New generality appears unjustified by the task or demonstrated usage.",
-		DefaultThreshold: 0.88, DefaultSeverity: SeverityWarning,
-		Instructions: "Return the probability that the change introduces abstraction, configurability, extensibility, indirection, generic infrastructure, or architectural machinery not justified by the task or demonstrated usage. Do not penalize abstraction itself, necessary boundaries, established patterns, or generality with current concrete consumers.",
-		Applicable:   alwaysApplicable,
+	"unchanged-argument-forwarder": {
+		ID: "unchanged-argument-forwarder", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect newly introduced callables that only forward an operation.",
+		Message:          "New callable appears to forward the same operation and arguments without visible added behavior.",
+		DefaultThreshold: 0.90, DefaultSeverity: SeverityWarning,
+		Signals: []Signal{
+			{
+				ID:           "introduces-forwarder",
+				Instructions: "Return the probability that the changed region introduces or materially changes a function, method, or callable whose visible implementation primarily invokes one other callable and returns or relays its result.",
+			},
+			{
+				ID:           "preserves-operation-and-arguments",
+				Instructions: "Return the probability that the visible forwarding callable exposes substantially the same operation and passes substantially the same arguments through unchanged.",
+			},
+			{
+				ID:           "adds-no-visible-behavior",
+				Instructions: "Return the probability that the visible forwarding callable adds no meaningful validation, authorization, policy, translation, composition, transaction handling, lifecycle management, observability, compatibility behavior, or error handling. Judge only behavior visible in the supplied region; do not decide whether the callable is architecturally justified elsewhere.",
+			},
+		},
+		Applicable: alwaysApplicable,
 	},
-	"pass-through-layer": {
-		ID: "pass-through-layer", Version: 1, Scope: ScopeHunk,
-		Description:      "Detect layers that add indirection without a new abstraction.",
-		Message:          "New layer appears to forward behavior without hiding meaningful complexity.",
+	"ceremonial-abstraction": {
+		ID: "ceremonial-abstraction", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect new abstractions with visible ceremony and little local behavior.",
+		Message:          "New abstraction adds visible ceremony while hiding little behavior in the supplied region.",
+		DefaultThreshold: 0.90, DefaultSeverity: SeverityWarning,
+		Signals: []Signal{
+			{
+				ID:           "introduces-abstraction",
+				Instructions: "Return the probability that the changed region introduces a class, interface, wrapper, service, builder, request object, option object, operation object, or similarly named abstraction.",
+			},
+			{
+				ID:           "adds-interface-ceremony",
+				Instructions: "Return the probability that using the introduced abstraction visibly requires learning or invoking additional names, methods, construction steps, options, or protocol.",
+			},
+			{
+				ID:           "hides-little-visible-behavior",
+				Instructions: "Return the probability that the abstraction's visible implementation provides only trivial calculation, assignment, lookup, forwarding, or similarly small behavior without visible invariant enforcement, policy, translation, difficult dependency handling, or meaningful state management. Judge only the supplied region and do not decide repository-wide architectural value.",
+			},
+		},
+		Applicable: alwaysApplicable,
+	},
+	"boolean-mode-parameter": {
+		ID: "boolean-mode-parameter", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect new boolean parameters that select substantially different behavior.",
+		Message:          "New boolean parameter appears to make callers select an internal behavior mode.",
+		DefaultThreshold: 0.90, DefaultSeverity: SeverityWarning,
+		Signals: []Signal{
+			{
+				ID:           "introduces-boolean-input",
+				Instructions: "Return the probability that the changed region introduces a boolean parameter, option, or flag that callers must supply.",
+			},
+			{
+				ID:           "selects-behavior-mode",
+				Instructions: "Return the probability that the boolean visibly selects between meaningfully different execution modes rather than representing genuine boolean domain data. Do not count clear product policy, security choices, feature state, or naturally boolean values.",
+			},
+		},
+		Applicable: alwaysApplicable,
+	},
+	"caller-managed-mechanics": {
+		ID: "caller-managed-mechanics", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect low-level operational mechanics newly required from callers.",
+		Message:          "Change appears to require callers to manage visible low-level operational mechanics.",
+		DefaultThreshold: 0.90, DefaultSeverity: SeverityWarning,
+		Signals: []Signal{
+			{
+				ID:           "introduces-caller-duty",
+				Instructions: "Return the probability that the changed region requires callers to choose or perform visible low-level configuration, setup ordering, multi-step sequencing, cleanup, retry, serialization, internal error translation, representation filtering, or state-transition duties.",
+			},
+			{
+				ID:           "duty-is-mechanical",
+				Instructions: "Return the probability that the visible duty concerns mechanical operation of a lower-level component rather than caller-owned product policy, required caller data, explicit resource ownership, cross-module coordination, observable data semantics, or a security decision.",
+			},
+		},
+		Applicable: alwaysApplicable,
+	},
+	"implementation-detail-exposure": {
+		ID: "implementation-detail-exposure", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect implementation-specific details added to public boundaries.",
+		Message:          "Changed public boundary appears to expose a visible implementation detail.",
 		DefaultThreshold: 0.91, DefaultSeverity: SeverityWarning,
-		Instructions: "Return the probability that the change introduces a method, class, wrapper, service, adapter, or architectural layer that mostly forwards the same operation and arguments to another layer without simplifying the interface, enforcing meaningful policy, translating representations, combining operations, or hiding substantial complexity. Do not count legitimate adapters, stable boundaries, dependency inversion with current consumers, authorization or validation layers, transaction boundaries, observability wrappers, or delegation that provides a meaningfully different abstraction.",
-		Applicable:   alwaysApplicable,
+		Signals: []Signal{
+			{
+				ID:           "changes-external-boundary",
+				Instructions: "Return the probability that the changed region adds or modifies a type, parameter, return value, field, key, exception, method, or required call sequence visibly exposed outside its immediate implementation.",
+			},
+			{
+				ID:           "exposes-implementation-detail",
+				Instructions: "Return the probability that the boundary visibly exposes a concrete dependency type, storage layout, mutable internal state, cache key, serialized bytes, protocol encoding, database row, process detail, internal identifier, algorithm phase, or other implementation-specific representation. Do not count intentional public contracts, standard interoperable formats, diagnostics, dependencies that are the module's purpose, or information callers visibly need.",
+			},
+		},
+		Applicable: alwaysApplicable,
 	},
-	"complexity-pushed-upward": {
-		ID: "complexity-pushed-upward", Version: 1, Scope: ScopeHunk,
-		Description:      "Detect implementation complexity pushed onto callers.",
-		Message:          "Change appears to make callers manage complexity the module could own.",
-		DefaultThreshold: 0.88, DefaultSeverity: SeverityWarning,
-		Instructions: "Return the probability that the change makes callers, users, or higher-level modules understand or manage complexity that the changed module can reasonably handle itself. Consider new configuration knobs, boolean mode flags, lifecycle sequencing, cleanup duties, retry details, internal error distinctions, representation details, or repeated setup required from callers. Do not count choices that are genuine product policy, security decisions, resource ownership boundaries, required caller data, or variability with multiple current use cases. Prefer a simple interface even when that makes the implementation more complex.",
-		Applicable:   alwaysApplicable,
+	"named-special-case": {
+		ID: "named-special-case", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect named product or workflow exceptions in reusable mechanisms.",
+		Message:          "Reusable-looking mechanism contains a visible named special case.",
+		DefaultThreshold: 0.91, DefaultSeverity: SeverityWarning,
+		Signals: []Signal{
+			{
+				ID:           "changes-reusable-mechanism",
+				Instructions: "Return the probability that the changed region is visibly part of a reusable, generic, shared, framework, infrastructure, utility, or mechanism-level component.",
+			},
+			{
+				ID:           "branches-on-named-policy",
+				Instructions: "Return the probability that the mechanism visibly branches on a named customer, endpoint, workflow, product, tenant, or one-off case. Do not count protocol-required cases, security boundaries, compatibility handling at a boundary, or behavior fundamental to the mechanism.",
+			},
+		},
+		Applicable: alwaysApplicable,
 	},
-	"information-leakage": {
-		ID: "information-leakage", Version: 1, Scope: ScopeHunk,
-		Description:      "Detect internal design knowledge exposed across module boundaries.",
-		Message:          "Change appears to expose an internal design decision to other modules.",
-		DefaultThreshold: 0.89, DefaultSeverity: SeverityWarning,
-		Instructions: "Return the probability that the change exposes internal implementation knowledge, representation, storage layout, protocol encoding, cache structure, dependency-specific type, or other design decision through a module boundary, causing consumers to depend on information that should remain hidden. Include back-door leakage through required call sequences or duplicated assumptions, not only public type signatures. Do not count intentional public contracts, standard interoperable formats, diagnostic or introspection APIs, dependency types that are the module's purpose, or representations callers genuinely need.",
-		Applicable:   alwaysApplicable,
+	"unused-extensibility-point": {
+		ID: "unused-extensibility-point", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect extensibility machinery with no concrete use visible in the patch.",
+		Message:          "New extensibility point has no distinct concrete use visible in the supplied change.",
+		DefaultThreshold: 0.91, DefaultSeverity: SeverityWarning,
+		Signals: []Signal{
+			{
+				ID:           "introduces-extensibility",
+				Instructions: "Return the probability that the changed region introduces an interface, callback, hook, plugin point, generic parameter, strategy, registry, configurable factory, or similar extensibility mechanism.",
+			},
+			{
+				ID:           "only-one-visible-behavior",
+				Instructions: "Return the probability that the supplied patch context shows only one concrete implementation, registration, instantiation, or behavior for the new extensibility mechanism.",
+			},
+			{
+				ID:           "task-does-not-request-extensibility",
+				Instructions: "Return the probability that the supplied task, when present, does not explicitly require multiple implementations, configurability, plugins, substitution, testing seams, or another concrete extensibility need. If no task is supplied, return 0 rather than assuming the need is absent.",
+			},
+		},
+		Applicable: func(_ semantic.Unit, task string) (bool, string) {
+			if task == "" {
+				return false, "task context is required for a local claim about unused extensibility"
+			}
+			return true, ""
+		},
 	},
-	"special-general-mixture": {
-		ID: "special-general-mixture", Version: 1, Scope: ScopeHunk,
-		Description:      "Detect special-purpose policy embedded in general mechanisms.",
-		Message:          "Special-case policy appears mixed into a general-purpose mechanism.",
-		DefaultThreshold: 0.90, DefaultSeverity: SeverityWarning,
-		Instructions: "Return the probability that the change embeds customer-specific, endpoint-specific, workflow-specific, product-specific, or one-off policy inside a general-purpose reusable mechanism, instead of keeping the special policy in its owning layer and the mechanism broadly applicable. Look for identity checks, named exceptions, domain branching, or special flags in generic infrastructure. Do not count behavior fundamental to the abstraction, protocol-required cases, security boundaries, compatibility handling localized at the boundary, or explicit policy hooks supplied by higher layers.",
-		Applicable:   alwaysApplicable,
-	},
-	"shallow-module": {
-		ID: "shallow-module", Version: 1, Scope: ScopeHunk,
-		Description:      "Detect abstractions with costly interfaces and little hidden complexity.",
-		Message:          "New abstraction appears shallow relative to the interface it introduces.",
-		DefaultThreshold: 0.90, DefaultSeverity: SeverityWarning,
-		Instructions: "Return the probability that the change introduces an abstraction whose interface complexity is not substantially lower than the implementation complexity it hides or the functionality it provides. Consider classes, interfaces, methods, option objects, builders, and wrappers that require significant learning, configuration, or ceremony for little benefit. Judge depth rather than raw code size. Do not count small well-named helpers that improve readability, narrow domain types that enforce invariants, adapters that hide difficult dependencies, or simple interfaces backed by meaningful policy or implementation complexity.",
-		Applicable:   alwaysApplicable,
-	},
-	"defensive-fallback": {
-		ID: "defensive-fallback", Version: 1, Scope: ScopeHunk,
-		Description:      "Detect newly introduced fallbacks that hide failures.",
-		Message:          "New fallback may hide an unexpected failure.",
-		DefaultThreshold: 0.90, DefaultSeverity: SeverityError,
-		Instructions: "Return the probability that newly introduced fallback behavior hides, suppresses, replaces, or silently recovers from a condition that should remain observable as an error, invalid state, or invariant violation. Do not count fallback behavior supported by the task, surrounding contract, established codebase behavior, or explicit resilience design.",
-		Applicable:   alwaysApplicable,
-	},
-	"weakened-test": {
-		ID: "weakened-test", Version: 1, Scope: ScopeHunk,
-		Description:      "Detect test changes that reduce defect detection.",
-		Message:          "Test modification may weaken behavioral protection.",
+	"silent-failure-fallback": {
+		ID: "silent-failure-fallback", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect changed code that turns visible failures into success or defaults.",
+		Message:          "Changed code appears to replace a visible failure with success or a default value.",
 		DefaultThreshold: 0.92, DefaultSeverity: SeverityError,
+		Signals: []Signal{
+			{
+				ID:           "intercepts-failure",
+				Instructions: "Return the probability that the changed region catches, checks, discards, suppresses, or otherwise intercepts an error, exception, invalid value, failed parse, unknown case, or invariant violation.",
+			},
+			{
+				ID:           "returns-success-or-default",
+				Instructions: "Return the probability that the intercepted failure is visibly replaced with success, nil, zero, empty data, a default object, stale data, or continued execution without making the failure observable. Do not count explicit resilience behavior required by the task or visibly established contract.",
+			},
+		},
+		Applicable: alwaysApplicable,
+	},
+	"weakened-test-assertion": {
+		ID: "weakened-test-assertion", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect locally visible removal or broadening of test protection.",
+		Message:          "Test change visibly removes, skips, or broadens an existing behavioral check.",
+		DefaultThreshold: 0.93, DefaultSeverity: SeverityError,
 		AuditSkipReason: "requires a before-and-after test change",
-		Instructions:    "Return the probability that modification of an existing test reduces its ability to detect incorrect behavior instead of legitimately adapting to an intended behavior change. Consider removed assertions, broader checks, increased tolerances, removed error validation, or skipped behavior. Use old and new versions and task context. Do not count legitimate updates caused by intentional behavior changes.",
+		Signals: []Signal{{
+			ID:           "reduces-visible-protection",
+			Instructions: "Return the probability that the changed test visibly removes an assertion, replaces an exact check with a broader check, increases a tolerance, removes error validation, skips behavior, weakens collection comparison, or otherwise reduces the specific protection present in the previous code. Judge only the before-and-after test change. Do not infer whether broader system behavior remains covered elsewhere.",
+		}},
 		Applicable: func(u semantic.Unit, _ string) (bool, string) {
 			if !u.IsTest {
 				return false, "not a test file"
@@ -125,13 +253,16 @@ var registry = map[string]Rule{
 	},
 	"scope-creep": {
 		ID: "scope-creep", Version: 1, Scope: ScopePatch,
-		Description:         "Detect substantial changes unrelated to the task.",
+		Description:         "Detect substantial patch changes unrelated to the supplied task.",
 		Message:             "Change appears unrelated to the supplied task.",
 		DefaultThreshold:    0.90,
 		DefaultSeverity:     SeverityWarning,
 		RequiresTaskContext: true,
 		AuditSkipReason:     "requires a code change and task context",
-		Instructions:        "Return the probability that the patch introduces externally observable behavior or substantial implementation changes unrelated to what is reasonably necessary for the supplied task. Do not count necessary small refactors, safety cleanup, required tests, or mechanical consequences of an API change.",
+		Signals: []Signal{{
+			ID:           "unrelated-substantial-change",
+			Instructions: "Return the probability that the patch introduces externally observable behavior or substantial implementation changes unrelated to what is reasonably necessary for the supplied task. Do not count necessary small refactors, safety cleanup, required tests, or mechanical consequences of an API change.",
+		}},
 		Applicable: func(_ semantic.Unit, task string) (bool, string) {
 			if task == "" {
 				return false, "task context is required"

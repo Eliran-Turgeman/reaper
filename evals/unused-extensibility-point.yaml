@@ -1,4 +1,4 @@
-- id: speculative-generality-obvious-go
+- id: unused-extensibility-point-obvious-go
   language: Go
   task: Add a function that formats the one supported invoice type.
   code: |
@@ -9,7 +9,7 @@
     func (DefaultInvoiceFormatter) Format(i Invoice) string { return i.Number }
   expected: positive
   rationale: An interface and implementation pair add indirection despite there being one fixed behavior.
-- id: speculative-generality-obvious-python
+- id: unused-extensibility-point-obvious-python
   language: Python
   task: Read the configured API URL.
   code: |
@@ -22,7 +22,7 @@
             return os.environ["API_URL"]
   expected: positive
   rationale: The requested environment lookup has been expanded into an unused provider hierarchy.
-- id: speculative-generality-obvious-typescript
+- id: unused-extensibility-point-obvious-typescript
   language: TypeScript
   task: Parse JSON responses from this endpoint.
   code: |
@@ -36,7 +36,7 @@
     }
   expected: positive
   rationale: Unsupported future formats are exposed in the API even though only JSON was requested or implemented.
-- id: speculative-generality-obvious-csharp
+- id: unused-extensibility-point-obvious-csharp
   language: C#
   task: Send password-reset email through the existing mailer.
   code: |
@@ -49,7 +49,7 @@
     }
   expected: positive
   rationale: The enum predicts unrequested channels and makes callers handle options that do not exist.
-- id: speculative-generality-obvious-java
+- id: unused-extensibility-point-obvious-java
   language: Java
   task: Calculate sales tax for the only operating region.
   code: |
@@ -63,7 +63,7 @@
     }
   expected: positive
   rationale: A strategy abstraction is premature when the product has one fixed region and calculation.
-- id: speculative-generality-subtle-go
+- id: unused-extensibility-point-subtle-go
   language: Go
   task: Add a 30-second timeout to the importer.
   code: |
@@ -75,7 +75,7 @@
     opts := ImportOptions{Timeout: 30 * time.Second, Clock: time.Now}
   expected: positive
   rationale: Clock and retry hooks are introduced without consumers to anticipate hypothetical future behavior.
-- id: speculative-generality-subtle-python
+- id: unused-extensibility-point-subtle-python
   language: Python
   task: Normalize usernames to lowercase.
   code: |
@@ -88,7 +88,7 @@
         return username
   expected: positive
   rationale: A configurable transformation pipeline needlessly generalizes one required lowercase operation.
-- id: speculative-generality-subtle-typescript
+- id: unused-extensibility-point-subtle-typescript
   language: TypeScript
   task: Cache product records in memory.
   code: |
@@ -101,7 +101,7 @@
     }
   expected: positive
   rationale: Backend genericity anticipates replacement stores even though the task specifies an in-memory cache.
-- id: speculative-generality-subtle-csharp
+- id: unused-extensibility-point-subtle-csharp
   language: C#
   task: Export the report as CSV.
   code: |
@@ -114,7 +114,7 @@
         WriteCsv(report, options ?? new());
   expected: positive
   rationale: Format and metadata switches broaden a CSV-only requirement without implemented alternatives.
-- id: speculative-generality-subtle-java
+- id: unused-extensibility-point-subtle-java
   language: Java
   task: Retry this request twice.
   code: |
@@ -127,7 +127,7 @@
     var policy = new RetryPolicy(2, Duration.ZERO, 1.0, error -> true);
   expected: positive
   rationale: A full policy object is invented for a fixed two-attempt requirement with no delay rules.
-- id: speculative-generality-negative-obvious-go
+- id: unused-extensibility-point-negative-obvious-go
   language: Go
   task: Support both S3 and Azure Blob storage selected by deployment configuration.
   code: |
@@ -140,7 +140,7 @@
     }
   expected: negative
   rationale: The interface is required by two explicitly supported production providers.
-- id: speculative-generality-negative-obvious-python
+- id: unused-extensibility-point-negative-obvious-python
   language: Python
   task: Allow plugins to register custom document parsers.
   code: |
@@ -150,7 +150,7 @@
         PARSERS[media_type] = parser
   expected: negative
   rationale: A registration extension point directly implements the requested plugin contract.
-- id: speculative-generality-negative-obvious-typescript
+- id: unused-extensibility-point-negative-obvious-typescript
   language: TypeScript
   task: The API must return either JSON or CSV according to the Accept header.
   code: |
@@ -164,7 +164,7 @@
     ]);
   expected: negative
   rationale: Multiple required output formats justify a serializer abstraction and lookup.
-- id: speculative-generality-negative-obvious-csharp
+- id: unused-extensibility-point-negative-obvious-csharp
   language: C#
   task: Make the payment gateway replaceable for merchant-specific Stripe and Adyen integrations.
   code: |
@@ -174,7 +174,7 @@
     }
   expected: negative
   rationale: Replaceability across named gateway implementations is an explicit business requirement.
-- id: speculative-generality-negative-obvious-java
+- id: unused-extensibility-point-negative-obvious-java
   language: Java
   task: Schedule jobs using fixed-delay, cron, and one-shot triggers.
   code: |
@@ -183,7 +183,7 @@
     }
   expected: negative
   rationale: The model represents three requested trigger behaviors rather than hypothetical future cases.
-- id: speculative-generality-negative-difficult-go
+- id: unused-extensibility-point-negative-difficult-go
   language: Go
   code: |
     type clock interface { Now() time.Time }
@@ -193,7 +193,7 @@
     }
   expected: negative
   rationale: Injecting time is justified because token expiry logic must be deterministic in tests and under clock control.
-- id: speculative-generality-negative-difficult-python
+- id: unused-extensibility-point-negative-difficult-python
   language: Python
   code: |
     class Transaction(Protocol):
@@ -204,7 +204,7 @@
         ...
   expected: negative
   rationale: The protocol captures an existing transaction boundary and enables atomic import testing, not imagined features.
-- id: speculative-generality-negative-difficult-typescript
+- id: unused-extensibility-point-negative-difficult-typescript
   language: TypeScript
   code: |
     type EventMap = {
@@ -216,7 +216,7 @@
     }
   expected: negative
   rationale: The generic ties each existing event name to its payload and prevents real type errors; it does not add unsupported events.
-- id: speculative-generality-negative-difficult-csharp
+- id: unused-extensibility-point-negative-difficult-csharp
   language: C#
   code: |
     internal interface IFileSystem
@@ -226,7 +226,7 @@
     }
   expected: negative
   rationale: Abstracting filesystem effects is warranted when the service must atomically move files and tests cannot use production paths.
-- id: speculative-generality-negative-difficult-java
+- id: unused-extensibility-point-negative-difficult-java
   language: Java
   code: |
     final class DecoderRegistry {

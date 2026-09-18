@@ -1,4 +1,4 @@
-- id: complexity-pushed-upward-obvious-go
+- id: caller-managed-mechanics-obvious-go
   language: Go
   task: Add a helper for importing a file.
   code: |
@@ -10,7 +10,7 @@
     err := Import(ctx, path, 4096, runtime.NumCPU())
   expected: positive
   rationale: Callers must choose internal chunking and worker details that the importer can reasonably own.
-- id: complexity-pushed-upward-obvious-python
+- id: caller-managed-mechanics-obvious-python
   language: Python
   task: Add an operation that sends an email.
   code: |
@@ -21,7 +21,7 @@
         mailer.close(connection)
   expected: positive
   rationale: The caller is forced to manage the mailer's connection lifecycle instead of invoking one safe send operation.
-- id: complexity-pushed-upward-obvious-typescript
+- id: caller-managed-mechanics-obvious-typescript
   language: TypeScript
   task: Fetch a product from the remote catalog.
   code: |
@@ -33,7 +33,7 @@
     });
   expected: positive
   rationale: Routine callers now define low-level retry policy that belongs with the catalog integration.
-- id: complexity-pushed-upward-obvious-csharp
+- id: caller-managed-mechanics-obvious-csharp
   language: C#
   task: Read a customer by ID.
   code: |
@@ -47,7 +47,7 @@
     }
   expected: positive
   rationale: A customer module exposing SQL deadlock details makes every caller understand its storage implementation.
-- id: complexity-pushed-upward-obvious-java
+- id: caller-managed-mechanics-obvious-java
   language: Java
   task: Process a batch of records.
   code: |
@@ -60,7 +60,7 @@
     processor.close();
   expected: positive
   rationale: The caller must know and correctly sequence five lifecycle operations for one batch-processing intent.
-- id: complexity-pushed-upward-subtle-go
+- id: caller-managed-mechanics-subtle-go
   language: Go
   task: Add a client method for uploading an avatar.
   code: |
@@ -73,7 +73,7 @@
     }
   expected: positive
   rationale: Refresh-and-retry mechanics of the avatar service leak into each consumer's workflow.
-- id: complexity-pushed-upward-subtle-python
+- id: caller-managed-mechanics-subtle-python
   language: Python
   task: Add a query method that returns active subscriptions.
   code: |
@@ -84,7 +84,7 @@
     ]
   expected: positive
   rationale: Consumers must reproduce deletion and state-code rules that the subscription query can encapsulate.
-- id: complexity-pushed-upward-subtle-typescript
+- id: caller-managed-mechanics-subtle-typescript
   language: TypeScript
   task: Write an event to the application event log.
   code: |
@@ -95,7 +95,7 @@
     await writer.dispose();
   expected: positive
   rationale: Resource creation, ordering, flushing, and cleanup are pushed onto ordinary event-log callers.
-- id: complexity-pushed-upward-subtle-csharp
+- id: caller-managed-mechanics-subtle-csharp
   language: C#
   task: Add a parser for configuration files.
   code: |
@@ -106,7 +106,7 @@
         throw new InvalidConfigurationException(result.ProductionName);
   expected: positive
   rationale: The parser exports its internal phases, forcing consumers to translate scanner and grammar mechanics.
-- id: complexity-pushed-upward-subtle-java
+- id: caller-managed-mechanics-subtle-java
   language: Java
   task: Reserve inventory for an order.
   code: |
@@ -119,7 +119,7 @@
     }
   expected: positive
   rationale: The caller must drive the inventory module's prepare-confirm-release protocol for a single domain operation.
-- id: complexity-pushed-upward-negative-obvious-go
+- id: caller-managed-mechanics-negative-obvious-go
   language: Go
   task: Let the command choose the user-requested output format.
   code: |
@@ -127,14 +127,14 @@
     result, err := reports.Generate(ctx, reportID, ReportOptions{Format: *format})
   expected: negative
   rationale: Output format is a genuine user-facing decision, not an internal implementation detail.
-- id: complexity-pushed-upward-negative-obvious-python
+- id: caller-managed-mechanics-negative-obvious-python
   language: Python
   task: Allow callers to cancel a long-running export.
   code: |
     await exporter.export(report, destination, cancellation_token)
   expected: negative
   rationale: Cancellation represents caller-owned lifecycle control and is appropriately part of the public contract.
-- id: complexity-pushed-upward-negative-obvious-typescript
+- id: caller-managed-mechanics-negative-obvious-typescript
   language: TypeScript
   task: Require the checkout caller to select a shipping address.
   code: |
@@ -144,7 +144,7 @@
     });
   expected: negative
   rationale: The shipping address is a product choice only the user-facing caller can supply.
-- id: complexity-pushed-upward-negative-obvious-csharp
+- id: caller-managed-mechanics-negative-obvious-csharp
   language: C#
   task: Let an administrator decide whether to revoke all sessions.
   code: |
@@ -155,7 +155,7 @@
         cancellationToken);
   expected: negative
   rationale: Session revocation is an explicit administrative policy choice rather than module mechanics.
-- id: complexity-pushed-upward-negative-obvious-java
+- id: caller-managed-mechanics-negative-obvious-java
   language: Java
   task: Expose transaction boundaries for a multi-repository business operation.
   code: |
@@ -166,7 +166,7 @@
     });
   expected: negative
   rationale: The application service legitimately owns the atomic boundary spanning multiple independent modules.
-- id: complexity-pushed-upward-negative-difficult-go
+- id: caller-managed-mechanics-negative-difficult-go
   language: Go
   code: |
     type WalkOptions struct {
@@ -176,7 +176,7 @@
     err := tree.Walk(root, WalkOptions{FollowSymlinks: userRequestedFollow}, visit)
   expected: negative
   rationale: Following symbolic links changes observable semantics and safety, so the caller must choose it.
-- id: complexity-pushed-upward-negative-difficult-python
+- id: caller-managed-mechanics-negative-difficult-python
   language: Python
   code: |
     with repository.transaction() as transaction:
@@ -184,7 +184,7 @@
         transaction.outbox.publish(InvoiceCreated(invoice.id))
   expected: negative
   rationale: The context manager hides commit and rollback mechanics while allowing the caller to define one required atomic unit.
-- id: complexity-pushed-upward-negative-difficult-typescript
+- id: caller-managed-mechanics-negative-difficult-typescript
   language: TypeScript
   code: |
     await search.query(text, {
@@ -193,14 +193,14 @@
     });
   expected: negative
   rationale: Pagination is a public result-navigation contract, and the caller supplies user intent while enforcing its own limit.
-- id: complexity-pushed-upward-negative-difficult-csharp
+- id: caller-managed-mechanics-negative-difficult-csharp
   language: C#
   code: |
     await using var lease = await locks.AcquireAsync(resourceId, cancellationToken);
     await UpdateTwoIndependentStoresAsync(resourceId, cancellationToken);
   expected: negative
   rationale: A scoped lock is legitimate caller-owned coordination around work that crosses module boundaries.
-- id: complexity-pushed-upward-negative-difficult-java
+- id: caller-managed-mechanics-negative-difficult-java
   language: Java
   code: |
     decoder.decode(

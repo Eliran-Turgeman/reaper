@@ -14,7 +14,7 @@ model: jev-1.13.0
 request_timeout: 2s
 concurrency: 2
 rules:
-  redundant-comment:
+  narrating-comment:
     enabled: false
     threshold: 0
     severity: error
@@ -29,11 +29,11 @@ rules:
 	if path == "" || cfg.Model != "jev-1.13.0" || cfg.RequestTimeout != 2*time.Second {
 		t.Fatalf("unexpected config: %#v", cfg)
 	}
-	rule := cfg.Rules["redundant-comment"]
+	rule := cfg.Rules["narrating-comment"]
 	if *rule.Enabled || rule.Threshold != 0 || rule.Severity != "error" {
 		t.Fatalf("override not applied: %#v", rule)
 	}
-	if _, ok := cfg.Rules["defensive-fallback"]; !ok {
+	if _, ok := cfg.Rules["silent-failure-fallback"]; !ok {
 		t.Fatal("default rules were not preserved")
 	}
 }
@@ -41,7 +41,7 @@ rules:
 func TestLoadRejectsUnknownAndInvalidFields(t *testing.T) {
 	for name, data := range map[string]string{
 		"unknown":  "version: 1\nmodel: jev-latest\nmystery: true\n",
-		"nested":   "version: 1\nmodel: jev-latest\nrules:\n  redundant-comment:\n    typo: true\n",
+		"nested":   "version: 1\nmodel: jev-latest\nrules:\n  narrating-comment:\n    typo: true\n",
 		"timeout":  "version: 1\nmodel: jev-latest\nrequest_timeout: nope\n",
 		"rule":     "version: 1\nmodel: jev-latest\nrules:\n  made-up:\n    enabled: true\n",
 		"provider": "version: 1\nprovider: mystery\nmodel: jev-latest\n",

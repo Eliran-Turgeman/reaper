@@ -10,49 +10,54 @@ cache:
   enabled: true
 
 rules:
-  redundant-comment:
+  narrating-comment:
     enabled: true
     threshold: 0.92
     severity: warning
 
-  speculative-generality:
+  unchanged-argument-forwarder:
     enabled: true
-    threshold: 0.88
+    threshold: 0.90
     severity: warning
 
-  pass-through-layer:
+  ceremonial-abstraction:
+    enabled: true
+    threshold: 0.90
+    severity: warning
+
+  boolean-mode-parameter:
+    enabled: true
+    threshold: 0.90
+    severity: warning
+
+  caller-managed-mechanics:
+    enabled: true
+    threshold: 0.90
+    severity: warning
+
+  implementation-detail-exposure:
     enabled: true
     threshold: 0.91
     severity: warning
 
-  complexity-pushed-upward:
+  named-special-case:
     enabled: true
-    threshold: 0.88
+    threshold: 0.91
     severity: warning
 
-  information-leakage:
+  unused-extensibility-point:
     enabled: true
-    threshold: 0.89
+    threshold: 0.91
     severity: warning
 
-  special-general-mixture:
-    enabled: true
-    threshold: 0.90
-    severity: warning
-
-  shallow-module:
-    enabled: true
-    threshold: 0.90
-    severity: warning
-
-  defensive-fallback:
-    enabled: true
-    threshold: 0.90
-    severity: error
-
-  weakened-test:
+  silent-failure-fallback:
     enabled: true
     threshold: 0.92
+    severity: error
+
+  weakened-test-assertion:
+    enabled: true
+    threshold: 0.93
     severity: error
 
   scope-creep:

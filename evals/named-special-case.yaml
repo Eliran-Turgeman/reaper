@@ -1,4 +1,4 @@
-- id: special-general-mixture-obvious-go
+- id: named-special-case-obvious-go
   language: Go
   task: Add a reusable HTTP request retry helper.
   code: |
@@ -10,7 +10,7 @@
     }
   expected: positive
   rationale: Customer-specific billing policy is embedded in an otherwise general HTTP retry mechanism.
-- id: special-general-mixture-obvious-python
+- id: named-special-case-obvious-python
   language: Python
   task: Add a generic CSV writer.
   code: |
@@ -21,7 +21,7 @@
             output.writerow(row)
   expected: positive
   rationale: One customer's discount rule does not belong inside a reusable serialization utility.
-- id: special-general-mixture-obvious-typescript
+- id: named-special-case-obvious-typescript
   language: TypeScript
   task: Add a general job scheduler.
   code: |
@@ -33,7 +33,7 @@
     }
   expected: positive
   rationale: Invoice calendar policy is mixed into the general scheduling mechanism.
-- id: special-general-mixture-obvious-csharp
+- id: named-special-case-obvious-csharp
   language: C#
   task: Add a reusable object validator.
   code: |
@@ -45,7 +45,7 @@
     }
   expected: positive
   rationale: VIP customer policy is embedded in a validator intended for arbitrary objects.
-- id: special-general-mixture-obvious-java
+- id: named-special-case-obvious-java
   language: Java
   task: Add a general-purpose cache.
   code: |
@@ -57,7 +57,7 @@
     }
   expected: positive
   rationale: A campaign-specific expiration rule is hidden inside the general cache implementation.
-- id: special-general-mixture-subtle-go
+- id: named-special-case-subtle-go
   language: Go
   task: Add generic middleware for recording request metrics.
   code: |
@@ -73,7 +73,7 @@
     }
   expected: positive
   rationale: A named tenant's reporting policy is coupled to general metrics middleware.
-- id: special-general-mixture-subtle-python
+- id: named-special-case-subtle-python
   language: Python
   task: Add a reusable record deduplication function.
   code: |
@@ -88,7 +88,7 @@
                 yield record
   expected: positive
   rationale: Legacy payroll normalization is specific ingestion policy inside a general deduplication algorithm.
-- id: special-general-mixture-subtle-typescript
+- id: named-special-case-subtle-typescript
   language: TypeScript
   task: Add a generic form state container.
   code: |
@@ -102,7 +102,7 @@
     }
   expected: positive
   rationale: Product-specific tax behavior is smuggled into a container meant to manage arbitrary forms.
-- id: special-general-mixture-subtle-csharp
+- id: named-special-case-subtle-csharp
   language: C#
   task: Add a reusable message dispatcher.
   code: |
@@ -114,7 +114,7 @@
     }
   expected: positive
   rationale: A retention workflow decision is mixed into the generic transport dispatcher.
-- id: special-general-mixture-subtle-java
+- id: named-special-case-subtle-java
   language: Java
   task: Add a generic collection sorter.
   code: |
@@ -126,7 +126,7 @@
     }
   expected: positive
   rationale: Enterprise support priority is a product rule layered into a general sorting mechanism.
-- id: special-general-mixture-negative-obvious-go
+- id: named-special-case-negative-obvious-go
   language: Go
   task: Apply enterprise pricing in the checkout policy layer.
   code: |
@@ -136,7 +136,7 @@
     }
   expected: negative
   rationale: The enterprise-specific rule lives in an explicitly specific pricing policy.
-- id: special-general-mixture-negative-obvious-python
+- id: named-special-case-negative-obvious-python
   language: Python
   task: Let a generic serializer accept a caller-provided field formatter.
   code: |
@@ -147,7 +147,7 @@
         ]
   expected: negative
   rationale: The general mechanism supplies an extension point without knowing any product-specific case.
-- id: special-general-mixture-negative-obvious-typescript
+- id: named-special-case-negative-obvious-typescript
   language: TypeScript
   task: Configure the scheduler with the invoice workflow's calendar.
   code: |
@@ -157,7 +157,7 @@
     );
   expected: negative
   rationale: The specific workflow computes its policy and passes a normal execution time to the general scheduler.
-- id: special-general-mixture-negative-obvious-csharp
+- id: named-special-case-negative-obvious-csharp
   language: C#
   task: Register customer-specific validation outside the validation engine.
   code: |
@@ -166,7 +166,7 @@
         validator: new AcmeOrderValidator(acmeContract));
   expected: negative
   rationale: The reusable engine remains general while its composition root installs an explicitly specific policy.
-- id: special-general-mixture-negative-obvious-java
+- id: named-special-case-negative-obvious-java
   language: Java
   task: Give campaign entries a short TTL using the cache's public API.
   code: |
@@ -176,7 +176,7 @@
         Duration.ofMinutes(2));
   expected: negative
   rationale: Campaign code chooses its required lifetime through a general cache contract.
-- id: special-general-mixture-negative-difficult-go
+- id: named-special-case-negative-difficult-go
   language: Go
   code: |
     type RetryPolicy interface {
@@ -187,7 +187,7 @@
     client.Do(ctx, request, partnerRetryPolicy)
   expected: negative
   rationale: The HTTP client stays general and receives current partner behavior through an explicit policy boundary.
-- id: special-general-mixture-negative-difficult-python
+- id: named-special-case-negative-difficult-python
   language: Python
   code: |
     class CsvExporter:
@@ -200,7 +200,7 @@
                 output.writerow([getattr(record, name) for name in self.columns])
   expected: negative
   rationale: Configurable columns are ordinary serialization behavior serving current exports, not embedded knowledge of a special case.
-- id: special-general-mixture-negative-difficult-typescript
+- id: named-special-case-negative-difficult-typescript
   language: TypeScript
   code: |
     eventBus.subscribe(TrialExpired, async event => {
@@ -208,7 +208,7 @@
     });
   expected: negative
   rationale: The special retention workflow is implemented by its own subscriber rather than inside the event bus.
-- id: special-general-mixture-negative-difficult-csharp
+- id: named-special-case-negative-difficult-csharp
   language: C#
   code: |
     var pipeline = new ImportPipeline<CustomerRow>(
@@ -216,7 +216,7 @@
         validate: row => customerValidator.Validate(row));
   expected: negative
   rationale: The generic pipeline composes caller-owned functions and contains no customer or legacy policy itself.
-- id: special-general-mixture-negative-difficult-java
+- id: named-special-case-negative-difficult-java
   language: Java
   code: |
     Comparator<SupportTicket> priority = Comparator

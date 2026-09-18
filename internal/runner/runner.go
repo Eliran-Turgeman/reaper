@@ -189,39 +189,40 @@ func (r *Runner) jobs(units []semantic.Unit, task string, logSkips bool) []job {
 
 func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []rules.Rule, task string) result {
 	state := buildState(unit, task, r.Audit)
-	probabilities := map[string]float64{}
-	cached := map[string]bool{}
-	var missing []rules.Rule
+	signalProbabilities := map[string]float64{}
+	ruleCached := map[string]bool{}
+	var missing []jev.Question
 	cacheKeys := map[string]string{}
 	for _, rule := range selected {
-		key := cache.Key(
-			r.Version, strconv.Itoa(semantic.SchemaVersion), r.Config.Provider, r.Config.Model, state, rule.ID,
-			strconv.Itoa(rule.Version), rule.Instructions,
-		)
-		cacheKeys[rule.ID] = key
-		value, ok, err := r.Cache.Get(key)
-		if err != nil {
-			return result{err: err}
+		ruleCached[rule.ID] = true
+		for _, signal := range rule.Signals {
+			questionID := rule.QuestionID(signal)
+			instructions := signal.Instructions
+			if r.Audit {
+				instructions = "Evaluate the current code as an existing-code audit, regardless of when it was introduced. " + instructions
+			}
+			key := cache.Key(
+				r.Version, strconv.Itoa(semantic.SchemaVersion), r.Config.Provider, r.Config.Model, state,
+				rule.ID, strconv.Itoa(rule.Version), signal.ID, instructions,
+			)
+			cacheKeys[questionID] = key
+			value, ok, err := r.Cache.Get(key)
+			if err != nil {
+				return result{err: err}
+			}
+			if ok {
+				signalProbabilities[questionID] = value
+				continue
+			}
+			ruleCached[rule.ID] = false
+			missing = append(missing, jev.Question{ID: questionID, Instructions: instructions})
 		}
-		if ok {
-			probabilities[rule.ID] = value
-			cached[rule.ID] = true
-			continue
-		}
-		missing = append(missing, rule)
 	}
 	if len(missing) > 0 {
 		if r.Client == nil {
 			return result{err: fmt.Errorf("Jev client is required for uncached semantic checks")}
 		}
-		request := jev.EvaluationRequest{Model: r.Config.Model, State: state}
-		for _, rule := range missing {
-			instructions := rule.Instructions
-			if r.Audit {
-				instructions = "Evaluate the current code as an existing-code audit, regardless of when it was introduced. " + instructions
-			}
-			request.Questions = append(request.Questions, jev.Question{ID: rule.ID, Instructions: instructions})
-		}
+		request := jev.EvaluationRequest{Model: r.Config.Model, State: state, Questions: missing}
 		response, err := r.Client.Evaluate(ctx, request)
 		if err != nil {
 			if jev.IsTokenLimitError(err) {
@@ -235,35 +236,42 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 			}
 			return result{err: fmt.Errorf("evaluate %s:%d: %w", unit.FilePath, unit.StartLine, err)}
 		}
-		for _, rule := range missing {
-			value, ok := response.Probabilities[rule.ID]
+		for _, question := range missing {
+			value, ok := response.Probabilities[question.ID]
 			if !ok {
-				return result{err: fmt.Errorf("Jev response omitted probability for %s", rule.ID)}
+				return result{err: fmt.Errorf("Jev response omitted probability for %s", question.ID)}
 			}
 			if value < 0 || value > 1 {
-				return result{err: fmt.Errorf("Jev probability for %s outside [0,1]", rule.ID)}
+				return result{err: fmt.Errorf("Jev probability for %s outside [0,1]", question.ID)}
 			}
-			probabilities[rule.ID] = value
-			if err := r.Cache.Put(cacheKeys[rule.ID], value); err != nil {
+			signalProbabilities[question.ID] = value
+			if err := r.Cache.Put(cacheKeys[question.ID], value); err != nil {
 				return result{err: err}
 			}
 		}
 	}
-	out := result{checks: len(selected), cacheHits: len(selected) - len(missing)}
+	out := result{checks: len(selected)}
 	for _, rule := range selected {
+		if ruleCached[rule.ID] {
+			out.cacheHits++
+		}
+		probability, ok := rule.Compose(signalProbabilities)
+		if !ok {
+			return result{err: fmt.Errorf("cannot compose probability for %s", rule.ID)}
+		}
 		rc := r.Config.Rules[rule.ID]
-		violation := probabilities[rule.ID] >= rc.Threshold
+		violation := probability >= rc.Threshold
 		out.evaluations = append(out.evaluations, evaluation{
 			rule: rule.ID, file: unit.FilePath, startLine: unit.StartLine,
-			confidence: probabilities[rule.ID], threshold: rc.Threshold,
-			violation: violation, cached: cached[rule.ID],
+			confidence: probability, threshold: rc.Threshold,
+			violation: violation, cached: ruleCached[rule.ID],
 		})
 		if !violation {
 			continue
 		}
 		severity, _ := rules.ValidateSeverity(rc.Severity)
 		out.diagnostics = append(out.diagnostics, diagnostics.Diagnostic{
-			Rule: rule.ID, Severity: severity, Probability: probabilities[rule.ID],
+			Rule: rule.ID, Severity: severity, Probability: probability,
 			Threshold: rc.Threshold, File: unit.FilePath, StartLine: unit.StartLine,
 			EndLine: unit.EndLine, Message: rule.Message,
 		})

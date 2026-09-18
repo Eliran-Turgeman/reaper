@@ -10,7 +10,7 @@ import (
 
 func TestJSONOutputSchemaAndBlockingPolicy(t *testing.T) {
 	report := New([]Diagnostic{{
-		Rule: "defensive-fallback", Severity: rules.SeverityError,
+		Rule: "silent-failure-fallback", Severity: rules.SeverityError,
 		Probability: 0.93, Threshold: 0.90, File: "client.go",
 		StartLine: 4, EndLine: 6, Message: "New fallback may hide an unexpected failure.",
 	}}, Summary{UnitsEvaluated: 1, SemanticChecks: 1, JevRequests: 1})

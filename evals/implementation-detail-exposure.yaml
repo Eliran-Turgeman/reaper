@@ -1,4 +1,4 @@
-- id: information-leakage-obvious-go
+- id: implementation-detail-exposure-obvious-go
   language: Go
   task: Expose the current shopping cart.
   code: |
@@ -8,7 +8,7 @@
     }
   expected: positive
   rationale: Consumers become coupled to the cart's indexing and dirty-tracking representation rather than a stable cart contract.
-- id: information-leakage-obvious-python
+- id: implementation-detail-exposure-obvious-python
   language: Python
   task: Return the authenticated session.
   code: |
@@ -20,7 +20,7 @@
         }
   expected: positive
   rationale: The API exposes Redis keys, TTLs, and encoded storage data instead of session meaning.
-- id: information-leakage-obvious-typescript
+- id: implementation-detail-exposure-obvious-typescript
   language: TypeScript
   task: Add a public result for customer lookup.
   code: |
@@ -31,7 +31,7 @@
     }
   expected: positive
   rationale: The public result reveals database row layout and sharding decisions that clients must understand.
-- id: information-leakage-obvious-csharp
+- id: implementation-detail-exposure-obvious-csharp
   language: C#
   task: Expose document metadata to callers.
   code: |
@@ -42,7 +42,7 @@
         string ETag);
   expected: positive
   rationale: Storage-provider concepts are made part of the document module's consumer-facing model.
-- id: information-leakage-obvious-java
+- id: implementation-detail-exposure-obvious-java
   language: Java
   task: Report whether an account exists.
   code: |
@@ -53,7 +53,7 @@
         int replicaIndex) {}
   expected: positive
   rationale: A simple account fact unnecessarily exposes table, row, and replica implementation knowledge.
-- id: information-leakage-subtle-go
+- id: implementation-detail-exposure-subtle-go
   language: Go
   task: Add an iterator over messages.
   code: |
@@ -65,7 +65,7 @@
     }
   expected: positive
   rationale: Segment and offset accessors bind consumers to the iterator's current log-storage design.
-- id: information-leakage-subtle-python
+- id: implementation-detail-exposure-subtle-python
   language: Python
   task: Return a user's permissions.
   code: |
@@ -76,7 +76,7 @@
         expansion_generation: int
   expected: positive
   rationale: Role-graph expansion internals accompany the useful permission set and invite dependencies on the authorization algorithm.
-- id: information-leakage-subtle-typescript
+- id: implementation-detail-exposure-subtle-typescript
   language: TypeScript
   task: Expose an image resizing operation.
   code: |
@@ -89,7 +89,7 @@
     ): Promise<Image>;
   expected: positive
   rationale: Callers must know WebAssembly memory and tiling choices unrelated to the resizing contract.
-- id: information-leakage-subtle-csharp
+- id: implementation-detail-exposure-subtle-csharp
   language: C#
   task: Add a public exception for unavailable reports.
   code: |
@@ -101,7 +101,7 @@
     }
   expected: positive
   rationale: The exception publishes SQL and replication mechanics rather than a stable report-domain failure.
-- id: information-leakage-subtle-java
+- id: implementation-detail-exposure-subtle-java
   language: Java
   task: Return the progress of a video conversion.
   code: |
@@ -112,7 +112,7 @@
         int completedPipeReads) {}
   expected: positive
   rationale: Process, temporary-directory, and pipe details leak the current converter implementation.
-- id: information-leakage-negative-obvious-go
+- id: implementation-detail-exposure-negative-obvious-go
   language: Go
   task: Publish the wire contract for a versioned webhook.
   code: |
@@ -123,7 +123,7 @@
     }
   expected: negative
   rationale: This representation is the intentional external protocol contract, not hidden module internals.
-- id: information-leakage-negative-obvious-python
+- id: implementation-detail-exposure-negative-obvious-python
   language: Python
   task: Let callers inspect validation failures by field.
   code: |
@@ -134,7 +134,7 @@
         message: str
   expected: negative
   rationale: Field and stable error code are meaningful public validation information required by clients.
-- id: information-leakage-negative-obvious-typescript
+- id: implementation-detail-exposure-negative-obvious-typescript
   language: TypeScript
   task: Return pagination metadata from the public search API.
   code: |
@@ -145,21 +145,21 @@
     }
   expected: negative
   rationale: Pagination metadata is part of the API's supported navigation contract and hides cursor contents.
-- id: information-leakage-negative-obvious-csharp
+- id: implementation-detail-exposure-negative-obvious-csharp
   language: C#
   task: Expose an immutable money value to consumers.
   code: |
     public readonly record struct Money(decimal Amount, string Currency);
   expected: negative
   rationale: Amount and currency are essential domain information, not accidental implementation representation.
-- id: information-leakage-negative-obvious-java
+- id: implementation-detail-exposure-negative-obvious-java
   language: Java
   task: Expose HTTP cache controls from an HTTP client library.
   code: |
     record CachePolicy(Duration maxAge, boolean mustRevalidate) {}
   expected: negative
   rationale: Cache semantics are an intentional part of the HTTP abstraction's public contract.
-- id: information-leakage-negative-difficult-go
+- id: implementation-detail-exposure-negative-difficult-go
   language: Go
   code: |
     type FileInfo interface {
@@ -170,7 +170,7 @@
     }
   expected: negative
   rationale: File name, size, mode, and modification time are stable filesystem concepts consumers legitimately need.
-- id: information-leakage-negative-difficult-python
+- id: implementation-detail-exposure-negative-difficult-python
   language: Python
   code: |
     class QueryPlan:
@@ -179,7 +179,7 @@
         def explain(self) -> str: ...
   expected: negative
   rationale: In a database diagnostics API, query planning and index information are the product being exposed.
-- id: information-leakage-negative-difficult-typescript
+- id: implementation-detail-exposure-negative-difficult-typescript
   language: TypeScript
   code: |
     export interface PluginContext {
@@ -189,7 +189,7 @@
     }
   expected: negative
   rationale: These are deliberate, versioned plugin capabilities and avoid exposing the host's private object graph.
-- id: information-leakage-negative-difficult-csharp
+- id: implementation-detail-exposure-negative-difficult-csharp
   language: C#
   code: |
     public sealed record UploadReceipt(
@@ -198,7 +198,7 @@
         long Length);
   expected: negative
   rationale: Location, integrity hash, and length are provider-neutral results useful to consumers of the upload contract.
-- id: information-leakage-negative-difficult-java
+- id: implementation-detail-exposure-negative-difficult-java
   language: Java
   code: |
     sealed interface ParseResult {

@@ -1,4 +1,4 @@
-- id: redundant-comment-obvious-go
+- id: narrating-comment-obvious-go
   language: Go
   task: Increment the retry counter.
   code: |
@@ -6,7 +6,7 @@
     retries++
   expected: positive
   rationale: The comment merely translates the single obvious statement into English.
-- id: redundant-comment-obvious-python
+- id: narrating-comment-obvious-python
   language: Python
   task: Return the user's email address.
   code: |
@@ -14,7 +14,7 @@
     return user.email
   expected: positive
   rationale: The comment adds no intent, constraint, or non-obvious information.
-- id: redundant-comment-obvious-typescript
+- id: narrating-comment-obvious-typescript
   language: TypeScript
   code: |
     // Check whether the list is empty.
@@ -23,21 +23,21 @@
     }
   expected: positive
   rationale: The condition is already self-explanatory and the comment just narrates it.
-- id: redundant-comment-obvious-csharp
+- id: narrating-comment-obvious-csharp
   language: C#
   code: |
     // Create a new customer.
     var customer = new Customer();
   expected: positive
   rationale: The comment repeats the constructor expression without explaining why it exists.
-- id: redundant-comment-obvious-java
+- id: narrating-comment-obvious-java
   language: Java
   code: |
     // Set active to true.
     account.setActive(true);
   expected: positive
   rationale: The setter call communicates exactly the same fact as the comment.
-- id: redundant-comment-subtle-go
+- id: narrating-comment-subtle-go
   language: Go
   code: |
     // Iterate over each header.
@@ -46,14 +46,14 @@
     }
   expected: positive
   rationale: Although attached to a loop, the comment conveys only its visible mechanics.
-- id: redundant-comment-subtle-python
+- id: narrating-comment-subtle-python
   language: Python
   code: |
     # Convert the timestamp to UTC.
     created_at = created_at.astimezone(timezone.utc)
   expected: positive
   rationale: The well-named method and destination make the conversion explicit already.
-- id: redundant-comment-subtle-typescript
+- id: narrating-comment-subtle-typescript
   language: TypeScript
   code: |
     // Remove undefined values from the array.
@@ -62,21 +62,21 @@
     );
   expected: positive
   rationale: The predicate and variable name fully describe the filtering operation.
-- id: redundant-comment-subtle-csharp
+- id: narrating-comment-subtle-csharp
   language: C#
   code: |
     // Dispose the stream when leaving the block.
     using var stream = File.OpenRead(path);
   expected: positive
   rationale: This restates standard using-declaration semantics familiar to C# readers.
-- id: redundant-comment-subtle-java
+- id: narrating-comment-subtle-java
   language: Java
   code: |
     // Sort orders by creation time in descending order.
     orders.sort(Comparator.comparing(Order::createdAt).reversed());
   expected: positive
   rationale: The comparator expression is direct and the comment supplies no reason for the ordering.
-- id: redundant-comment-negative-obvious-go
+- id: narrating-comment-negative-obvious-go
   language: Go
   code: |
     // Clone before publishing: subscribers may retain and mutate the slice.
@@ -84,7 +84,7 @@
     updates <- snapshot
   expected: negative
   rationale: The comment explains an aliasing hazard and why an otherwise unnecessary-looking copy is required.
-- id: redundant-comment-negative-obvious-python
+- id: narrating-comment-negative-obvious-python
   language: Python
   code: |
     # Stripe retries webhook deliveries, so this write must remain idempotent.
@@ -93,28 +93,28 @@
     )
   expected: negative
   rationale: The comment records an external delivery guarantee that motivates the database operation.
-- id: redundant-comment-negative-obvious-typescript
+- id: narrating-comment-negative-obvious-typescript
   language: TypeScript
   code: |
     // Keep this as a macrotask; a microtask can starve rendering during large imports.
     setTimeout(processNextChunk, 0);
   expected: negative
   rationale: It explains the non-obvious choice of scheduling primitive and its performance consequence.
-- id: redundant-comment-negative-obvious-csharp
+- id: narrating-comment-negative-obvious-csharp
   language: C#
   code: |
     // SQL Server rounds datetime to 3.33 ms; compare at the persisted precision.
     actual = TruncateToSqlDateTime(actual);
   expected: negative
   rationale: The comment documents a database precision constraint not evident from the helper call.
-- id: redundant-comment-negative-obvious-java
+- id: narrating-comment-negative-obvious-java
   language: Java
   code: |
     // Offset by one because zero is reserved for the legacy "unknown" wire value.
     writer.writeVarInt(status.ordinal() + 1);
   expected: negative
   rationale: The comment preserves a protocol compatibility rule that the arithmetic alone cannot convey.
-- id: redundant-comment-negative-difficult-go
+- id: narrating-comment-negative-difficult-go
   language: Go
   code: |
     // Do not replace with time.After: this timer is reset on every heartbeat and
@@ -122,21 +122,21 @@
     timer.Reset(heartbeatTimeout)
   expected: negative
   rationale: It guards against a tempting refactor by explaining a subtle allocation and lifetime issue.
-- id: redundant-comment-negative-difficult-python
+- id: narrating-comment-negative-difficult-python
   language: Python
   code: |
     # Use monotonic time for elapsed durations; wall time can move backward under NTP.
     deadline = time.monotonic() + timeout
   expected: negative
   rationale: The comment supplies the correctness reason for a clock choice that may otherwise seem arbitrary.
-- id: redundant-comment-negative-difficult-typescript
+- id: narrating-comment-negative-difficult-typescript
   language: TypeScript
   code: |
     // Deliberately omit credentials: this URL can be supplied by an untrusted tenant.
     const response = await fetch(webhookUrl, { credentials: "omit" });
   expected: negative
   rationale: This is security-relevant intent and identifies the trust boundary behind the option.
-- id: redundant-comment-negative-difficult-csharp
+- id: narrating-comment-negative-difficult-csharp
   language: C#
   code: |
     // ConfigureAwait(false) avoids capturing the single-threaded host context,
@@ -144,7 +144,7 @@
     await FlushAsync(cancellationToken).ConfigureAwait(false);
   expected: negative
   rationale: The comment explains a host-specific deadlock risk not visible in the await expression.
-- id: redundant-comment-negative-difficult-java
+- id: narrating-comment-negative-difficult-java
   language: Java
   code: |
     // CHM.compute may invoke the function more than once during contention;

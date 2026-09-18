@@ -11,6 +11,7 @@ import (
 	"github.com/Eliran-Turgeman/repear/internal/cache"
 	"github.com/Eliran-Turgeman/repear/internal/config"
 	"github.com/Eliran-Turgeman/repear/internal/jev"
+	"github.com/Eliran-Turgeman/repear/internal/rules"
 	"github.com/Eliran-Turgeman/repear/internal/semantic"
 )
 
@@ -19,6 +20,7 @@ type mockClient struct {
 	requests []jev.EvaluationRequest
 	delay    map[string]time.Duration
 	failures map[string]error
+	scores   map[string]float64
 }
 
 func (m *mockClient) Evaluate(_ context.Context, request jev.EvaluationRequest) (jev.EvaluationResponse, error) {
@@ -33,7 +35,11 @@ func (m *mockClient) Evaluate(_ context.Context, request jev.EvaluationRequest) 
 	}
 	scores := map[string]float64{}
 	for _, question := range request.Questions {
-		scores[question.ID] = 0.95
+		score, ok := m.scores[question.ID]
+		if !ok {
+			score = 0.95
+		}
+		scores[question.ID] = score
 	}
 	return jev.EvaluationResponse{Probabilities: scores}, nil
 }
@@ -42,6 +48,37 @@ func (m *mockClient) Stats() jev.Stats {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return jev.Stats{Requests: len(m.requests)}
+}
+
+func TestRunnerRequiresEveryCompositeSignal(t *testing.T) {
+	cfg := config.Defaults()
+	disabled := false
+	for id, rc := range cfg.Rules {
+		if id != "unchanged-argument-forwarder" {
+			rc.Enabled = &disabled
+			cfg.Rules[id] = rc
+		}
+	}
+	client := &mockClient{scores: map[string]float64{
+		"unchanged-argument-forwarder:adds-no-visible-behavior": 0.40,
+	}}
+	engine := Runner{Config: cfg, Client: client, Cache: cache.Disabled{}}
+	unit := semantic.Unit{
+		FilePath: "client.go", Language: "go",
+		Diff:       "+func Find(id string) User { return repository.Find(id) }",
+		NewContent: "func Find(id string) User { return repository.Find(id) }",
+		StartLine:  4, EndLine: 4,
+	}
+	report, err := engine.Run(context.Background(), []semantic.Unit{unit}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Diagnostics) != 0 {
+		t.Fatalf("weak composite signal produced a diagnostic: %#v", report.Diagnostics)
+	}
+	if len(client.requests) != 1 || len(client.requests[0].Questions) != 3 {
+		t.Fatalf("unexpected composite request: %#v", client.requests)
+	}
 }
 
 func TestRunnerBatchesRulesAppliesPolicyAndCaches(t *testing.T) {
@@ -62,8 +99,8 @@ func TestRunnerBatchesRulesAppliesPolicyAndCaches(t *testing.T) {
 	if len(client.requests) != 1 {
 		t.Fatalf("rules were not batched: %d requests", len(client.requests))
 	}
-	if got := len(client.requests[0].Questions); got != 9 {
-		t.Fatalf("got %d batched questions, want 9", got)
+	if got := len(client.requests[0].Questions); got != 18 {
+		t.Fatalf("got %d batched signal questions, want 18", got)
 	}
 	if len(report.Diagnostics) != 9 || report.Summary.Errors != 2 || report.Summary.Warnings != 7 {
 		t.Fatalf("unexpected policy result: %#v", report)
@@ -81,7 +118,7 @@ func TestRunnerSortsDiagnosticsDespiteConcurrentCompletion(t *testing.T) {
 	cfg := config.Defaults()
 	disabled := false
 	for id, rc := range cfg.Rules {
-		if id != "defensive-fallback" {
+		if id != "silent-failure-fallback" {
 			rc.Enabled = &disabled
 			cfg.Rules[id] = rc
 		}
@@ -102,7 +139,7 @@ func TestRunnerSortsDiagnosticsDespiteConcurrentCompletion(t *testing.T) {
 func TestRunnerSkipsTaskRuleWithoutTaskAndHonorsGlobExcludes(t *testing.T) {
 	cfg := config.Defaults()
 	for id, rc := range cfg.Rules {
-		enabled := id == "scope-creep" || id == "defensive-fallback"
+		enabled := id == "scope-creep" || id == "silent-failure-fallback"
 		rc.Enabled = &enabled
 		cfg.Rules[id] = rc
 	}
@@ -131,7 +168,7 @@ func TestRunnerLogsAndContinuesAfterProviderTokenLimit(t *testing.T) {
 	cfg := config.Defaults()
 	disabled := false
 	for id, rc := range cfg.Rules {
-		if id != "defensive-fallback" {
+		if id != "silent-failure-fallback" {
 			rc.Enabled = &disabled
 			cfg.Rules[id] = rc
 		}
@@ -174,7 +211,7 @@ func TestRunnerCacheIsIsolatedByProvider(t *testing.T) {
 	cfg := config.Defaults()
 	disabled := false
 	for id, rc := range cfg.Rules {
-		if id != "defensive-fallback" {
+		if id != "silent-failure-fallback" {
 			rc.Enabled = &disabled
 			cfg.Rules[id] = rc
 		}
@@ -200,7 +237,7 @@ func TestRunnerCacheIsIsolatedByReaperVersion(t *testing.T) {
 	cfg := config.Defaults()
 	disabled := false
 	for id, rc := range cfg.Rules {
-		if id != "defensive-fallback" {
+		if id != "silent-failure-fallback" {
 			rc.Enabled = &disabled
 			cfg.Rules[id] = rc
 		}
@@ -224,7 +261,7 @@ func TestRunnerCacheIsIsolatedByReaperVersion(t *testing.T) {
 func TestWorkCountDoesNotDuplicateVerboseSkipLogs(t *testing.T) {
 	cfg := config.Defaults()
 	for id, rc := range cfg.Rules {
-		enabled := id == "redundant-comment"
+		enabled := id == "narrating-comment"
 		rc.Enabled = &enabled
 		cfg.Rules[id] = rc
 	}
@@ -255,7 +292,7 @@ func TestRunnerDebugLogsEveryEvaluationWithRawConfidence(t *testing.T) {
 	cfg := config.Defaults()
 	disabled := false
 	for id, rc := range cfg.Rules {
-		if id != "defensive-fallback" {
+		if id != "silent-failure-fallback" {
 			rc.Enabled = &disabled
 		} else {
 			rc.Threshold = 0.99
@@ -283,7 +320,7 @@ func TestRunnerDebugLogsEveryEvaluationWithRawConfidence(t *testing.T) {
 	if len(report.Diagnostics) != 0 {
 		t.Fatalf("below-threshold evaluation became a diagnostic: %#v", report.Diagnostics)
 	}
-	const expected = "evaluation defensive-fallback for client.go:7 confidence=0.95 threshold=0.99 result=pass source=provider"
+	const expected = "evaluation silent-failure-fallback for client.go:7 confidence=0.95 threshold=0.99 result=pass source=provider"
 	if !strings.Contains(strings.Join(logs, "\n"), expected) {
 		t.Fatalf("debug output does not contain %q: %#v", expected, logs)
 	}
@@ -319,14 +356,14 @@ func TestRunnerAuditSkipsRulesThatRequireChangeContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.Summary.SemanticChecks != 8 {
-		t.Fatalf("got %d audit checks, want 8", report.Summary.SemanticChecks)
+	if report.Summary.SemanticChecks != 9 {
+		t.Fatalf("got %d audit checks, want 9", report.Summary.SemanticChecks)
 	}
-	if len(client.requests) != 1 || len(client.requests[0].Questions) != 8 {
+	if len(client.requests) != 1 || len(client.requests[0].Questions) != 20 {
 		t.Fatalf("unexpected audit request: %#v", client.requests)
 	}
 	joined := strings.Join(logs, "\n")
-	if !strings.Contains(joined, "skip weakened-test") || !strings.Contains(joined, "skip scope-creep") {
+	if !strings.Contains(joined, "skip weakened-test-assertion") || !strings.Contains(joined, "skip scope-creep") {
 		t.Fatalf("change-context rules were not logged as skipped: %s", joined)
 	}
 	if !strings.Contains(client.requests[0].State, "MODE\nEXISTING CODE AUDIT") ||
@@ -343,13 +380,13 @@ func TestRunnerAuditSkipsRulesThatRequireChangeContext(t *testing.T) {
 func TestRunnerEvaluatesSemanticRulesForDeletionOnlyHunk(t *testing.T) {
 	cfg := config.Defaults()
 	enabledRules := map[string]bool{
-		"speculative-generality":   true,
-		"pass-through-layer":       true,
-		"complexity-pushed-upward": true,
-		"information-leakage":      true,
-		"special-general-mixture":  true,
-		"shallow-module":           true,
-		"defensive-fallback":       true,
+		"unchanged-argument-forwarder":   true,
+		"ceremonial-abstraction":         true,
+		"boolean-mode-parameter":         true,
+		"caller-managed-mechanics":       true,
+		"implementation-detail-exposure": true,
+		"named-special-case":             true,
+		"silent-failure-fallback":        true,
 	}
 	for id, rc := range cfg.Rules {
 		enabled := enabledRules[id]
@@ -369,7 +406,12 @@ func TestRunnerEvaluatesSemanticRulesForDeletionOnlyHunk(t *testing.T) {
 	if len(client.requests) != 1 {
 		t.Fatalf("got %d requests, want 1", len(client.requests))
 	}
-	if got := len(client.requests[0].Questions); got != len(enabledRules) {
-		t.Fatalf("got %d questions, want %d", got, len(enabledRules))
+	wantQuestions := 0
+	for id := range enabledRules {
+		rule, _ := rules.Get(id)
+		wantQuestions += len(rule.Signals)
+	}
+	if got := len(client.requests[0].Questions); got != wantQuestions {
+		t.Fatalf("got %d questions, want %d", got, wantQuestions)
 	}
 }
