@@ -50,3 +50,27 @@ func TestParseRejectsMalformedHunk(t *testing.T) {
 		t.Fatal("expected malformed hunk error")
 	}
 }
+
+func TestUnitsSkipsUnsupportedDataFiles(t *testing.T) {
+	input := `diff --git a/EmailCollector.Api/Services/EmailValidations/emails.txt b/EmailCollector.Api/Services/EmailValidations/emails.txt
+new file mode 100644
+--- /dev/null
++++ b/EmailCollector.Api/Services/EmailValidations/emails.txt
+@@ -0,0 +1,2 @@
++one@example.com
++two@example.com
+diff --git a/EmailCollector.Api/Services/EmailValidator.cs b/EmailCollector.Api/Services/EmailValidator.cs
+new file mode 100644
+--- /dev/null
++++ b/EmailCollector.Api/Services/EmailValidator.cs
+@@ -0,0 +1 @@
++class EmailValidator {}
+`
+	units, err := Units(t.TempDir(), input, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(units) != 1 || units[0].FilePath != "EmailCollector.Api/Services/EmailValidator.cs" {
+		t.Fatalf("unexpected units: %#v", units)
+	}
+}

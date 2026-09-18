@@ -111,15 +111,18 @@ Check staged changes:
 reaper check --staged
 ```
 
-Audit every Git-tracked file in the current codebase:
+Audit every supported Git-tracked source file in the current codebase:
 
 ```sh
 reaper check --all
 ```
 
-Full-codebase audits honor configured exclusions and optional path arguments.
-They skip `weakened-test` and `scope-creep`, which require a before-and-after
-code change. Untracked files are not included.
+Full-codebase audits support Go, Python, TypeScript, JavaScript, C#, Java, Ruby,
+Rust, C, C++, Kotlin, Swift, PHP, Scala, Dart, Elixir, Lua, and Objective-C.
+They honor configured exclusions and optional path arguments, and skip
+`weakened-test` and `scope-creep`, which require a before-and-after code change.
+Reaper uses this source-language allowlist, so untracked files and non-source
+files such as Markdown, text, JSON, and YAML are not included.
 
 Give Reaper a short, accurate summary of the requested change so it can detect
 unrelated work:

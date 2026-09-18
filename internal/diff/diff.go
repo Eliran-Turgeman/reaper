@@ -75,6 +75,9 @@ func Units(root, input string, contextLines int) ([]semantic.Unit, error) {
 		if path == "/dev/null" {
 			path = patch.OldPath
 		}
+		if !semantic.IsSupportedSource(path) {
+			continue
+		}
 		source, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
 		sourceLines := splitLines(string(source))
 		for _, hunk := range patch.Hunks {
