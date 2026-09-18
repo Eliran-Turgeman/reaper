@@ -70,6 +70,12 @@ func IsSupportedSource(path string) bool {
 	return ok
 }
 
+func IsMinifiedSource(path string) bool {
+	base := strings.ToLower(filepath.Base(path))
+	return IsSupportedSource(path) &&
+		(strings.Contains(base, ".min.") || strings.Contains(base, "-min."))
+}
+
 func IsTestFile(path string) bool {
 	p := strings.ToLower(filepath.ToSlash(path))
 	base := strings.ToLower(filepath.Base(path))

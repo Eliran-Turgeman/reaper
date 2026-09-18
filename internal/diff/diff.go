@@ -1,7 +1,6 @@
 package diff
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -75,7 +74,7 @@ func Units(root, input string, contextLines int) ([]semantic.Unit, error) {
 		if path == "/dev/null" {
 			path = patch.OldPath
 		}
-		if !semantic.IsSupportedSource(path) {
+		if !semantic.IsSupportedSource(path) || semantic.IsMinifiedSource(path) {
 			continue
 		}
 		source, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
@@ -137,12 +136,11 @@ func splitLines(value string) []string {
 	if value == "" {
 		return nil
 	}
-	scanner := bufio.NewScanner(strings.NewReader(strings.ReplaceAll(value, "\r\n", "\n")))
-	var out []string
-	for scanner.Scan() {
-		out = append(out, scanner.Text())
+	lines := strings.Split(strings.ReplaceAll(value, "\r\n", "\n"), "\n")
+	if lines[len(lines)-1] == "" {
+		lines = lines[:len(lines)-1]
 	}
-	return out
+	return lines
 }
 
 func trimPrefix(path string) string {

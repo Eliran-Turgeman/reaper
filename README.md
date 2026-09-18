@@ -122,7 +122,11 @@ Rust, C, C++, Kotlin, Swift, PHP, Scala, Dart, Elixir, Lua, and Objective-C.
 They honor configured exclusions and optional path arguments, and skip
 `weakened-test` and `scope-creep`, which require a before-and-after code change.
 Reaper uses this source-language allowlist, so untracked files and non-source
-files such as Markdown, text, JSON, and YAML are not included.
+files such as Markdown, text, JSON, and YAML are not included. Dependency and
+build directories such as `vendor`, `node_modules`, and `dist` are excluded at
+any directory depth, and minified source files such as `jquery.min.js` are
+ignored. If another source file exceeds the provider's token limit, Reaper logs
+the skipped file to stderr and continues checking the rest of the codebase.
 
 Give Reaper a short, accurate summary of the requested change so it can detect
 unrelated work:

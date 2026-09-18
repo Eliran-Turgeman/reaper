@@ -59,6 +59,17 @@ func (e *APIError) Error() string {
 	return message
 }
 
+func IsTokenLimitError(err error) bool {
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+	body := strings.ToLower(apiErr.Body)
+	return strings.Contains(body, "max_tokens_exceeded") ||
+		strings.Contains(body, "context_length_exceeded") ||
+		strings.Contains(body, "maximum context length")
+}
+
 func NewHTTPClient(options HTTPOptions) (*HTTPClient, error) {
 	return newHTTPClient(options, "TypeSafe", DefaultBaseURL, "/v1/systemone", "TYPESAFE_API_KEY")
 }

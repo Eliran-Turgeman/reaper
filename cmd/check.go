@@ -118,6 +118,9 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 	engine := &runner.Runner{
 		Config: cfg, Cache: cacheStore, Version: Version, Verbose: log,
 		Debug: options.debug, Audit: options.all,
+		Notice: func(format string, args ...any) {
+			fmt.Fprintf(command.ErrOrStderr(), "reaper: "+format+"\n", args...)
+		},
 	}
 	if engine.WorkCount(units, task) > 0 {
 		client, err := jev.NewProviderClient(cfg.Provider, jev.HTTPOptions{

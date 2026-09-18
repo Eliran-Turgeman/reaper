@@ -65,6 +65,12 @@ new file mode 100644
 +++ b/EmailCollector.Api/Services/EmailValidator.cs
 @@ -0,0 +1 @@
 +class EmailValidator {}
+diff --git a/wwwroot/js/site.min.js b/wwwroot/js/site.min.js
+new file mode 100644
+--- /dev/null
++++ b/wwwroot/js/site.min.js
+@@ -0,0 +1 @@
++const minified=true;
 `
 	units, err := Units(t.TempDir(), input, 2)
 	if err != nil {

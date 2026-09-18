@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -127,6 +128,24 @@ func TestHTTPClientCancellationAndMalformedResponse(t *testing.T) {
 func TestHTTPClientRequiresAPIKey(t *testing.T) {
 	if _, err := NewHTTPClient(HTTPOptions{}); err == nil {
 		t.Fatal("expected missing key error")
+	}
+}
+
+func TestIsTokenLimitError(t *testing.T) {
+	for _, body := range []string{
+		`{"error_type":"max_tokens_exceeded"}`,
+		`{"code":"context_length_exceeded"}`,
+		`This endpoint's maximum context length is 32000 tokens`,
+	} {
+		err := fmt.Errorf("evaluate: %w", &APIError{
+			Provider: "OpenRouter", StatusCode: 400, Body: body,
+		})
+		if !IsTokenLimitError(err) {
+			t.Fatalf("IsTokenLimitError(%q) = false, want true", body)
+		}
+	}
+	if IsTokenLimitError(&APIError{Provider: "OpenRouter", StatusCode: 401, Body: "invalid key"}) {
+		t.Fatal("authentication error was classified as a token-limit error")
 	}
 }
 

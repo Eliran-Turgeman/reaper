@@ -18,6 +18,7 @@ type mockClient struct {
 	mu       sync.Mutex
 	requests []jev.EvaluationRequest
 	delay    map[string]time.Duration
+	failures map[string]error
 }
 
 func (m *mockClient) Evaluate(_ context.Context, request jev.EvaluationRequest) (jev.EvaluationResponse, error) {
@@ -27,6 +28,9 @@ func (m *mockClient) Evaluate(_ context.Context, request jev.EvaluationRequest) 
 	m.mu.Lock()
 	m.requests = append(m.requests, request)
 	m.mu.Unlock()
+	if err := m.failures[request.State]; err != nil {
+		return jev.EvaluationResponse{}, err
+	}
 	scores := map[string]float64{}
 	for _, question := range request.Questions {
 		scores[question.ID] = 0.95
@@ -106,6 +110,63 @@ func TestRunnerSkipsTaskRuleWithoutTaskAndHonorsGlobExcludes(t *testing.T) {
 	engine := Runner{Config: cfg, Cache: cache.Disabled{}}
 	if got := engine.WorkCount([]semantic.Unit{unit}, ""); got != 0 {
 		t.Fatalf("got %d jobs, expected excluded file and skipped task rule", got)
+	}
+}
+
+func TestRunnerExcludesNestedBuildAndDependencyDirectories(t *testing.T) {
+	cfg := config.Defaults()
+	engine := Runner{Config: cfg, Cache: cache.Disabled{}}
+	for _, file := range []string{
+		"EmailCollector.Api/wwwroot/lib/bootstrap/dist/js/bootstrap.js",
+		"client/vendor/library/source.go",
+		"web/node_modules/package/index.js",
+	} {
+		if got := engine.WorkCount([]semantic.Unit{{FilePath: file}}, ""); got != 0 {
+			t.Fatalf("got %d jobs for excluded file %s", got, file)
+		}
+	}
+}
+
+func TestRunnerLogsAndContinuesAfterProviderTokenLimit(t *testing.T) {
+	cfg := config.Defaults()
+	disabled := false
+	for id, rc := range cfg.Rules {
+		if id != "defensive-fallback" {
+			rc.Enabled = &disabled
+			cfg.Rules[id] = rc
+		}
+	}
+	large := semantic.Unit{
+		FilePath: "large.go", Language: "go", NewContent: "large",
+		StartLine: 1, EndLine: 100,
+	}
+	small := semantic.Unit{
+		FilePath: "small.go", Language: "go", NewContent: "small",
+		StartLine: 1, EndLine: 1,
+	}
+	client := &mockClient{failures: map[string]error{
+		buildState(large, "", false): &jev.APIError{
+			Provider: "OpenRouter", StatusCode: 400,
+			Body: `{"detail":{"error_type":"max_tokens_exceeded"}}`,
+		},
+	}}
+	var notices []string
+	engine := Runner{
+		Config: cfg, Client: client, Cache: cache.Disabled{},
+		Notice: func(format string, args ...any) {
+			notices = append(notices, fmt.Sprintf(format, args...))
+		},
+	}
+	report, err := engine.Run(context.Background(), []semantic.Unit{large, small}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Summary.UnitsSkipped != 1 || report.Summary.UnitsEvaluated != 1 ||
+		report.Summary.SemanticChecks != 1 || len(client.requests) != 2 {
+		t.Fatalf("unexpected report after skip: %#v requests=%d", report, len(client.requests))
+	}
+	if len(notices) != 1 || !strings.Contains(notices[0], "skip large.go:1") {
+		t.Fatalf("unexpected skip notices: %#v", notices)
 	}
 }
 

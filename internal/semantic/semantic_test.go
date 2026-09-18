@@ -1,6 +1,8 @@
 package semantic
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestSupportedSourceWhitelist(t *testing.T) {
 	tests := []struct {
@@ -89,5 +91,18 @@ func TestExpandedLanguageTestFiles(t *testing.T) {
 				t.Fatalf("IsTestFile(%q) = false, want true", path)
 			}
 		})
+	}
+}
+
+func TestMinifiedSourceDetection(t *testing.T) {
+	for _, path := range []string{"jquery.min.js", "vendor-MIN.mjs", "client.min.ts"} {
+		if !IsMinifiedSource(path) {
+			t.Fatalf("IsMinifiedSource(%q) = false, want true", path)
+		}
+	}
+	for _, path := range []string{"client.js", "minimum.js", "styles.min.css"} {
+		if IsMinifiedSource(path) {
+			t.Fatalf("IsMinifiedSource(%q) = true, want false", path)
+		}
 	}
 }

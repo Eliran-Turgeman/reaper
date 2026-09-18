@@ -24,6 +24,7 @@ type Summary struct {
 	Errors         int `json:"errors"`
 	Warnings       int `json:"warnings"`
 	UnitsEvaluated int `json:"units_evaluated"`
+	UnitsSkipped   int `json:"units_skipped,omitempty"`
 	SemanticChecks int `json:"semantic_checks"`
 	JevRequests    int `json:"jev_requests"`
 	CacheHits      int `json:"cache_hits"`

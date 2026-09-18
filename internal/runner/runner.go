@@ -26,6 +26,7 @@ type Runner struct {
 	Cache   cache.Store
 	Version string
 	Verbose VerboseFunc
+	Notice  VerboseFunc
 	Debug   bool
 	Audit   bool
 }
@@ -41,6 +42,8 @@ type result struct {
 	evaluations []evaluation
 	checks      int
 	cacheHits   int
+	skipped     bool
+	skipMessage string
 	err         error
 }
 
@@ -75,13 +78,19 @@ func (r *Runner) Run(ctx context.Context, units []semantic.Unit, task string) (d
 	}
 	wg.Wait()
 
-	summary := diagnostics.Summary{UnitsEvaluated: len(jobs)}
+	summary := diagnostics.Summary{}
 	var items []diagnostics.Diagnostic
 	var evaluations []evaluation
 	for _, item := range results {
 		if item.err != nil {
 			return diagnostics.Report{}, item.err
 		}
+		if item.skipped {
+			summary.UnitsSkipped++
+			r.notice("%s", item.skipMessage)
+			continue
+		}
+		summary.UnitsEvaluated++
 		items = append(items, item.diagnostics...)
 		evaluations = append(evaluations, item.evaluations...)
 		summary.SemanticChecks += item.checks
@@ -215,6 +224,15 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		}
 		response, err := r.Client.Evaluate(ctx, request)
 		if err != nil {
+			if jev.IsTokenLimitError(err) {
+				return result{
+					skipped: true,
+					skipMessage: fmt.Sprintf(
+						"skip %s:%d: provider token limit exceeded",
+						unit.FilePath, unit.StartLine,
+					),
+				}
+			}
 			return result{err: fmt.Errorf("evaluate %s:%d: %w", unit.FilePath, unit.StartLine, err)}
 		}
 		for _, rule := range missing {
@@ -261,7 +279,7 @@ func (r *Runner) enabled(rule rules.Rule) bool {
 func (r *Runner) matches(rule rules.Rule, file string) bool {
 	rc := r.Config.Rules[rule.ID]
 	for _, glob := range append(r.Config.Exclude, rc.Exclude...) {
-		if globMatch(glob, file) {
+		if excludeMatch(glob, file) {
 			return false
 		}
 	}
@@ -279,6 +297,12 @@ func (r *Runner) matches(rule rules.Rule, file string) bool {
 func (r *Runner) log(format string, args ...any) {
 	if r.Verbose != nil {
 		r.Verbose(format, args...)
+	}
+}
+
+func (r *Runner) notice(format string, args ...any) {
+	if r.Notice != nil {
+		r.Notice(format, args...)
 	}
 }
 
@@ -320,6 +344,16 @@ func aggregate(units []semantic.Unit) semantic.Unit {
 		FilePath: "<patch>", Language: "diff", Diff: strings.Join(diffs, "\n\n"),
 		StartLine: 1, EndLine: 1,
 	}
+}
+
+func excludeMatch(pattern, file string) bool {
+	if globMatch(pattern, file) {
+		return true
+	}
+	if strings.HasPrefix(strings.ReplaceAll(pattern, "\\", "/"), "**/") {
+		return false
+	}
+	return globMatch("**/"+pattern, file)
 }
 
 func globMatch(pattern, file string) bool {
