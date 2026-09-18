@@ -102,7 +102,7 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		}
 		cacheStore = &cache.FileStore{Dir: dir}
 	}
-	engine := &runner.Runner{Config: cfg, Cache: cacheStore, Verbose: log}
+	engine := &runner.Runner{Config: cfg, Cache: cacheStore, Version: Version, Verbose: log}
 	if engine.WorkCount(units, task) > 0 {
 		client, err := jev.NewProviderClient(cfg.Provider, jev.HTTPOptions{
 			BaseURL: cfg.BaseURL, APIKey: app.Getenv(config.APIKeyEnv(cfg.Provider)),

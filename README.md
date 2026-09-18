@@ -20,19 +20,52 @@ CI jobs, and coding agents can act on immediately.
 
 ## Install
 
-Reaper requires Go 1.25 or newer:
+### Windows
+
+Install the latest release from PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/Eliran-Turgeman/repear/main/scripts/install.ps1 | iex
+```
+
+The installer adds Reaper to your user `PATH`. Open a new terminal, then run
+`reaper version`.
+
+### macOS and Linux
+
+Install the latest release:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/Eliran-Turgeman/repear/main/scripts/install.sh | sh
+```
+
+The installer uses `/usr/local/bin` when it is writable, otherwise
+`~/.local/bin`. It tells you if that directory needs to be added to `PATH`.
+
+Both installers detect the operating system and CPU architecture, download the
+matching GitHub release, and verify its SHA-256 checksum before installing it.
+Set `REAPER_VERSION` to install a specific version or `REAPER_INSTALL_DIR` to
+choose the destination.
+
+### Install with Go
+
+If you have Go 1.25 or newer:
 
 ```sh
 go install github.com/Eliran-Turgeman/repear/cmd/reaper@latest
 ```
 
-Or build it from source:
+### Build from source
 
 ```sh
 git clone https://github.com/Eliran-Turgeman/repear
 cd repear
 go build -o reaper ./cmd/reaper
 ```
+
+Maintainers publish a release by pushing a semantic-version tag such as
+`v0.1.0`. GitHub Actions tests the project and attaches binaries for Windows,
+macOS, and Linux on x64 and ARM64, along with `checksums.txt`.
 
 ## Configure
 

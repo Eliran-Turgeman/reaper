@@ -1,0 +1,45 @@
+version: 2
+
+project_name: reaper
+
+builds:
+  - id: reaper
+    main: ./cmd/reaper
+    binary: reaper
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/Eliran-Turgeman/repear/cmd.Version={{.Version}}
+
+archives:
+  - id: reaper
+    ids:
+      - reaper
+    formats:
+      - tar.gz
+    format_overrides:
+      - goos: windows
+        formats:
+          - zip
+    name_template: "reaper_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  prerelease: auto

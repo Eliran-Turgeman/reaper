@@ -24,6 +24,7 @@ type Runner struct {
 	Config  config.Config
 	Client  jev.Client
 	Cache   cache.Store
+	Version string
 	Verbose VerboseFunc
 }
 
@@ -131,7 +132,7 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 	cacheKeys := map[string]string{}
 	for _, rule := range selected {
 		key := cache.Key(
-			strconv.Itoa(semantic.SchemaVersion), r.Config.Provider, r.Config.Model, state, rule.ID,
+			r.Version, strconv.Itoa(semantic.SchemaVersion), r.Config.Provider, r.Config.Model, state, rule.ID,
 			strconv.Itoa(rule.Version), rule.Instructions,
 		)
 		cacheKeys[rule.ID] = key

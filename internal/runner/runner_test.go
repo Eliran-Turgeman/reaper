@@ -133,6 +133,31 @@ func TestRunnerCacheIsIsolatedByProvider(t *testing.T) {
 	}
 }
 
+func TestRunnerCacheIsIsolatedByReaperVersion(t *testing.T) {
+	cfg := config.Defaults()
+	disabled := false
+	for id, rc := range cfg.Rules {
+		if id != "defensive-fallback" {
+			rc.Enabled = &disabled
+			cfg.Rules[id] = rc
+		}
+	}
+	unit := semantic.Unit{FilePath: "client.go", Language: "go", Diff: "+x", NewContent: "x", Additions: 1}
+	client := &mockClient{}
+	store := cache.NewMemory()
+	engine := Runner{Config: cfg, Client: client, Cache: store, Version: "0.1.0"}
+	if _, err := engine.Run(context.Background(), []semantic.Unit{unit}, ""); err != nil {
+		t.Fatal(err)
+	}
+	engine.Version = "0.2.0"
+	if _, err := engine.Run(context.Background(), []semantic.Unit{unit}, ""); err != nil {
+		t.Fatal(err)
+	}
+	if len(client.requests) != 2 {
+		t.Fatalf("Reaper version change reused a cache entry: requests=%d", len(client.requests))
+	}
+}
+
 func TestWorkCountDoesNotDuplicateVerboseSkipLogs(t *testing.T) {
 	cfg := config.Defaults()
 	for id, rc := range cfg.Rules {
