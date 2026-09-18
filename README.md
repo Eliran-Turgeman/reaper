@@ -110,11 +110,27 @@ Check staged changes:
 reaper check --staged
 ```
 
-Give Reaper the task so it can also detect unrelated changes:
+Give Reaper a short, accurate summary of the requested change so it can detect
+unrelated work:
 
 ```sh
-reaper check --task "Do not retry authentication failures"
+export REAPER_TASK="Do not retry authentication failures"
+reaper check --task "$REAPER_TASK"
 ```
+
+PowerShell:
+
+```powershell
+$env:REAPER_TASK = "Do not retry authentication failures"
+reaper check --task $env:REAPER_TASK
+```
+
+`REAPER_TASK` represents the user's request. It is not a rule name and does not
+replace the configured rules: Reaper still runs every applicable rule. The
+`scope-creep` rule uses the task description to identify substantial changes
+that do not support the request. Keep it focused on what the user asked for,
+rather than expanding it to justify additional changes. If no task is supplied,
+only `scope-creep` is skipped.
 
 Useful options:
 
