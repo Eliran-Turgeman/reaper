@@ -1,0 +1,188 @@
+package eval
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+
+	"github.com/Eliran-Turgeman/repear/internal/jev"
+	"github.com/Eliran-Turgeman/repear/internal/rules"
+	"gopkg.in/yaml.v3"
+)
+
+type Example struct {
+	ID        string `yaml:"id"`
+	Language  string `yaml:"language"`
+	Task      string `yaml:"task,omitempty"`
+	OldCode   string `yaml:"old_code,omitempty"`
+	Code      string `yaml:"code"`
+	Expected  string `yaml:"expected"`
+	Rationale string `yaml:"rationale"`
+}
+
+type RuleReport struct {
+	Rule                 string  `json:"rule"`
+	Examples             int     `json:"examples"`
+	TruePositive         int     `json:"true_positive"`
+	FalsePositive        int     `json:"false_positive"`
+	TrueNegative         int     `json:"true_negative"`
+	FalseNegative        int     `json:"false_negative"`
+	Precision            float64 `json:"precision"`
+	Recall               float64 `json:"recall"`
+	FalsePositiveRate    float64 `json:"false_positive_rate"`
+	Threshold            float64 `json:"threshold"`
+	AveragePositiveScore float64 `json:"average_positive_score"`
+	AverageNegativeScore float64 `json:"average_negative_score"`
+}
+
+type Report struct {
+	Version  int          `json:"version"`
+	Provider string       `json:"provider"`
+	Model    string       `json:"model"`
+	Rules    []RuleReport `json:"rules"`
+}
+
+func Load(dir, id string) ([]Example, error) {
+	data, err := os.ReadFile(filepath.Join(dir, id+".yaml"))
+	if err != nil {
+		return nil, fmt.Errorf("read eval corpus for %s: %w", id, err)
+	}
+	var examples []Example
+	if err := yaml.Unmarshal(data, &examples); err != nil {
+		return nil, fmt.Errorf("parse eval corpus for %s: %w", id, err)
+	}
+	for i, example := range examples {
+		if example.ID == "" || example.Language == "" || example.Code == "" || example.Rationale == "" {
+			return nil, fmt.Errorf("%s example %d is missing a required field", id, i+1)
+		}
+		if example.Expected != "positive" && example.Expected != "negative" {
+			return nil, fmt.Errorf("%s example %s has invalid expected label %q", id, example.ID, example.Expected)
+		}
+	}
+	return examples, nil
+}
+
+func Run(ctx context.Context, client jev.Client, dir, provider, model, onlyRule string, thresholdOverride *float64, thresholds map[string]float64) (Report, error) {
+	selected := rules.All()
+	if onlyRule != "" {
+		rule, ok := rules.Get(onlyRule)
+		if !ok {
+			return Report{}, fmt.Errorf("unknown rule %q", onlyRule)
+		}
+		selected = []rules.Rule{rule}
+	}
+	report := Report{Version: 1, Provider: provider, Model: model}
+	for _, rule := range selected {
+		examples, err := Load(dir, rule.ID)
+		if err != nil {
+			return Report{}, err
+		}
+		threshold := thresholds[rule.ID]
+		if thresholdOverride != nil {
+			threshold = *thresholdOverride
+		}
+		result := RuleReport{Rule: rule.ID, Examples: len(examples), Threshold: threshold}
+		var positiveTotal, negativeTotal float64
+		var positives, negatives int
+		for _, example := range examples {
+			state := evalState(example)
+			response, err := client.Evaluate(ctx, jev.EvaluationRequest{
+				Model: model, State: state,
+				Questions: []jev.Question{{ID: rule.ID, Instructions: rule.Instructions}},
+			})
+			if err != nil {
+				return Report{}, fmt.Errorf("evaluate example %s: %w", example.ID, err)
+			}
+			score, ok := response.Probabilities[rule.ID]
+			if !ok || score < 0 || score > 1 {
+				return Report{}, fmt.Errorf("invalid probability for example %s", example.ID)
+			}
+			predicted := score >= threshold
+			if example.Expected == "positive" {
+				positives++
+				positiveTotal += score
+				if predicted {
+					result.TruePositive++
+				} else {
+					result.FalseNegative++
+				}
+			} else {
+				negatives++
+				negativeTotal += score
+				if predicted {
+					result.FalsePositive++
+				} else {
+					result.TrueNegative++
+				}
+			}
+		}
+		result.Precision = ratio(result.TruePositive, result.TruePositive+result.FalsePositive)
+		result.Recall = ratio(result.TruePositive, result.TruePositive+result.FalseNegative)
+		result.FalsePositiveRate = ratio(result.FalsePositive, result.FalsePositive+result.TrueNegative)
+		result.AveragePositiveScore = ratioFloat(positiveTotal, positives)
+		result.AverageNegativeScore = ratioFloat(negativeTotal, negatives)
+		report.Rules = append(report.Rules, result)
+	}
+	sort.Slice(report.Rules, func(i, j int) bool { return report.Rules[i].Rule < report.Rules[j].Rule })
+	return report, nil
+}
+
+func WriteJSON(w io.Writer, report Report) error {
+	encoder := json.NewEncoder(w)
+	encoder.SetIndent("", "  ")
+	return encoder.Encode(report)
+}
+
+func WriteText(w io.Writer, report Report) error {
+	fmt.Fprintf(w, "Provider: %s\nModel: %s\n\n", report.Provider, report.Model)
+	for i, result := range report.Rules {
+		if i > 0 {
+			fmt.Fprintln(w)
+		}
+		fmt.Fprintf(w, "Rule: %s\n\n", result.Rule)
+		fmt.Fprintf(w, "Examples:          %d\n", result.Examples)
+		fmt.Fprintf(w, "True positive:     %d\n", result.TruePositive)
+		fmt.Fprintf(w, "False positive:    %d\n", result.FalsePositive)
+		fmt.Fprintf(w, "True negative:     %d\n", result.TrueNegative)
+		fmt.Fprintf(w, "False negative:    %d\n\n", result.FalseNegative)
+		fmt.Fprintf(w, "Precision:         %.1f%%\n", result.Precision*100)
+		fmt.Fprintf(w, "Recall:            %.1f%%\n", result.Recall*100)
+		fmt.Fprintf(w, "False positive:    %.1f%%\n", result.FalsePositiveRate*100)
+		fmt.Fprintf(w, "Threshold:         %.2f\n", result.Threshold)
+		fmt.Fprintf(w, "Average positive:  %.3f\n", result.AveragePositiveScore)
+		fmt.Fprintf(w, "Average negative:  %.3f\n", result.AverageNegativeScore)
+	}
+	return nil
+}
+
+func evalState(example Example) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "LANGUAGE\n%s\n", example.Language)
+	if example.Task != "" {
+		fmt.Fprintf(&b, "\nTASK\n%s\n", example.Task)
+	}
+	if example.OldCode != "" {
+		fmt.Fprintf(&b, "\nPREVIOUS CODE\n%s\n", example.OldCode)
+	}
+	fmt.Fprintf(&b, "\nCURRENT CODE\n%s", example.Code)
+	return b.String()
+}
+
+func ratio(numerator, denominator int) float64 {
+	if denominator == 0 {
+		return 0
+	}
+	return float64(numerator) / float64(denominator)
+}
+
+func ratioFloat(numerator float64, denominator int) float64 {
+	if denominator == 0 {
+		return 0
+	}
+	return numerator / float64(denominator)
+}

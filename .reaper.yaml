@@ -1,0 +1,43 @@
+version: 1
+
+provider: openrouter
+model: typesafe/jev-1.13
+
+request_timeout: 30s
+concurrency: 4
+
+cache:
+  enabled: true
+
+rules:
+  redundant-comment:
+    enabled: true
+    threshold: 0.92
+    severity: warning
+
+  speculative-generality:
+    enabled: true
+    threshold: 0.88
+    severity: warning
+
+  defensive-fallback:
+    enabled: true
+    threshold: 0.90
+    severity: error
+
+  weakened-test:
+    enabled: true
+    threshold: 0.92
+    severity: error
+
+  scope-creep:
+    enabled: true
+    threshold: 0.90
+    severity: warning
+
+exclude:
+  - vendor/**
+  - generated/**
+  - dist/**
+  - node_modules/**
+  - "**/*.lock"

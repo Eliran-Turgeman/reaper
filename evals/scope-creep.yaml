@@ -1,0 +1,230 @@
+- id: scope-creep-obvious-go
+  language: Go
+  task: Fix the off-by-one error in pagination.
+  old_code: |
+    offset := page * pageSize
+  code: |
+    offset := (page - 1) * pageSize
+
+    func (u User) DisplayName() string {
+        return strings.TrimSpace(u.FirstName + " " + u.LastName)
+    }
+  expected: positive
+  rationale: The unrelated user display-name helper is added alongside the pagination fix.
+- id: scope-creep-obvious-python
+  language: Python
+  task: Rename the invoice download button.
+  code: |
+    DOWNLOAD_LABEL = "Download PDF"
+
+    def archive_old_invoices(cutoff):
+        return Invoice.objects.filter(created_at__lt=cutoff).update(archived=True)
+  expected: positive
+  rationale: Invoice archival behavior is unrelated to changing a UI label.
+- id: scope-creep-obvious-typescript
+  language: TypeScript
+  task: Add validation for the email field.
+  code: |
+    export const emailSchema = z.string().email();
+
+    export function sortUsersByName(users: User[]): User[] {
+      return [...users].sort((a, b) => a.name.localeCompare(b.name));
+    }
+  expected: positive
+  rationale: User sorting was neither requested nor necessary for email validation.
+- id: scope-creep-obvious-csharp
+  language: C#
+  task: Correct the tax rounding mode.
+  code: |
+    var tax = Math.Round(rawTax, 2, MidpointRounding.AwayFromZero);
+
+    public string FormatCustomerName(Customer customer) =>
+        $"{customer.LastName}, {customer.FirstName}";
+  expected: positive
+  rationale: Customer-name formatting is a separate feature bundled into a tax fix.
+- id: scope-creep-obvious-java
+  language: Java
+  task: Prevent duplicate cart items.
+  code: |
+    if (items.stream().noneMatch(item -> item.sku().equals(product.sku()))) {
+        items.add(product);
+    }
+
+    public void sendAbandonedCartReminder(Customer customer) {
+        mailer.send(customer.email(), "Your cart is waiting");
+    }
+  expected: positive
+  rationale: Marketing email functionality clearly exceeds the duplicate-prevention task.
+- id: scope-creep-subtle-go
+  language: Go
+  task: Propagate cancellation to the database query.
+  old_code: |
+    rows, err := db.Query(query)
+  code: |
+    rows, err := db.QueryContext(ctx, query)
+    log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
+  expected: positive
+  rationale: Changing global log timestamp precision is unrelated to context propagation and can affect the whole process.
+- id: scope-creep-subtle-python
+  language: Python
+  task: Handle a missing profile image.
+  old_code: |
+    return user.profile.image.url
+  code: |
+    url = user.profile.image.url if user.profile.image else DEFAULT_AVATAR
+    user.last_seen = timezone.now()
+    user.save(update_fields=["last_seen"])
+    return url
+  expected: positive
+  rationale: Updating presence data is a hidden side effect unrelated to selecting a fallback image.
+- id: scope-creep-subtle-typescript
+  language: TypeScript
+  task: Escape the search term before building the regular expression.
+  code: |
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matcher = new RegExp(escaped, "i");
+    localStorage.setItem("lastSearch", term);
+  expected: positive
+  rationale: Persisting search history is an unrequested product behavior coupled to a safety fix.
+- id: scope-creep-subtle-csharp
+  language: C#
+  task: Dispose the HTTP response.
+  old_code: |
+    var response = await client.SendAsync(request);
+  code: |
+    using var response = await client.SendAsync(request);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("Repear/1.0");
+  expected: positive
+  rationale: Mutating the shared client's user agent is not needed to correct response disposal.
+- id: scope-creep-subtle-java
+  language: Java
+  task: Make the counter update atomic.
+  old_code: |
+    requestCount++;
+  code: |
+    requestCount.incrementAndGet();
+    Thread.currentThread().setName("request-" + requestCount.get());
+  expected: positive
+  rationale: Renaming worker threads changes diagnostics globally and is not part of atomic counting.
+- id: scope-creep-negative-obvious-go
+  language: Go
+  task: Add a required Region field to Account and persist it.
+  code: |
+    type Account struct {
+        ID     string
+        Region string
+    }
+
+    _, err := db.ExecContext(ctx,
+        `INSERT INTO accounts (id, region) VALUES ($1, $2)`,
+        account.ID, account.Region)
+  expected: negative
+  rationale: Updating both the model and persistence is directly required to make the new field functional.
+- id: scope-creep-negative-obvious-python
+  language: Python
+  task: Rename Customer.full_name to display_name across the application.
+  code: |
+    class Customer:
+        @property
+        def display_name(self) -> str:
+            return f"{self.first_name} {self.last_name}"
+
+    greeting = f"Hello, {order.customer.display_name}"
+  expected: negative
+  rationale: Updating call sites is explicitly part of a cross-application rename.
+- id: scope-creep-negative-obvious-typescript
+  language: TypeScript
+  task: Reject expired sessions and remove their cookies.
+  code: |
+    if (session.expiresAt <= new Date()) {
+      response.cookies.delete("session");
+      throw new UnauthorizedError("Session expired");
+    }
+  expected: negative
+  rationale: Cookie cleanup is specified behavior coupled directly to expired-session rejection.
+- id: scope-creep-negative-obvious-csharp
+  language: C#
+  task: Add cancellation support from the controller through the repository.
+  code: |
+    public Task<Order?> Get(
+        string id,
+        CancellationToken cancellationToken) =>
+        repository.GetAsync(id, cancellationToken);
+  expected: negative
+  rationale: Passing the token through intermediate layers is necessary for end-to-end cancellation.
+- id: scope-creep-negative-obvious-java
+  language: Java
+  task: Store monetary amounts as BigDecimal instead of double.
+  code: |
+    record LineItem(BigDecimal unitPrice, int quantity) {
+        BigDecimal total() {
+            return unitPrice.multiply(BigDecimal.valueOf(quantity));
+        }
+    }
+  expected: negative
+  rationale: Updating dependent arithmetic is essential to completing the requested representation change.
+- id: scope-creep-negative-difficult-go
+  language: Go
+  task: Fix concurrent map writes in the metrics collector.
+  old_code: |
+    type Collector struct {
+        counts map[string]int
+    }
+  code: |
+    type Collector struct {
+        mu     sync.RWMutex
+        counts map[string]int
+    }
+
+    func (c *Collector) Snapshot() map[string]int {
+        c.mu.RLock()
+        defer c.mu.RUnlock()
+        return maps.Clone(c.counts)
+    }
+  expected: negative
+  rationale: Protecting reads and returning a clone are required to avoid races and exposing the synchronized map.
+- id: scope-creep-negative-difficult-python
+  language: Python
+  task: Ensure uploaded filenames cannot escape the upload directory.
+  code: |
+    candidate = (upload_root / supplied_name).resolve()
+    if upload_root.resolve() not in candidate.parents:
+        raise InvalidFilename(supplied_name)
+    candidate.parent.mkdir(parents=True, exist_ok=True)
+  expected: negative
+  rationale: Creating validated nested parent directories supports legitimate filenames and is tightly coupled to safe storage.
+- id: scope-creep-negative-difficult-typescript
+  language: TypeScript
+  task: Make configuration reload atomic for readers.
+  code: |
+    const parsed = configSchema.parse(await readConfig());
+    Object.freeze(parsed);
+    currentConfig = parsed;
+  expected: negative
+  rationale: Validation and freezing prevent readers from observing invalid or subsequently mutated replacement state.
+- id: scope-creep-negative-difficult-csharp
+  language: C#
+  task: Fix duplicate event handling by enforcing idempotency.
+  code: |
+    await using var transaction =
+        await database.BeginTransactionAsync(cancellationToken);
+    if (await events.ExistsAsync(message.Id, transaction, cancellationToken))
+        return;
+    await ApplyAsync(message, transaction, cancellationToken);
+    await events.MarkProcessedAsync(message.Id, transaction, cancellationToken);
+    await transaction.CommitAsync(cancellationToken);
+  expected: negative
+  rationale: The transaction spans the effect and marker because both are needed for correct idempotency under failure.
+- id: scope-creep-negative-difficult-java
+  language: Java
+  task: Prevent cached authorization decisions from leaking across tenants.
+  code: |
+    record AuthorizationKey(String tenantId, String userId, String permission) {}
+
+    boolean isAllowed(Request request, String permission) {
+        var key = new AuthorizationKey(
+            request.tenantId(), request.userId(), permission);
+        return cache.computeIfAbsent(key, ignored -> policy.evaluate(request, permission));
+    }
+  expected: negative
+  rationale: Introducing a tenant-aware key and updating cache access are inseparable parts of fixing the isolation bug.

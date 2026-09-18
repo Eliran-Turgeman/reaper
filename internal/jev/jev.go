@@ -1,0 +1,30 @@
+package jev
+
+import "context"
+
+type Question struct {
+	ID           string `json:"id"`
+	Instructions string `json:"instructions"`
+}
+
+type EvaluationRequest struct {
+	Model     string     `json:"model"`
+	State     string     `json:"state"`
+	Questions []Question `json:"questions"`
+}
+
+type EvaluationResponse struct {
+	Probabilities map[string]float64
+}
+
+type Client interface {
+	Evaluate(context.Context, EvaluationRequest) (EvaluationResponse, error)
+	Stats() Stats
+}
+
+type Stats struct {
+	Requests     int `json:"jev_requests"`
+	Retries      int `json:"retries,omitempty"`
+	InputTokens  int `json:"input_tokens,omitempty"`
+	OutputTokens int `json:"output_tokens,omitempty"`
+}

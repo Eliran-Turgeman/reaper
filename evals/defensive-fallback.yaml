@@ -1,0 +1,184 @@
+- id: defensive-fallback-obvious-go
+  language: Go
+  task: Load the required database URL.
+  code: |
+    databaseURL := os.Getenv("DATABASE_URL")
+    if databaseURL == "" {
+        databaseURL = "postgres://localhost/app"
+    }
+  expected: positive
+  rationale: A silent localhost default hides a missing required production setting.
+- id: defensive-fallback-obvious-python
+  language: Python
+  task: Parse the server's required JSON response.
+  code: |
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = {}
+  expected: positive
+  rationale: Treating malformed required JSON as an empty object suppresses the real upstream failure.
+- id: defensive-fallback-obvious-typescript
+  language: TypeScript
+  task: Find the authenticated user.
+  code: |
+    const user = await users.findById(session.userId);
+    return user ?? { id: "anonymous", name: "Guest" };
+  expected: positive
+  rationale: Fabricating a guest after authenticated lookup failure masks stale or corrupt session state.
+- id: defensive-fallback-obvious-csharp
+  language: C#
+  task: Read the required signing key.
+  code: |
+    var key = configuration["SigningKey"] ?? "development-key";
+  expected: positive
+  rationale: A hard-coded fallback converts dangerous misconfiguration into apparently successful insecure operation.
+- id: defensive-fallback-obvious-java
+  language: Java
+  task: Resolve the required order status.
+  code: |
+    OrderStatus status;
+    try {
+        status = OrderStatus.valueOf(rawStatus);
+    } catch (IllegalArgumentException ex) {
+        status = OrderStatus.PENDING;
+    }
+  expected: positive
+  rationale: Unknown persisted data is silently reclassified instead of being reported as invalid.
+- id: defensive-fallback-subtle-go
+  language: Go
+  task: Return the account fetched from the repository.
+  code: |
+    account, err := repo.Get(ctx, id)
+    if err != nil {
+        return Account{}, nil
+    }
+    return account, nil
+  expected: positive
+  rationale: The fallback erases every repository failure and presents a zero value as a successful lookup.
+- id: defensive-fallback-subtle-python
+  language: Python
+  task: Apply the configured pricing formula.
+  code: |
+    formula = getattr(settings, "PRICING_FORMULA", None)
+    if callable(formula):
+        return formula(cart)
+    return cart.subtotal
+  expected: positive
+  rationale: Falling back to subtotal conceals an invalid mandatory pricing configuration and can undercharge.
+- id: defensive-fallback-subtle-typescript
+  language: TypeScript
+  task: Decode messages produced by our protocol encoder.
+  code: |
+    function decodeKind(value: number): MessageKind {
+      return kindByByte.get(value) ?? MessageKind.Unknown;
+    }
+  expected: positive
+  rationale: An impossible encoder-produced byte is normalized to Unknown, hiding protocol corruption.
+- id: defensive-fallback-subtle-csharp
+  language: C#
+  task: Use the tenant established by authentication middleware.
+  code: |
+    var tenantId = context.Items["TenantId"] as string
+        ?? context.Request.Headers["X-Tenant"].FirstOrDefault()
+        ?? "public";
+  expected: positive
+  rationale: Multiple fallbacks bypass the established authentication invariant and can route data to the wrong tenant.
+- id: defensive-fallback-subtle-java
+  language: Java
+  task: Deserialize internal queue messages.
+  code: |
+    try {
+        return mapper.readValue(body, Job.class);
+    } catch (IOException ignored) {
+        return new Job("noop");
+    }
+  expected: positive
+  rationale: Replacing a corrupt internal message with a no-op falsely acknowledges work that was never performed.
+- id: defensive-fallback-negative-obvious-go
+  language: Go
+  task: Use a cached response when the third-party weather API is unavailable.
+  code: |
+    forecast, err := client.Fetch(ctx, city)
+    if err != nil {
+        return cache.LastForecast(city)
+    }
+    return forecast, nil
+  expected: negative
+  rationale: The fallback is the explicitly requested degraded mode for an unreliable external dependency.
+- id: defensive-fallback-negative-obvious-python
+  language: Python
+  task: Display a placeholder avatar when a user has not uploaded one.
+  code: |
+    avatar_url = user.avatar_url or static_url("images/default-avatar.svg")
+  expected: negative
+  rationale: Missing optional user content is an expected state with a specified presentation fallback.
+- id: defensive-fallback-negative-obvious-typescript
+  language: TypeScript
+  task: Read an optional locale and default to English.
+  code: |
+    const locale = request.headers.get("accept-language") ?? "en";
+  expected: negative
+  rationale: The input is optional and the requirement explicitly defines the default.
+- id: defensive-fallback-negative-obvious-csharp
+  language: C#
+  task: Retry the idempotent status request on transient timeouts.
+  code: |
+    return await retryPolicy.ExecuteAsync(
+        token => client.GetStatusAsync(orderId, token),
+        cancellationToken);
+  expected: negative
+  rationale: Controlled retry of an idempotent external request is intentional resilience, not error masking.
+- id: defensive-fallback-negative-obvious-java
+  language: Java
+  task: Substitute the Unicode replacement character for malformed user-uploaded text.
+  code: |
+    decoder.onMalformedInput(CodingErrorAction.REPLACE);
+  expected: negative
+  rationale: The boundary policy for untrusted text explicitly calls for lossy but safe decoding.
+- id: defensive-fallback-negative-difficult-go
+  language: Go
+  code: |
+    value, ok := optionalCache.Load(key)
+    if !ok {
+        return computeFromSource(ctx, key)
+    }
+    return value.(Result), nil
+  expected: negative
+  rationale: A cache miss is normal control flow and recomputing from the authoritative source preserves correctness.
+- id: defensive-fallback-negative-difficult-python
+  language: Python
+  code: |
+    try:
+        preferred = gettext.translation("app", locales, [locale])
+    except FileNotFoundError:
+        preferred = gettext.translation("app", locales, ["en"])
+  expected: negative
+  rationale: Falling back from an unavailable optional translation catalog to the complete base locale is a valid UI policy.
+- id: defensive-fallback-negative-difficult-typescript
+  language: TypeScript
+  code: |
+    const decoded = schema.safeParse(localStorage.getItem("draft"));
+    const draft = decoded.success ? decoded.data : createEmptyDraft();
+  expected: negative
+  rationale: Browser storage is untrusted and disposable, so resetting an invalid draft is appropriate boundary handling.
+- id: defensive-fallback-negative-difficult-csharp
+  language: C#
+  code: |
+    if (!memoryCache.TryGetValue(key, out Product? product))
+    {
+        product = await repository.FindAsync(key, cancellationToken);
+    }
+  expected: negative
+  rationale: A cache miss legitimately delegates to the authoritative repository rather than concealing a failure.
+- id: defensive-fallback-negative-difficult-java
+  language: Java
+  code: |
+    ZoneId zone;
+    try {
+        zone = ZoneId.of(clientZone);
+    } catch (DateTimeException invalidClientInput) {
+        zone = ZoneOffset.UTC;
+    }
+  expected: negative
+  rationale: Invalid untrusted client preference can safely use a documented UTC default without weakening server invariants.

@@ -1,0 +1,240 @@
+- id: speculative-generality-obvious-go
+  language: Go
+  task: Add a function that formats the one supported invoice type.
+  code: |
+    type InvoiceFormatter interface {
+        Format(Invoice) string
+    }
+    type DefaultInvoiceFormatter struct{}
+    func (DefaultInvoiceFormatter) Format(i Invoice) string { return i.Number }
+  expected: positive
+  rationale: An interface and implementation pair add indirection despite there being one fixed behavior.
+- id: speculative-generality-obvious-python
+  language: Python
+  task: Read the configured API URL.
+  code: |
+    class SettingProvider(ABC):
+        @abstractmethod
+        def api_url(self) -> str: ...
+
+    class EnvironmentSettingProvider(SettingProvider):
+        def api_url(self) -> str:
+            return os.environ["API_URL"]
+  expected: positive
+  rationale: The requested environment lookup has been expanded into an unused provider hierarchy.
+- id: speculative-generality-obvious-typescript
+  language: TypeScript
+  task: Parse JSON responses from this endpoint.
+  code: |
+    type ResponseFormat = "json" | "xml" | "yaml";
+    async function parseResponse(
+      response: Response,
+      format: ResponseFormat = "json",
+    ): Promise<unknown> {
+      if (format !== "json") throw new Error("Not implemented");
+      return response.json();
+    }
+  expected: positive
+  rationale: Unsupported future formats are exposed in the API even though only JSON was requested or implemented.
+- id: speculative-generality-obvious-csharp
+  language: C#
+  task: Send password-reset email through the existing mailer.
+  code: |
+    public enum ResetDeliveryChannel { Email, Sms, Push }
+
+    public Task SendResetAsync(User user, ResetDeliveryChannel channel = ResetDeliveryChannel.Email)
+    {
+        if (channel != ResetDeliveryChannel.Email) throw new NotSupportedException();
+        return _mailer.SendResetAsync(user.Email);
+    }
+  expected: positive
+  rationale: The enum predicts unrequested channels and makes callers handle options that do not exist.
+- id: speculative-generality-obvious-java
+  language: Java
+  task: Calculate sales tax for the only operating region.
+  code: |
+    interface TaxStrategy {
+        BigDecimal calculate(BigDecimal subtotal);
+    }
+    final class LocalTaxStrategy implements TaxStrategy {
+        public BigDecimal calculate(BigDecimal subtotal) {
+            return subtotal.multiply(new BigDecimal("0.07"));
+        }
+    }
+  expected: positive
+  rationale: A strategy abstraction is premature when the product has one fixed region and calculation.
+- id: speculative-generality-subtle-go
+  language: Go
+  task: Add a 30-second timeout to the importer.
+  code: |
+    type ImportOptions struct {
+        Timeout time.Duration
+        Clock   func() time.Time
+        OnRetry func(int)
+    }
+    opts := ImportOptions{Timeout: 30 * time.Second, Clock: time.Now}
+  expected: positive
+  rationale: Clock and retry hooks are introduced without consumers to anticipate hypothetical future behavior.
+- id: speculative-generality-subtle-python
+  language: Python
+  task: Normalize usernames to lowercase.
+  code: |
+    def normalize_username(
+        username: str,
+        transforms: tuple[Callable[[str], str], ...] = (str.lower,),
+    ) -> str:
+        for transform in transforms:
+            username = transform(username)
+        return username
+  expected: positive
+  rationale: A configurable transformation pipeline needlessly generalizes one required lowercase operation.
+- id: speculative-generality-subtle-typescript
+  language: TypeScript
+  task: Cache product records in memory.
+  code: |
+    interface CacheBackend<T> {
+      get(key: string): T | undefined;
+      set(key: string, value: T): void;
+    }
+    class ProductCache<B extends CacheBackend<Product>> {
+      constructor(private readonly backend: B) {}
+    }
+  expected: positive
+  rationale: Backend genericity anticipates replacement stores even though the task specifies an in-memory cache.
+- id: speculative-generality-subtle-csharp
+  language: C#
+  task: Export the report as CSV.
+  code: |
+    public sealed record ExportOptions(
+        string Format = "csv",
+        char Delimiter = ',',
+        bool IncludeMetadata = false);
+
+    public string Export(Report report, ExportOptions? options = null) =>
+        WriteCsv(report, options ?? new());
+  expected: positive
+  rationale: Format and metadata switches broaden a CSV-only requirement without implemented alternatives.
+- id: speculative-generality-subtle-java
+  language: Java
+  task: Retry this request twice.
+  code: |
+    record RetryPolicy(
+        int attempts,
+        Duration initialDelay,
+        double multiplier,
+        Predicate<Throwable> retryable) {}
+
+    var policy = new RetryPolicy(2, Duration.ZERO, 1.0, error -> true);
+  expected: positive
+  rationale: A full policy object is invented for a fixed two-attempt requirement with no delay rules.
+- id: speculative-generality-negative-obvious-go
+  language: Go
+  task: Support both S3 and Azure Blob storage selected by deployment configuration.
+  code: |
+    type ObjectStore interface {
+        Put(context.Context, string, io.Reader) error
+    }
+    func NewObjectStore(cfg Config) ObjectStore {
+        if cfg.Provider == "azure" { return NewAzureStore(cfg) }
+        return NewS3Store(cfg)
+    }
+  expected: negative
+  rationale: The interface is required by two explicitly supported production providers.
+- id: speculative-generality-negative-obvious-python
+  language: Python
+  task: Allow plugins to register custom document parsers.
+  code: |
+    PARSERS: dict[str, Callable[[bytes], Document]] = {}
+
+    def register_parser(media_type: str, parser: Callable[[bytes], Document]) -> None:
+        PARSERS[media_type] = parser
+  expected: negative
+  rationale: A registration extension point directly implements the requested plugin contract.
+- id: speculative-generality-negative-obvious-typescript
+  language: TypeScript
+  task: The API must return either JSON or CSV according to the Accept header.
+  code: |
+    interface Serializer {
+      mediaType: string;
+      serialize(rows: Row[]): string;
+    }
+    const serializers = new Map<string, Serializer>([
+      ["application/json", jsonSerializer],
+      ["text/csv", csvSerializer],
+    ]);
+  expected: negative
+  rationale: Multiple required output formats justify a serializer abstraction and lookup.
+- id: speculative-generality-negative-obvious-csharp
+  language: C#
+  task: Make the payment gateway replaceable for merchant-specific Stripe and Adyen integrations.
+  code: |
+    public interface IPaymentGateway
+    {
+        Task<Charge> ChargeAsync(Money amount, CancellationToken cancellationToken);
+    }
+  expected: negative
+  rationale: Replaceability across named gateway implementations is an explicit business requirement.
+- id: speculative-generality-negative-obvious-java
+  language: Java
+  task: Schedule jobs using fixed-delay, cron, and one-shot triggers.
+  code: |
+    sealed interface Trigger permits FixedDelay, Cron, OneShot {
+        Instant nextAfter(Instant now);
+    }
+  expected: negative
+  rationale: The model represents three requested trigger behaviors rather than hypothetical future cases.
+- id: speculative-generality-negative-difficult-go
+  language: Go
+  code: |
+    type clock interface { Now() time.Time }
+
+    type TokenVerifier struct {
+        clock clock
+    }
+  expected: negative
+  rationale: Injecting time is justified because token expiry logic must be deterministic in tests and under clock control.
+- id: speculative-generality-negative-difficult-python
+  language: Python
+  code: |
+    class Transaction(Protocol):
+        def commit(self) -> None: ...
+        def rollback(self) -> None: ...
+
+    def import_rows(rows: Iterable[Row], tx: Transaction) -> None:
+        ...
+  expected: negative
+  rationale: The protocol captures an existing transaction boundary and enables atomic import testing, not imagined features.
+- id: speculative-generality-negative-difficult-typescript
+  language: TypeScript
+  code: |
+    type EventMap = {
+      connected: { peerId: string };
+      disconnected: { reason: string };
+    };
+    function emit<K extends keyof EventMap>(name: K, payload: EventMap[K]): void {
+      bus.publish(name, payload);
+    }
+  expected: negative
+  rationale: The generic ties each existing event name to its payload and prevents real type errors; it does not add unsupported events.
+- id: speculative-generality-negative-difficult-csharp
+  language: C#
+  code: |
+    internal interface IFileSystem
+    {
+        Stream OpenRead(string path);
+        void Move(string source, string destination);
+    }
+  expected: negative
+  rationale: Abstracting filesystem effects is warranted when the service must atomically move files and tests cannot use production paths.
+- id: speculative-generality-negative-difficult-java
+  language: Java
+  code: |
+    final class DecoderRegistry {
+        private final Map<Byte, MessageDecoder<?>> byType;
+
+        Message decode(ByteBuffer input) {
+            return byType.get(input.get()).decode(input);
+        }
+    }
+  expected: negative
+  rationale: A registry is appropriate for an existing versioned wire protocol with multiple message type bytes.
