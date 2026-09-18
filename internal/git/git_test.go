@@ -43,6 +43,45 @@ func TestCommandCollectorWorkingStagedAndReferenceDiffs(t *testing.T) {
 	}
 }
 
+func TestCommandCollectorAllUsesTrackedWorkingTreeFiles(t *testing.T) {
+	dir := t.TempDir()
+	runGit(t, dir, "init", "--quiet")
+	runGit(t, dir, "config", "user.email", "test@example.com")
+	runGit(t, dir, "config", "user.name", "Test")
+	tracked := filepath.Join(dir, "tracked.txt")
+	if err := os.WriteFile(tracked, []byte("committed\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	runGit(t, dir, "add", "tracked.txt")
+	runGit(t, dir, "commit", "--quiet", "-m", "initial")
+	if err := os.WriteFile(tracked, []byte("working tree\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "untracked.txt"), []byte("untracked\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	collector := CommandCollector{Dir: dir}
+	all, root, err := collector.Diff(context.Background(), Options{All: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if root == "" || !strings.Contains(all, "+working tree") {
+		t.Fatalf("tracked working-tree content missing: root=%q diff=%s", root, all)
+	}
+	if strings.Contains(all, "committed") || strings.Contains(all, "untracked") {
+		t.Fatalf("all-mode included stale or untracked content: %s", all)
+	}
+
+	filtered, _, err := collector.Diff(context.Background(), Options{All: true, Paths: []string{"missing"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filtered != "" {
+		t.Fatalf("path filter was not honored: %s", filtered)
+	}
+}
+
 func runGit(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	command := exec.Command("git", append([]string{"-C", dir}, args...)...)

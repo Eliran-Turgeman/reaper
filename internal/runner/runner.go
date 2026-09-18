@@ -26,6 +26,8 @@ type Runner struct {
 	Cache   cache.Store
 	Version string
 	Verbose VerboseFunc
+	Debug   bool
+	Audit   bool
 }
 
 type job struct {
@@ -36,9 +38,20 @@ type job struct {
 
 type result struct {
 	diagnostics []diagnostics.Diagnostic
+	evaluations []evaluation
 	checks      int
 	cacheHits   int
 	err         error
+}
+
+type evaluation struct {
+	rule       string
+	file       string
+	startLine  int
+	confidence float64
+	threshold  float64
+	violation  bool
+	cached     bool
 }
 
 func (r *Runner) Run(ctx context.Context, units []semantic.Unit, task string) (diagnostics.Report, error) {
@@ -64,13 +77,41 @@ func (r *Runner) Run(ctx context.Context, units []semantic.Unit, task string) (d
 
 	summary := diagnostics.Summary{UnitsEvaluated: len(jobs)}
 	var items []diagnostics.Diagnostic
+	var evaluations []evaluation
 	for _, item := range results {
 		if item.err != nil {
 			return diagnostics.Report{}, item.err
 		}
 		items = append(items, item.diagnostics...)
+		evaluations = append(evaluations, item.evaluations...)
 		summary.SemanticChecks += item.checks
 		summary.CacheHits += item.cacheHits
+	}
+	if r.Debug {
+		sort.Slice(evaluations, func(i, j int) bool {
+			if evaluations[i].file != evaluations[j].file {
+				return evaluations[i].file < evaluations[j].file
+			}
+			if evaluations[i].startLine != evaluations[j].startLine {
+				return evaluations[i].startLine < evaluations[j].startLine
+			}
+			return evaluations[i].rule < evaluations[j].rule
+		})
+		for _, item := range evaluations {
+			outcome := "pass"
+			if item.violation {
+				outcome = "violation"
+			}
+			source := "provider"
+			if item.cached {
+				source = "cache"
+			}
+			r.log("evaluation %s for %s:%d confidence=%s threshold=%s result=%s source=%s",
+				item.rule, item.file, item.startLine,
+				strconv.FormatFloat(item.confidence, 'g', -1, 64),
+				strconv.FormatFloat(item.threshold, 'g', -1, 64),
+				outcome, source)
+		}
 	}
 	if r.Client != nil {
 		summary.JevRequests = r.Client.Stats().Requests
@@ -93,6 +134,12 @@ func (r *Runner) jobs(units []semantic.Unit, task string, logSkips bool) []job {
 			if rule.Scope == rules.ScopePatch || !r.enabled(rule) || !r.matches(rule, unit.FilePath) {
 				continue
 			}
+			if r.Audit && rule.AuditSkipReason != "" {
+				if logSkips {
+					r.log("skip %s for %s:%d: %s", rule.ID, unit.FilePath, unit.StartLine, rule.AuditSkipReason)
+				}
+				continue
+			}
 			ok, reason := rule.Applicable(unit, task)
 			if !ok {
 				if logSkips {
@@ -111,6 +158,12 @@ func (r *Runner) jobs(units []semantic.Unit, task string, logSkips bool) []job {
 			if rule.Scope != rules.ScopePatch || !r.enabled(rule) {
 				continue
 			}
+			if r.Audit && rule.AuditSkipReason != "" {
+				if logSkips {
+					r.log("skip %s: %s", rule.ID, rule.AuditSkipReason)
+				}
+				continue
+			}
 			ok, reason := rule.Applicable(units[0], task)
 			if !ok {
 				if logSkips {
@@ -126,8 +179,9 @@ func (r *Runner) jobs(units []semantic.Unit, task string, logSkips bool) []job {
 }
 
 func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []rules.Rule, task string) result {
-	state := buildState(unit, task)
+	state := buildState(unit, task, r.Audit)
 	probabilities := map[string]float64{}
+	cached := map[string]bool{}
 	var missing []rules.Rule
 	cacheKeys := map[string]string{}
 	for _, rule := range selected {
@@ -142,6 +196,7 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		}
 		if ok {
 			probabilities[rule.ID] = value
+			cached[rule.ID] = true
 			continue
 		}
 		missing = append(missing, rule)
@@ -152,7 +207,11 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		}
 		request := jev.EvaluationRequest{Model: r.Config.Model, State: state}
 		for _, rule := range missing {
-			request.Questions = append(request.Questions, jev.Question{ID: rule.ID, Instructions: rule.Instructions})
+			instructions := rule.Instructions
+			if r.Audit {
+				instructions = "Evaluate the current code as an existing-code audit, regardless of when it was introduced. " + instructions
+			}
+			request.Questions = append(request.Questions, jev.Question{ID: rule.ID, Instructions: instructions})
 		}
 		response, err := r.Client.Evaluate(ctx, request)
 		if err != nil {
@@ -175,7 +234,13 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 	out := result{checks: len(selected), cacheHits: len(selected) - len(missing)}
 	for _, rule := range selected {
 		rc := r.Config.Rules[rule.ID]
-		if probabilities[rule.ID] < rc.Threshold {
+		violation := probabilities[rule.ID] >= rc.Threshold
+		out.evaluations = append(out.evaluations, evaluation{
+			rule: rule.ID, file: unit.FilePath, startLine: unit.StartLine,
+			confidence: probabilities[rule.ID], threshold: rc.Threshold,
+			violation: violation, cached: cached[rule.ID],
+		})
+		if !violation {
 			continue
 		}
 		severity, _ := rules.ValidateSeverity(rc.Severity)
@@ -217,13 +282,19 @@ func (r *Runner) log(format string, args ...any) {
 	}
 }
 
-func buildState(unit semantic.Unit, task string) string {
+func buildState(unit semantic.Unit, task string, audit bool) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "FILE\n%s\n\nLANGUAGE\n%s\n", unit.FilePath, unit.Language)
+	if audit {
+		b.WriteString("\nMODE\nEXISTING CODE AUDIT\n")
+	}
 	if task != "" {
 		fmt.Fprintf(&b, "\nTASK\n%s\n", task)
 	}
-	fmt.Fprintf(&b, "\nDIFF\n%s\n\nCURRENT CODE\n%s", unit.Diff, unit.NewContent)
+	if !audit {
+		fmt.Fprintf(&b, "\nDIFF\n%s", unit.Diff)
+	}
+	fmt.Fprintf(&b, "\n\nCURRENT CODE\n%s", unit.NewContent)
 	if unit.OldContent != "" {
 		fmt.Fprintf(&b, "\n\nPREVIOUS CODE\n%s", unit.OldContent)
 	}

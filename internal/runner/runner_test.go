@@ -2,6 +2,8 @@ package runner
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -82,7 +84,7 @@ func TestRunnerSortsDiagnosticsDespiteConcurrentCompletion(t *testing.T) {
 	}
 	first := semantic.Unit{FilePath: "z.go", Language: "go", Diff: "+x", NewContent: "x", StartLine: 8, EndLine: 8}
 	second := semantic.Unit{FilePath: "a.go", Language: "go", Diff: "+y", NewContent: "y", StartLine: 3, EndLine: 3}
-	client := &mockClient{delay: map[string]time.Duration{buildState(first, ""): 20 * time.Millisecond}}
+	client := &mockClient{delay: map[string]time.Duration{buildState(first, "", false): 20 * time.Millisecond}}
 	engine := Runner{Config: cfg, Client: client, Cache: cache.Disabled{}}
 	report, err := engine.Run(context.Background(), []semantic.Unit{first, second}, "")
 	if err != nil {
@@ -185,6 +187,95 @@ func TestWorkCountDoesNotDuplicateVerboseSkipLogs(t *testing.T) {
 	}
 	if logs != 1 {
 		t.Fatalf("run emitted %d verbose messages, want 1", logs)
+	}
+}
+
+func TestRunnerDebugLogsEveryEvaluationWithRawConfidence(t *testing.T) {
+	cfg := config.Defaults()
+	disabled := false
+	for id, rc := range cfg.Rules {
+		if id != "defensive-fallback" {
+			rc.Enabled = &disabled
+		} else {
+			rc.Threshold = 0.99
+		}
+		cfg.Rules[id] = rc
+	}
+	var logs []string
+	engine := Runner{
+		Config: cfg,
+		Client: &mockClient{},
+		Cache:  cache.NewMemory(),
+		Debug:  true,
+		Verbose: func(format string, args ...any) {
+			logs = append(logs, fmt.Sprintf(format, args...))
+		},
+	}
+	unit := semantic.Unit{
+		FilePath: "client.go", Language: "go", Diff: "+return nil",
+		NewContent: "return nil", StartLine: 7, EndLine: 7,
+	}
+	report, err := engine.Run(context.Background(), []semantic.Unit{unit}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Diagnostics) != 0 {
+		t.Fatalf("below-threshold evaluation became a diagnostic: %#v", report.Diagnostics)
+	}
+	const expected = "evaluation defensive-fallback for client.go:7 confidence=0.95 threshold=0.99 result=pass source=provider"
+	if !strings.Contains(strings.Join(logs, "\n"), expected) {
+		t.Fatalf("debug output does not contain %q: %#v", expected, logs)
+	}
+
+	logs = nil
+	if _, err := engine.Run(context.Background(), []semantic.Unit{unit}, ""); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(strings.Join(logs, "\n"), "result=pass source=cache") {
+		t.Fatalf("cached debug evaluation was not identified: %#v", logs)
+	}
+}
+
+func TestRunnerAuditSkipsRulesThatRequireChangeContext(t *testing.T) {
+	cfg := config.Defaults()
+	var logs []string
+	client := &mockClient{}
+	engine := Runner{
+		Config: cfg,
+		Client: client,
+		Cache:  cache.Disabled{},
+		Audit:  true,
+		Verbose: func(format string, args ...any) {
+			logs = append(logs, fmt.Sprintf(format, args...))
+		},
+	}
+	unit := semantic.Unit{
+		FilePath: "client_test.go", Language: "go",
+		Diff: "+// Explains why this is required.", NewContent: "// Explains why this is required.",
+		StartLine: 1, EndLine: 1, IsTest: true, ContainsComments: true, ExistingModified: true,
+	}
+	report, err := engine.Run(context.Background(), []semantic.Unit{unit}, "some task")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Summary.SemanticChecks != 8 {
+		t.Fatalf("got %d audit checks, want 8", report.Summary.SemanticChecks)
+	}
+	if len(client.requests) != 1 || len(client.requests[0].Questions) != 8 {
+		t.Fatalf("unexpected audit request: %#v", client.requests)
+	}
+	joined := strings.Join(logs, "\n")
+	if !strings.Contains(joined, "skip weakened-test") || !strings.Contains(joined, "skip scope-creep") {
+		t.Fatalf("change-context rules were not logged as skipped: %s", joined)
+	}
+	if !strings.Contains(client.requests[0].State, "MODE\nEXISTING CODE AUDIT") ||
+		strings.Contains(client.requests[0].State, "\nDIFF\n") {
+		t.Fatalf("unexpected audit state: %s", client.requests[0].State)
+	}
+	for _, question := range client.requests[0].Questions {
+		if !strings.HasPrefix(question.Instructions, "Evaluate the current code as an existing-code audit") {
+			t.Fatalf("audit instructions missing for %s: %s", question.ID, question.Instructions)
+		}
 	}
 }
 

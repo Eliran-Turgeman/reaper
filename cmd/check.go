@@ -19,11 +19,13 @@ import (
 )
 
 type checkOptions struct {
+	all      bool
 	staged   bool
 	ref      string
 	task     string
 	format   string
 	verbose  bool
+	debug    bool
 	noCache  bool
 	provider string
 	model    string
@@ -36,6 +38,9 @@ func newCheck(app App) *cobra.Command {
 		Short: "Check changed code for semantic violations",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(command *cobra.Command, paths []string) error {
+			if options.all && (options.staged || options.ref != "") {
+				return errors.New("--all cannot be used with --staged or --diff")
+			}
 			if options.staged && options.ref != "" {
 				return errors.New("--staged and --diff cannot be used together")
 			}
@@ -46,11 +51,13 @@ func newCheck(app App) *cobra.Command {
 		},
 	}
 	flags := command.Flags()
+	flags.BoolVar(&options.all, "all", false, "evaluate all tracked files instead of only changes")
 	flags.BoolVar(&options.staged, "staged", false, "inspect the staged diff")
 	flags.StringVar(&options.ref, "diff", "", "compare current code against a Git reference")
 	flags.StringVar(&options.task, "task", "", "task that motivated the code change")
 	flags.StringVar(&options.format, "format", "text", "output format: text or json")
 	flags.BoolVarP(&options.verbose, "verbose", "v", false, "show evaluation details")
+	flags.BoolVar(&options.debug, "debug", false, "show raw confidence for every evaluation")
 	flags.BoolVar(&options.noCache, "no-cache", false, "disable result caching")
 	flags.StringVar(&options.provider, "provider", "", "evaluation provider: typesafe or openrouter")
 	flags.StringVar(&options.model, "model", "", "provider model override")
@@ -75,7 +82,9 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		task = app.Getenv("REAPER_TASK")
 	}
 	collector := gitpkg.CommandCollector{Dir: cwd}
-	rawDiff, root, err := collector.Diff(ctx, gitpkg.Options{Staged: options.staged, Ref: options.ref, Paths: paths})
+	rawDiff, root, err := collector.Diff(ctx, gitpkg.Options{
+		All: options.all, Staged: options.staged, Ref: options.ref, Paths: paths,
+	})
 	if err != nil {
 		return err
 	}
@@ -84,12 +93,16 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		return fmt.Errorf("extract semantic units: %w", err)
 	}
 	log := func(format string, args ...any) {}
-	if options.verbose {
+	if options.verbose || options.debug {
 		log = func(format string, args ...any) {
 			fmt.Fprintf(command.ErrOrStderr(), "reaper: "+format+"\n", args...)
 		}
-		log("config=%s provider=%s model=%s units=%d",
-			displayConfig(configPath), cfg.Provider, cfg.Model, len(units))
+		mode := "changes"
+		if options.all {
+			mode = "all"
+		}
+		log("config=%s provider=%s model=%s mode=%s units=%d",
+			displayConfig(configPath), cfg.Provider, cfg.Model, mode, len(units))
 	}
 
 	cacheStore := cache.Store(cache.Disabled{})
@@ -102,7 +115,10 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		}
 		cacheStore = &cache.FileStore{Dir: dir}
 	}
-	engine := &runner.Runner{Config: cfg, Cache: cacheStore, Version: Version, Verbose: log}
+	engine := &runner.Runner{
+		Config: cfg, Cache: cacheStore, Version: Version, Verbose: log,
+		Debug: options.debug, Audit: options.all,
+	}
 	if engine.WorkCount(units, task) > 0 {
 		client, err := jev.NewProviderClient(cfg.Provider, jev.HTTPOptions{
 			BaseURL: cfg.BaseURL, APIKey: app.Getenv(config.APIKeyEnv(cfg.Provider)),
@@ -117,7 +133,7 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 	if err != nil {
 		return err
 	}
-	if options.verbose {
+	if options.verbose || options.debug {
 		log("checks=%d requests=%d cache_hits=%d duration=%s",
 			report.Summary.SemanticChecks, report.Summary.JevRequests,
 			report.Summary.CacheHits, time.Since(started).Round(time.Millisecond))

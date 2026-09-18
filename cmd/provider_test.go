@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 
 	"github.com/Eliran-Turgeman/repear/internal/config"
@@ -13,6 +15,21 @@ func TestApplyProviderOverridesUsesProviderModelDefault(t *testing.T) {
 	}
 	if cfg.Provider != config.ProviderOpenRouter || cfg.Model != "typesafe/jev-1.13" {
 		t.Fatalf("unexpected overrides: %#v", cfg)
+	}
+}
+
+func TestCheckAllRejectsDiffModes(t *testing.T) {
+	for _, args := range [][]string{
+		{"check", "--all", "--staged"},
+		{"check", "--all", "--diff", "main"},
+	} {
+		var output bytes.Buffer
+		command := NewWith(App{Out: &output, ErrOut: &output, Getenv: func(string) string { return "" }})
+		command.SetArgs(args)
+		err := command.Execute()
+		if err == nil || !strings.Contains(err.Error(), "--all cannot be used") {
+			t.Fatalf("args %v returned %v, want --all conflict", args, err)
+		}
 	}
 }
 

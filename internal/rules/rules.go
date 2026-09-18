@@ -31,6 +31,7 @@ type Rule struct {
 	DefaultThreshold    float64
 	DefaultSeverity     Severity
 	RequiresTaskContext bool
+	AuditSkipReason     string
 	Version             int
 	Applicable          func(semantic.Unit, string) (bool, string)
 }
@@ -110,7 +111,8 @@ var registry = map[string]Rule{
 		Description:      "Detect test changes that reduce defect detection.",
 		Message:          "Test modification may weaken behavioral protection.",
 		DefaultThreshold: 0.92, DefaultSeverity: SeverityError,
-		Instructions: "Return the probability that modification of an existing test reduces its ability to detect incorrect behavior instead of legitimately adapting to an intended behavior change. Consider removed assertions, broader checks, increased tolerances, removed error validation, or skipped behavior. Use old and new versions and task context. Do not count legitimate updates caused by intentional behavior changes.",
+		AuditSkipReason: "requires a before-and-after test change",
+		Instructions:    "Return the probability that modification of an existing test reduces its ability to detect incorrect behavior instead of legitimately adapting to an intended behavior change. Consider removed assertions, broader checks, increased tolerances, removed error validation, or skipped behavior. Use old and new versions and task context. Do not count legitimate updates caused by intentional behavior changes.",
 		Applicable: func(u semantic.Unit, _ string) (bool, string) {
 			if !u.IsTest {
 				return false, "not a test file"
@@ -128,6 +130,7 @@ var registry = map[string]Rule{
 		DefaultThreshold:    0.90,
 		DefaultSeverity:     SeverityWarning,
 		RequiresTaskContext: true,
+		AuditSkipReason:     "requires a code change and task context",
 		Instructions:        "Return the probability that the patch introduces externally observable behavior or substantial implementation changes unrelated to what is reasonably necessary for the supplied task. Do not count necessary small refactors, safety cleanup, required tests, or mechanical consequences of an API change.",
 		Applicable: func(_ semantic.Unit, task string) (bool, string) {
 			if task == "" {

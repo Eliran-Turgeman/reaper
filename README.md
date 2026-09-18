@@ -111,6 +111,16 @@ Check staged changes:
 reaper check --staged
 ```
 
+Audit every Git-tracked file in the current codebase:
+
+```sh
+reaper check --all
+```
+
+Full-codebase audits honor configured exclusions and optional path arguments.
+They skip `weakened-test` and `scope-creep`, which require a before-and-after
+code change. Untracked files are not included.
+
 Give Reaper a short, accurate summary of the requested change so it can detect
 unrelated work:
 
@@ -138,10 +148,16 @@ Useful options:
 ```sh
 reaper check --diff main       # compare with a Git reference
 reaper check src/              # limit the check to a path
+reaper check --all             # audit all tracked files
 reaper check --format json     # machine-readable output
 reaper check --verbose         # show evaluation details
+reaper check --debug           # show raw confidence for every evaluation
 reaper check --no-cache        # force fresh evaluations
 ```
+
+Debug output is written to stderr and includes below-threshold checks, their
+configured thresholds, and whether each confidence came from the provider or
+cache. Normal text and JSON output remain unchanged.
 
 Errors exit with code `1`, tool failures exit with code `2`, and warnings do not
 block by default.

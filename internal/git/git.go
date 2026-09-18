@@ -13,6 +13,7 @@ type Collector interface {
 }
 
 type Options struct {
+	All    bool
 	Staged bool
 	Ref    string
 	Paths  []string
@@ -30,6 +31,12 @@ func (c CommandCollector) Diff(ctx context.Context, opts Options) (string, strin
 	root := strings.TrimSpace(string(rootBytes))
 	args := []string{"-C", c.Dir, "--no-pager", "diff", "--no-ext-diff", "--unified=6"}
 	switch {
+	case opts.All:
+		emptyTree, err := c.emptyTree(ctx)
+		if err != nil {
+			return "", root, err
+		}
+		args = append(args, emptyTree)
 	case opts.Staged:
 		args = append(args, "--cached")
 	case opts.Ref != "":
@@ -45,4 +52,14 @@ func (c CommandCollector) Diff(ctx context.Context, opts Options) (string, strin
 		return "", root, fmt.Errorf("git diff: %s", strings.TrimSpace(string(output)))
 	}
 	return string(output), root, nil
+}
+
+func (c CommandCollector) emptyTree(ctx context.Context) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "-C", c.Dir, "hash-object", "-t", "tree", "--stdin")
+	cmd.Stdin = strings.NewReader("")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("create empty Git tree: %s", strings.TrimSpace(string(output)))
+	}
+	return strings.TrimSpace(string(output)), nil
 }
