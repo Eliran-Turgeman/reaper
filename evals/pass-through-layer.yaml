@@ -1,0 +1,260 @@
+- id: pass-through-layer-obvious-go
+  language: Go
+  task: Add a service used to save orders.
+  code: |
+    type OrderService struct {
+        repository *OrderRepository
+    }
+
+    func (s *OrderService) Save(ctx context.Context, order Order) error {
+        return s.repository.Save(ctx, order)
+    }
+  expected: positive
+  rationale: The service repeats the repository operation and arguments without adding policy, translation, or simplification.
+- id: pass-through-layer-obvious-python
+  language: Python
+  task: Add an API client layer for fetching a user.
+  code: |
+    class UserApi:
+        def __init__(self, client):
+            self.client = client
+
+        def get_user(self, user_id):
+            return self.client.get_user(user_id)
+  expected: positive
+  rationale: The new class only renames the owner of the same call and leaves the interface unchanged.
+- id: pass-through-layer-obvious-typescript
+  language: TypeScript
+  task: Expose product deletion through a manager.
+  code: |
+    class ProductManager {
+      constructor(private readonly products: ProductRepository) {}
+
+      delete(id: string): Promise<void> {
+        return this.products.delete(id);
+      }
+    }
+  expected: positive
+  rationale: The manager forwards the identical operation and identifier with no additional responsibility.
+- id: pass-through-layer-obvious-csharp
+  language: C#
+  task: Introduce a handler for loading invoices.
+  code: |
+    public sealed class LoadInvoiceHandler
+    {
+        private readonly InvoiceStore _store;
+
+        public Task<Invoice> HandleAsync(Guid id, CancellationToken token) =>
+            _store.LoadAsync(id, token);
+    }
+  expected: positive
+  rationale: The handler is a one-for-one forwarding layer over the store.
+- id: pass-through-layer-obvious-java
+  language: Java
+  task: Add a facade for sending notifications.
+  code: |
+    final class NotificationFacade {
+        private final NotificationClient client;
+
+        void send(Notification notification) {
+            client.send(notification);
+        }
+    }
+  expected: positive
+  rationale: The facade provides no facade-level simplification or policy and merely relays the object.
+- id: pass-through-layer-subtle-go
+  language: Go
+  task: Add an application layer for updating an account email.
+  code: |
+    func (a *AccountApplication) UpdateEmail(
+        ctx context.Context, accountID string, email string,
+    ) (Account, error) {
+        return a.accounts.UpdateEmail(ctx, accountID, email)
+    }
+  expected: positive
+  rationale: Despite the application-layer name, all inputs and behavior pass directly to the underlying component.
+- id: pass-through-layer-subtle-python
+  language: Python
+  task: Add a gateway around the report renderer.
+  code: |
+    class ReportGateway:
+        def render(self, report, template, locale):
+            return self._renderer.render(report, template, locale)
+  expected: positive
+  rationale: The gateway preserves the renderer's full parameter surface and contributes no boundary behavior.
+- id: pass-through-layer-subtle-typescript
+  language: TypeScript
+  task: Route cache operations through a domain service.
+  code: |
+    class SessionService {
+      constructor(private readonly cache: SessionCache) {}
+
+      read(key: string): Session | undefined {
+        return this.cache.read(key);
+      }
+
+      write(key: string, value: Session, ttl: number): void {
+        this.cache.write(key, value, ttl);
+      }
+    }
+  expected: positive
+  rationale: Both methods mirror the cache protocol, including its low-level key and TTL arguments, without adding domain behavior.
+- id: pass-through-layer-subtle-csharp
+  language: C#
+  task: Add a coordinator for starting and stopping a worker.
+  code: |
+    public sealed class WorkerCoordinator
+    {
+        private readonly Worker _worker;
+
+        public Task StartAsync(CancellationToken token) => _worker.StartAsync(token);
+        public Task StopAsync(CancellationToken token) => _worker.StopAsync(token);
+    }
+  expected: positive
+  rationale: Calling the coordinator still requires the same lifecycle operations and gains no sequencing or ownership.
+- id: pass-through-layer-subtle-java
+  language: Java
+  task: Add a repository decorator for customer lookup.
+  code: |
+    final class CustomerRepositoryDecorator implements CustomerRepository {
+        private final CustomerRepository delegate;
+
+        public Optional<Customer> findById(CustomerId id) {
+            return delegate.findById(id);
+        }
+    }
+  expected: positive
+  rationale: A decorator with no decoration simply duplicates the existing repository boundary.
+- id: pass-through-layer-negative-obvious-go
+  language: Go
+  task: Expose a simple profile operation over two storage calls.
+  code: |
+    func (s *ProfileService) Rename(ctx context.Context, id UserID, name string) error {
+        user, err := s.users.Get(ctx, id)
+        if err != nil {
+            return err
+        }
+        user.DisplayName = strings.TrimSpace(name)
+        return s.users.Save(ctx, user)
+    }
+  expected: negative
+  rationale: The service owns retrieval, normalization, mutation, and persistence behind one domain operation.
+- id: pass-through-layer-negative-obvious-python
+  language: Python
+  task: Adapt a vendor payment response to the application's result type.
+  code: |
+    class PaymentGateway:
+        def charge(self, payment):
+            response = self._vendor.create_charge(
+                cents=payment.amount.cents,
+                source=payment.token,
+            )
+            return ChargeResult(id=response["charge_id"], approved=response["ok"])
+  expected: negative
+  rationale: This gateway translates both request and response representations at a meaningful external boundary.
+- id: pass-through-layer-negative-obvious-typescript
+  language: TypeScript
+  task: Require authorization before deleting a project.
+  code: |
+    class ProjectService {
+      async delete(actor: User, projectId: string): Promise<void> {
+        await this.permissions.require(actor, "project:delete", projectId);
+        await this.projects.delete(projectId);
+      }
+    }
+  expected: negative
+  rationale: The service enforces an authorization policy rather than merely forwarding deletion.
+- id: pass-through-layer-negative-obvious-csharp
+  language: C#
+  task: Provide one operation that commits an uploaded document.
+  code: |
+    public async Task<DocumentId> CommitAsync(Stream content, CancellationToken token)
+    {
+        var checksum = await _hashes.ComputeAsync(content, token);
+        content.Position = 0;
+        var location = await _blobs.PutAsync(content, token);
+        return await _documents.CreateAsync(location, checksum, token);
+    }
+  expected: negative
+  rationale: The method hides a multi-step storage protocol behind a single cohesive operation.
+- id: pass-through-layer-negative-obvious-java
+  language: Java
+  task: Publish an order while guaranteeing an audit record.
+  code: |
+    void publish(Order order) {
+        transaction.run(() -> {
+            orders.markPublished(order.id());
+            audit.append("order-published", order.id().toString());
+        });
+    }
+  expected: negative
+  rationale: The layer establishes an atomic policy across two collaborators.
+- id: pass-through-layer-negative-difficult-go
+  language: Go
+  code: |
+    type MeteredStore struct {
+        next Store
+        calls prometheus.Counter
+    }
+
+    func (s *MeteredStore) Get(ctx context.Context, key string) ([]byte, error) {
+        s.calls.Inc()
+        return s.next.Get(ctx, key)
+    }
+  expected: negative
+  rationale: Delegation is legitimate because the decorator consistently adds required instrumentation at the boundary.
+- id: pass-through-layer-negative-difficult-python
+  language: Python
+  code: |
+    class ReadOnlyConnection:
+        def execute(self, statement, parameters=()):
+            if not statement.lstrip().upper().startswith("SELECT"):
+                raise PermissionError("read-only connection")
+            return self._connection.execute(statement, parameters)
+  expected: negative
+  rationale: The wrapper enforces a read-only policy even though successful calls are delegated.
+- id: pass-through-layer-negative-difficult-typescript
+  language: TypeScript
+  code: |
+    class RetryingCatalog {
+      getProduct(id: ProductId): Promise<Product> {
+        return retry(
+          () => this.remote.getProduct(id.value),
+          { attempts: 3, retryOn: isTransient },
+        );
+      }
+    }
+  expected: negative
+  rationale: The layer owns retry policy and converts a domain identifier at a remote-system boundary.
+- id: pass-through-layer-negative-difficult-csharp
+  language: C#
+  code: |
+    public async Task<Order> FindAsync(OrderId id, CancellationToken token)
+    {
+        try
+        {
+            return Map(await _client.GetAsync(id.Value, token));
+        }
+        catch (VendorNotFoundException)
+        {
+            throw new OrderNotFoundException(id);
+        }
+    }
+  expected: negative
+  rationale: The gateway translates vendor data and errors into the application's public model.
+- id: pass-through-layer-negative-difficult-java
+  language: Java
+  code: |
+    final class SerializedExecutor implements Executor {
+        private final Executor delegate;
+        private final Semaphore permit = new Semaphore(1);
+
+        public void execute(Runnable command) {
+            delegate.execute(() -> {
+                permit.acquireUninterruptibly();
+                try { command.run(); } finally { permit.release(); }
+            });
+        }
+    }
+  expected: negative
+  rationale: Although it delegates execution, the wrapper provides the meaningful guarantee that tasks never overlap.

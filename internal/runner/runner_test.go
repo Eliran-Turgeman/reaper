@@ -47,7 +47,7 @@ func TestRunnerBatchesRulesAppliesPolicyAndCaches(t *testing.T) {
 		FilePath: "client_test.go", Language: "go", Diff: "+// Loop over values.\n+for range values {}",
 		NewContent: "// Loop over values.\nfor range values {}", OldContent: "assert.Equal(t, 2, got)",
 		StartLine: 10, EndLine: 12, IsTest: true, ExistingModified: true,
-		ContainsComments: true, Additions: 10,
+		ContainsComments: true,
 	}
 	report, err := engine.Run(context.Background(), []semantic.Unit{unit}, "")
 	if err != nil {
@@ -56,17 +56,17 @@ func TestRunnerBatchesRulesAppliesPolicyAndCaches(t *testing.T) {
 	if len(client.requests) != 1 {
 		t.Fatalf("rules were not batched: %d requests", len(client.requests))
 	}
-	if got := len(client.requests[0].Questions); got != 4 {
-		t.Fatalf("got %d batched questions, want 4", got)
+	if got := len(client.requests[0].Questions); got != 9 {
+		t.Fatalf("got %d batched questions, want 9", got)
 	}
-	if len(report.Diagnostics) != 4 || report.Summary.Errors != 2 || report.Summary.Warnings != 2 {
+	if len(report.Diagnostics) != 9 || report.Summary.Errors != 2 || report.Summary.Warnings != 7 {
 		t.Fatalf("unexpected policy result: %#v", report)
 	}
 	report, err = engine.Run(context.Background(), []semantic.Unit{unit}, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(client.requests) != 1 || report.Summary.CacheHits != 4 {
+	if len(client.requests) != 1 || report.Summary.CacheHits != 9 {
 		t.Fatalf("cache was not used: requests=%d summary=%#v", len(client.requests), report.Summary)
 	}
 }
@@ -80,8 +80,8 @@ func TestRunnerSortsDiagnosticsDespiteConcurrentCompletion(t *testing.T) {
 			cfg.Rules[id] = rc
 		}
 	}
-	first := semantic.Unit{FilePath: "z.go", Language: "go", Diff: "+x", NewContent: "x", StartLine: 8, EndLine: 8, Additions: 1}
-	second := semantic.Unit{FilePath: "a.go", Language: "go", Diff: "+y", NewContent: "y", StartLine: 3, EndLine: 3, Additions: 1}
+	first := semantic.Unit{FilePath: "z.go", Language: "go", Diff: "+x", NewContent: "x", StartLine: 8, EndLine: 8}
+	second := semantic.Unit{FilePath: "a.go", Language: "go", Diff: "+y", NewContent: "y", StartLine: 3, EndLine: 3}
 	client := &mockClient{delay: map[string]time.Duration{buildState(first, ""): 20 * time.Millisecond}}
 	engine := Runner{Config: cfg, Client: client, Cache: cache.Disabled{}}
 	report, err := engine.Run(context.Background(), []semantic.Unit{first, second}, "")
@@ -100,7 +100,7 @@ func TestRunnerSkipsTaskRuleWithoutTaskAndHonorsGlobExcludes(t *testing.T) {
 		rc.Enabled = &enabled
 		cfg.Rules[id] = rc
 	}
-	unit := semantic.Unit{FilePath: "vendor/deep/client.go", Additions: 3}
+	unit := semantic.Unit{FilePath: "vendor/deep/client.go"}
 	engine := Runner{Config: cfg, Cache: cache.Disabled{}}
 	if got := engine.WorkCount([]semantic.Unit{unit}, ""); got != 0 {
 		t.Fatalf("got %d jobs, expected excluded file and skipped task rule", got)
@@ -116,7 +116,7 @@ func TestRunnerCacheIsIsolatedByProvider(t *testing.T) {
 			cfg.Rules[id] = rc
 		}
 	}
-	unit := semantic.Unit{FilePath: "client.go", Language: "go", Diff: "+x", NewContent: "x", Additions: 1}
+	unit := semantic.Unit{FilePath: "client.go", Language: "go", Diff: "+x", NewContent: "x"}
 	client := &mockClient{}
 	store := cache.NewMemory()
 	engine := Runner{Config: cfg, Client: client, Cache: store}
@@ -142,7 +142,7 @@ func TestRunnerCacheIsIsolatedByReaperVersion(t *testing.T) {
 			cfg.Rules[id] = rc
 		}
 	}
-	unit := semantic.Unit{FilePath: "client.go", Language: "go", Diff: "+x", NewContent: "x", Additions: 1}
+	unit := semantic.Unit{FilePath: "client.go", Language: "go", Diff: "+x", NewContent: "x"}
 	client := &mockClient{}
 	store := cache.NewMemory()
 	engine := Runner{Config: cfg, Client: client, Cache: store, Version: "0.1.0"}
@@ -173,7 +173,7 @@ func TestWorkCountDoesNotDuplicateVerboseSkipLogs(t *testing.T) {
 			logs++
 		},
 	}
-	unit := semantic.Unit{FilePath: "client.go", Language: "go", Additions: 1}
+	unit := semantic.Unit{FilePath: "client.go", Language: "go"}
 	if got := engine.WorkCount([]semantic.Unit{unit}, ""); got != 0 {
 		t.Fatalf("got %d jobs, want 0", got)
 	}
@@ -185,5 +185,39 @@ func TestWorkCountDoesNotDuplicateVerboseSkipLogs(t *testing.T) {
 	}
 	if logs != 1 {
 		t.Fatalf("run emitted %d verbose messages, want 1", logs)
+	}
+}
+
+func TestRunnerEvaluatesSemanticRulesForDeletionOnlyHunk(t *testing.T) {
+	cfg := config.Defaults()
+	enabledRules := map[string]bool{
+		"speculative-generality":   true,
+		"pass-through-layer":       true,
+		"complexity-pushed-upward": true,
+		"information-leakage":      true,
+		"special-general-mixture":  true,
+		"shallow-module":           true,
+		"defensive-fallback":       true,
+	}
+	for id, rc := range cfg.Rules {
+		enabled := enabledRules[id]
+		rc.Enabled = &enabled
+		cfg.Rules[id] = rc
+	}
+	client := &mockClient{}
+	engine := Runner{Config: cfg, Client: client, Cache: cache.Disabled{}}
+	unit := semantic.Unit{
+		FilePath: "client.go", Language: "go",
+		Diff: "-if err != nil {\n-\treturn err\n-}", OldContent: "if err != nil {\n\treturn err\n}",
+		StartLine: 10, EndLine: 10, ExistingModified: true,
+	}
+	if _, err := engine.Run(context.Background(), []semantic.Unit{unit}, ""); err != nil {
+		t.Fatal(err)
+	}
+	if len(client.requests) != 1 {
+		t.Fatalf("got %d requests, want 1", len(client.requests))
+	}
+	if got := len(client.requests[0].Questions); got != len(enabledRules) {
+		t.Fatalf("got %d questions, want %d", got, len(enabledRules))
 	}
 }

@@ -19,7 +19,6 @@ type Unit struct {
 	IsTest           bool
 	ContainsComments bool
 	ExistingModified bool
-	Additions        int
 }
 
 func Language(path string) string {

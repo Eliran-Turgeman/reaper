@@ -1,0 +1,262 @@
+- id: shallow-module-obvious-go
+  language: Go
+  task: Add an abstraction for checking whether a string is empty.
+  code: |
+    type EmptinessChecker struct{}
+
+    func (EmptinessChecker) IsEmpty(value string) bool {
+        return len(value) == 0
+    }
+  expected: positive
+  rationale: A named module and method expose nearly as much conceptual surface as the single trivial expression they contain.
+- id: shallow-module-obvious-python
+  language: Python
+  task: Add a class for joining a first and last name.
+  code: |
+    class NameCombiner:
+        def combine(self, first_name: str, last_name: str) -> str:
+            return first_name + " " + last_name
+  expected: positive
+  rationale: Instantiating and learning this class is more interface than the simple concatenation it provides.
+- id: shallow-module-obvious-typescript
+  language: TypeScript
+  task: Encapsulate incrementing a counter.
+  code: |
+    class CounterIncrementOperation {
+      execute(currentValue: number): number {
+        return currentValue + 1;
+      }
+    }
+  expected: positive
+  rationale: The operation abstraction adds ceremony without hiding meaningful logic or state.
+- id: shallow-module-obvious-csharp
+  language: C#
+  task: Add a service that converts minutes to seconds.
+  code: |
+    public sealed class TimeConversionService
+    {
+        public int MinutesToSeconds(int minutes) => minutes * 60;
+    }
+  expected: positive
+  rationale: The service interface is not simpler than the obvious arithmetic it wraps.
+- id: shallow-module-obvious-java
+  language: Java
+  task: Add a module for selecting the larger number.
+  code: |
+    final class MaximumValueModule {
+        int select(int left, int right) {
+            return Math.max(left, right);
+        }
+    }
+  expected: positive
+  rationale: The module introduces a new concept for behavior already expressed completely by one standard operation.
+- id: shallow-module-subtle-go
+  language: Go
+  task: Add a request object for changing a display name.
+  code: |
+    type ChangeDisplayNameRequest struct {
+        UserID      string
+        DisplayName string
+    }
+
+    func (r ChangeDisplayNameRequest) Apply(user *User) {
+        user.ID = r.UserID
+        user.DisplayName = r.DisplayName
+    }
+  expected: positive
+  rationale: The request type and Apply protocol do not reduce the complexity of assigning two already-known fields.
+- id: shallow-module-subtle-python
+  language: Python
+  task: Add a reusable abstraction for reading one dictionary setting.
+  code: |
+    class ConfigurationValueReader:
+        def __init__(self, values):
+            self._values = values
+
+        def read(self, section, key, default=None):
+            return self._values.get(section, {}).get(key, default)
+  expected: positive
+  rationale: The constructor plus three-argument method provide little leverage over the direct nested lookup.
+- id: shallow-module-subtle-typescript
+  language: TypeScript
+  task: Encapsulate creation of a status badge.
+  code: |
+    interface BadgeCreationOptions {
+      text: string;
+      color: string;
+    }
+
+    class BadgeFactory {
+      create(options: BadgeCreationOptions): Badge {
+        return { text: options.text, color: options.color };
+      }
+    }
+  expected: positive
+  rationale: The options type and factory simply reproduce the complete shape of the value being created.
+- id: shallow-module-subtle-csharp
+  language: C#
+  task: Add an abstraction for comparing version numbers.
+  code: |
+    public interface IVersionComparisonService
+    {
+        int Compare(int majorA, int minorA, int majorB, int minorB);
+    }
+
+    public sealed class VersionComparisonService : IVersionComparisonService
+    {
+        public int Compare(int majorA, int minorA, int majorB, int minorB) =>
+            (majorA, minorA).CompareTo((majorB, minorB));
+    }
+  expected: positive
+  rationale: A service contract with four scalar inputs is more cumbersome than the tiny tuple comparison it hides.
+- id: shallow-module-subtle-java
+  language: Java
+  task: Add an object for toggling a feature flag value.
+  code: |
+    final class FeatureFlagToggle {
+        private final String flagName;
+        private final boolean enabled;
+
+        FeatureFlagToggle(String flagName, boolean enabled) {
+            this.flagName = flagName;
+            this.enabled = enabled;
+        }
+
+        void apply(Map<String, Boolean> flags) {
+            flags.put(flagName, enabled);
+        }
+    }
+  expected: positive
+  rationale: Constructing and applying the object adds a lifecycle around one transparent map assignment.
+- id: shallow-module-negative-obvious-go
+  language: Go
+  task: Parse and validate a connection string behind one operation.
+  code: |
+    func ParseDatabaseURL(raw string) (DatabaseConfig, error) {
+        parsed, err := url.Parse(raw)
+        if err != nil {
+            return DatabaseConfig{}, fmt.Errorf("invalid database URL: %w", err)
+        }
+        if parsed.Scheme != "postgres" || parsed.Host == "" {
+            return DatabaseConfig{}, errors.New("database URL requires postgres host")
+        }
+        return configFromURL(parsed), nil
+    }
+  expected: negative
+  rationale: A small interface hides parsing, validation, defaults, and representation conversion.
+- id: shallow-module-negative-obvious-python
+  language: Python
+  task: Provide one operation for reserving inventory safely.
+  code: |
+    def reserve_inventory(order):
+        with database.transaction():
+            available = inventory.lock_rows(order.skus)
+            shortages = find_shortages(order.lines, available)
+            if shortages:
+                raise OutOfStock(shortages)
+            inventory.decrement(order.lines)
+  expected: negative
+  rationale: The function presents one domain operation while hiding locking, validation, and transactional mutation.
+- id: shallow-module-negative-obvious-typescript
+  language: TypeScript
+  task: Add a module that renders invoices from templates.
+  code: |
+    interface InvoiceRenderer {
+      render(invoice: Invoice, locale: Locale): Promise<Uint8Array>;
+    }
+
+    class PdfInvoiceRenderer implements InvoiceRenderer {
+      async render(invoice: Invoice, locale: Locale): Promise<Uint8Array> {
+        const template = await this.templates.load(locale);
+        const model = buildInvoiceModel(invoice, locale);
+        const html = this.engine.render(template, model);
+        return this.pdf.convert(html);
+      }
+    }
+  expected: negative
+  rationale: A compact interface conceals template loading, model construction, rendering, and PDF conversion.
+- id: shallow-module-negative-obvious-csharp
+  language: C#
+  task: Add a client that uploads a file reliably.
+  code: |
+    public interface IFileUploader
+    {
+        Task<UploadReceipt> UploadAsync(
+            Stream content,
+            CancellationToken cancellationToken);
+    }
+  expected: negative
+  rationale: The simple contract can hide multipart transfer, retries, authentication, and integrity checks.
+- id: shallow-module-negative-obvious-java
+  language: Java
+  task: Add an authorization module for document access.
+  code: |
+    interface DocumentAuthorizer {
+        void requireRead(User user, DocumentId documentId);
+    }
+
+    final class PolicyDocumentAuthorizer implements DocumentAuthorizer {
+        public void requireRead(User user, DocumentId documentId) {
+            Document document = documents.load(documentId);
+            permissions.requireTenant(user, document.tenantId());
+            permissions.requireAnyRole(user, document.readRoles());
+        }
+    }
+  expected: negative
+  rationale: One intention-revealing method hides document lookup and multiple authorization rules.
+- id: shallow-module-negative-difficult-go
+  language: Go
+  code: |
+    func IsBlank(value string) bool {
+        return strings.TrimSpace(value) == ""
+    }
+
+    if IsBlank(profile.DisplayName) {
+        return errors.New("display name is required")
+    }
+  expected: negative
+  rationale: This tiny helper gives a repeated domain-relevant condition a clear name without introducing a burdensome abstraction.
+- id: shallow-module-negative-difficult-python
+  language: Python
+  code: |
+    def clamp_page_size(requested: int) -> int:
+        return max(1, min(requested, 100))
+  expected: negative
+  rationale: The small helper centralizes a meaningful boundary invariant and makes call sites clearer.
+- id: shallow-module-negative-difficult-typescript
+  language: TypeScript
+  code: |
+    type UserId = string & { readonly userId: unique symbol };
+
+    function userId(raw: string): UserId {
+      if (!UUID_PATTERN.test(raw)) throw new InvalidUserId(raw);
+      return raw as UserId;
+    }
+  expected: negative
+  rationale: A narrow constructor enforces validation and prevents accidental mixing of identifiers throughout the program.
+- id: shallow-module-negative-difficult-csharp
+  language: C#
+  code: |
+    public static string FullName(this Customer customer) =>
+        string.Join(
+            " ",
+            new[] { customer.Title, customer.FirstName, customer.LastName }
+                .Where(part => !string.IsNullOrWhiteSpace(part)));
+  expected: negative
+  rationale: The focused helper gives a recurring formatting rule a clear home and handles missing components consistently.
+- id: shallow-module-negative-difficult-java
+  language: Java
+  code: |
+    record Percentage(BigDecimal value) {
+        Percentage {
+            if (value.signum() < 0 || value.compareTo(BigDecimal.ONE) > 0) {
+                throw new IllegalArgumentException("percentage outside 0..1");
+            }
+        }
+
+        BigDecimal applyTo(BigDecimal amount) {
+            return amount.multiply(value);
+        }
+    }
+  expected: negative
+  rationale: The small value object enforces a useful invariant and prevents raw decimals from being misinterpreted.

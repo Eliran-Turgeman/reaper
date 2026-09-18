@@ -7,8 +7,9 @@
 <p align="center"><strong>Semantic lint for coding agents.</strong></p>
 
 Reaper catches engineering problems that normal linters cannot understand, such
-as comments that merely narrate code, silent error fallbacks, weakened tests,
-unnecessary abstractions, and changes unrelated to the task.
+as comments that merely narrate code, shallow or pass-through abstractions,
+leaked implementation details, silent error fallbacks, weakened tests, and
+changes unrelated to the task.
 
 ```text
 client.go:84-91: warning [redundant-comment] confidence=0.96
@@ -151,6 +152,11 @@ block by default.
 |---|---|
 | `redundant-comment` | Comments that merely repeat adjacent code |
 | `speculative-generality` | Abstraction or flexibility without a real need |
+| `pass-through-layer` | Layers that add indirection without a new abstraction |
+| `complexity-pushed-upward` | Complexity imposed on callers that a module could hide |
+| `information-leakage` | Internal design knowledge exposed across module boundaries |
+| `special-general-mixture` | Special-purpose policy embedded in general mechanisms |
+| `shallow-module` | Abstractions with costly interfaces and little hidden complexity |
 | `defensive-fallback` | Fallbacks that hide errors or invalid states |
 | `weakened-test` | Test changes that reduce protection |
 | `scope-creep` | Substantial changes unrelated to the supplied task |
@@ -159,7 +165,7 @@ Run `reaper rules` to see the configured defaults.
 
 ## Evaluate the rules
 
-The repository includes 100 labeled examples for measuring rule quality:
+The repository includes 200 labeled examples for measuring rule quality:
 
 ```sh
 reaper eval

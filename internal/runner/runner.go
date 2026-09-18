@@ -247,7 +247,7 @@ func aggregate(units []semantic.Unit) semantic.Unit {
 	}
 	return semantic.Unit{
 		FilePath: "<patch>", Language: "diff", Diff: strings.Join(diffs, "\n\n"),
-		StartLine: 1, EndLine: 1, Additions: 1,
+		StartLine: 1, EndLine: 1,
 	}
 }
 

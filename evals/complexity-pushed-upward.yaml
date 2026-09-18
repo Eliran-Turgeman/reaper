@@ -1,0 +1,211 @@
+- id: complexity-pushed-upward-obvious-go
+  language: Go
+  task: Add a helper for importing a file.
+  code: |
+    func Import(ctx context.Context, path string, chunkSize int, workers int) error {
+        // import implementation
+        return nil
+    }
+
+    err := Import(ctx, path, 4096, runtime.NumCPU())
+  expected: positive
+  rationale: Callers must choose internal chunking and worker details that the importer can reasonably own.
+- id: complexity-pushed-upward-obvious-python
+  language: Python
+  task: Add an operation that sends an email.
+  code: |
+    connection = mailer.open()
+    try:
+        mailer.send(connection, message)
+    finally:
+        mailer.close(connection)
+  expected: positive
+  rationale: The caller is forced to manage the mailer's connection lifecycle instead of invoking one safe send operation.
+- id: complexity-pushed-upward-obvious-typescript
+  language: TypeScript
+  task: Fetch a product from the remote catalog.
+  code: |
+    const product = await catalog.fetch(productId, {
+      retries: 3,
+      initialDelayMs: 100,
+      backoffMultiplier: 2,
+      retryStatusCodes: [429, 503],
+    });
+  expected: positive
+  rationale: Routine callers now define low-level retry policy that belongs with the catalog integration.
+- id: complexity-pushed-upward-obvious-csharp
+  language: C#
+  task: Read a customer by ID.
+  code: |
+    try
+    {
+        return await customers.FindAsync(id, cancellationToken);
+    }
+    catch (SqlException exception) when (exception.Number == 1205)
+    {
+        throw new CustomerTemporarilyUnavailableException(id, exception);
+    }
+  expected: positive
+  rationale: A customer module exposing SQL deadlock details makes every caller understand its storage implementation.
+- id: complexity-pushed-upward-obvious-java
+  language: Java
+  task: Process a batch of records.
+  code: |
+    processor.begin();
+    for (Record record : records) {
+        processor.accept(record);
+    }
+    processor.flush();
+    processor.commit();
+    processor.close();
+  expected: positive
+  rationale: The caller must know and correctly sequence five lifecycle operations for one batch-processing intent.
+- id: complexity-pushed-upward-subtle-go
+  language: Go
+  task: Add a client method for uploading an avatar.
+  code: |
+    err := avatars.Upload(ctx, userID, body)
+    if err == ErrExpiredUploadURL {
+        if err := avatars.RefreshUploadURL(ctx, userID); err != nil {
+            return err
+        }
+        err = avatars.Upload(ctx, userID, body)
+    }
+  expected: positive
+  rationale: Refresh-and-retry mechanics of the avatar service leak into each consumer's workflow.
+- id: complexity-pushed-upward-subtle-python
+  language: Python
+  task: Add a query method that returns active subscriptions.
+  code: |
+    rows = subscriptions.query(account_id)
+    active = [
+        row for row in rows
+        if row["deleted_at"] is None and row["state_code"] in (1, 2)
+    ]
+  expected: positive
+  rationale: Consumers must reproduce deletion and state-code rules that the subscription query can encapsulate.
+- id: complexity-pushed-upward-subtle-typescript
+  language: TypeScript
+  task: Write an event to the application event log.
+  code: |
+    const writer = eventLog.createWriter(streamId);
+    await writer.open();
+    await writer.append(event);
+    await writer.flush();
+    await writer.dispose();
+  expected: positive
+  rationale: Resource creation, ordering, flushing, and cleanup are pushed onto ordinary event-log callers.
+- id: complexity-pushed-upward-subtle-csharp
+  language: C#
+  task: Add a parser for configuration files.
+  code: |
+    var result = parser.Parse(text);
+    if (result.ErrorKind == ParseErrorKind.Scanner)
+        throw new InvalidConfigurationException(result.ScannerOffset);
+    if (result.ErrorKind == ParseErrorKind.Grammar)
+        throw new InvalidConfigurationException(result.ProductionName);
+  expected: positive
+  rationale: The parser exports its internal phases, forcing consumers to translate scanner and grammar mechanics.
+- id: complexity-pushed-upward-subtle-java
+  language: Java
+  task: Reserve inventory for an order.
+  code: |
+    Reservation reservation = inventory.prepare(order.lines());
+    if (reservation.conflicts().isEmpty()) {
+        inventory.confirm(reservation.token());
+    } else {
+        inventory.release(reservation.token());
+        throw new OutOfStockException(reservation.conflicts());
+    }
+  expected: positive
+  rationale: The caller must drive the inventory module's prepare-confirm-release protocol for a single domain operation.
+- id: complexity-pushed-upward-negative-obvious-go
+  language: Go
+  task: Let the command choose the user-requested output format.
+  code: |
+    format := flags.String("format", "table", "output format: table or json")
+    result, err := reports.Generate(ctx, reportID, ReportOptions{Format: *format})
+  expected: negative
+  rationale: Output format is a genuine user-facing decision, not an internal implementation detail.
+- id: complexity-pushed-upward-negative-obvious-python
+  language: Python
+  task: Allow callers to cancel a long-running export.
+  code: |
+    await exporter.export(report, destination, cancellation_token)
+  expected: negative
+  rationale: Cancellation represents caller-owned lifecycle control and is appropriately part of the public contract.
+- id: complexity-pushed-upward-negative-obvious-typescript
+  language: TypeScript
+  task: Require the checkout caller to select a shipping address.
+  code: |
+    await checkout.placeOrder({
+      cartId,
+      shippingAddressId: selectedAddress.id,
+    });
+  expected: negative
+  rationale: The shipping address is a product choice only the user-facing caller can supply.
+- id: complexity-pushed-upward-negative-obvious-csharp
+  language: C#
+  task: Let an administrator decide whether to revoke all sessions.
+  code: |
+    await accounts.ResetPasswordAsync(
+        accountId,
+        newPassword,
+        revokeAllSessions: request.RevokeAllSessions,
+        cancellationToken);
+  expected: negative
+  rationale: Session revocation is an explicit administrative policy choice rather than module mechanics.
+- id: complexity-pushed-upward-negative-obvious-java
+  language: Java
+  task: Expose transaction boundaries for a multi-repository business operation.
+  code: |
+    transactions.run(() -> {
+        accounts.debit(from, amount);
+        accounts.credit(to, amount);
+        ledger.recordTransfer(from, to, amount);
+    });
+  expected: negative
+  rationale: The application service legitimately owns the atomic boundary spanning multiple independent modules.
+- id: complexity-pushed-upward-negative-difficult-go
+  language: Go
+  code: |
+    type WalkOptions struct {
+        FollowSymlinks bool
+    }
+
+    err := tree.Walk(root, WalkOptions{FollowSymlinks: userRequestedFollow}, visit)
+  expected: negative
+  rationale: Following symbolic links changes observable semantics and safety, so the caller must choose it.
+- id: complexity-pushed-upward-negative-difficult-python
+  language: Python
+  code: |
+    with repository.transaction() as transaction:
+        invoice = transaction.invoices.create(draft)
+        transaction.outbox.publish(InvoiceCreated(invoice.id))
+  expected: negative
+  rationale: The context manager hides commit and rollback mechanics while allowing the caller to define one required atomic unit.
+- id: complexity-pushed-upward-negative-difficult-typescript
+  language: TypeScript
+  code: |
+    await search.query(text, {
+      page: request.page,
+      pageSize: Math.min(request.pageSize, 100),
+    });
+  expected: negative
+  rationale: Pagination is a public result-navigation contract, and the caller supplies user intent while enforcing its own limit.
+- id: complexity-pushed-upward-negative-difficult-csharp
+  language: C#
+  code: |
+    await using var lease = await locks.AcquireAsync(resourceId, cancellationToken);
+    await UpdateTwoIndependentStoresAsync(resourceId, cancellationToken);
+  expected: negative
+  rationale: A scoped lock is legitimate caller-owned coordination around work that crosses module boundaries.
+- id: complexity-pushed-upward-negative-difficult-java
+  language: Java
+  code: |
+    decoder.decode(
+        input,
+        CodingErrorAction.REPORT,
+        NormalizationForm.NFC);
+  expected: negative
+  rationale: Error handling and Unicode normalization are observable data-contract policies required from the consuming boundary.

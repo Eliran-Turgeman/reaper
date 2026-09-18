@@ -36,7 +36,7 @@ index 1111111..2222222 100644
 	if unit.FilePath != "client.go" || unit.StartLine != 1 || unit.EndLine != 6 {
 		t.Fatalf("unexpected location: %#v", unit)
 	}
-	if !unit.ContainsComments || unit.Additions != 1 {
+	if !unit.ContainsComments {
 		t.Fatalf("unexpected applicability metadata: %#v", unit)
 	}
 	if unit.OldContent == unit.NewContent || unit.SurroundingCode == "" {

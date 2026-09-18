@@ -94,7 +94,6 @@ func Units(root, input string, contextLines int) ([]semantic.Unit, error) {
 				StartLine: hunk.NewStart, EndLine: max(hunk.NewStart, hunk.NewStart+max(hunk.NewCount, 1)-1),
 				IsTest: semantic.IsTestFile(path), ContainsComments: semantic.ContainsComment(language, addedContent(hunk)),
 				ExistingModified: hunk.OldCount > 0 && hasPrefix(hunk.Lines, "-"),
-				Additions:        countPrefix(hunk.Lines, "+"),
 			})
 		}
 	}
@@ -161,17 +160,15 @@ func parseCount(value string) int {
 	return parseInt(value)
 }
 
-func countPrefix(lines []string, prefix string) int {
-	count := 0
+func hasPrefix(lines []string, prefix string) bool {
 	for _, line := range lines {
 		if strings.HasPrefix(line, prefix) && !strings.HasPrefix(line, prefix+prefix+prefix) {
-			count++
+			return true
 		}
 	}
-	return count
+	return false
 }
 
-func hasPrefix(lines []string, prefix string) bool { return countPrefix(lines, prefix) > 0 }
 func min(a, b int) int {
 	if a < b {
 		return a

@@ -20,6 +20,31 @@ rules:
     threshold: 0.88
     severity: warning
 
+  pass-through-layer:
+    enabled: true
+    threshold: 0.91
+    severity: warning
+
+  complexity-pushed-upward:
+    enabled: true
+    threshold: 0.88
+    severity: warning
+
+  information-leakage:
+    enabled: true
+    threshold: 0.89
+    severity: warning
+
+  special-general-mixture:
+    enabled: true
+    threshold: 0.90
+    severity: warning
+
+  shallow-module:
+    enabled: true
+    threshold: 0.90
+    severity: warning
+
   defensive-fallback:
     enabled: true
     threshold: 0.90

@@ -1,0 +1,228 @@
+- id: special-general-mixture-obvious-go
+  language: Go
+  task: Add a reusable HTTP request retry helper.
+  code: |
+    func RetryRequest(req *http.Request, attempts int) (*http.Response, error) {
+        if req.URL.Host == "billing.partner.example" {
+            req.Header.Set("X-Merchant-Tier", "gold")
+        }
+        return retryHTTP(req, attempts)
+    }
+  expected: positive
+  rationale: Customer-specific billing policy is embedded in an otherwise general HTTP retry mechanism.
+- id: special-general-mixture-obvious-python
+  language: Python
+  task: Add a generic CSV writer.
+  code: |
+    def write_csv(rows, output):
+        for row in rows:
+            if row.get("customer") == "Northwind":
+                row["discount"] = "15%"
+            output.writerow(row)
+  expected: positive
+  rationale: One customer's discount rule does not belong inside a reusable serialization utility.
+- id: special-general-mixture-obvious-typescript
+  language: TypeScript
+  task: Add a general job scheduler.
+  code: |
+    function schedule(job: Job, at: Date): void {
+      if (job.name === "monthly-invoice") {
+        at = lastBusinessDay(at);
+      }
+      queue.enqueue(job, at);
+    }
+  expected: positive
+  rationale: Invoice calendar policy is mixed into the general scheduling mechanism.
+- id: special-general-mixture-obvious-csharp
+  language: C#
+  task: Add a reusable object validator.
+  code: |
+    public ValidationResult Validate(object value)
+    {
+        if (value is Order order && order.CustomerId == VipCustomer.Id)
+            return ValidateVipOrder(order);
+        return ValidateAttributes(value);
+    }
+  expected: positive
+  rationale: VIP customer policy is embedded in a validator intended for arbitrary objects.
+- id: special-general-mixture-obvious-java
+  language: Java
+  task: Add a general-purpose cache.
+  code: |
+    void put(String key, Object value) {
+        Duration ttl = key.startsWith("black-friday:")
+            ? Duration.ofMinutes(2)
+            : defaultTtl;
+        entries.put(key, new Entry(value, ttl));
+    }
+  expected: positive
+  rationale: A campaign-specific expiration rule is hidden inside the general cache implementation.
+- id: special-general-mixture-subtle-go
+  language: Go
+  task: Add generic middleware for recording request metrics.
+  code: |
+    func Metrics(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            label := r.URL.Path
+            if strings.HasPrefix(r.URL.Path, "/enterprise/acme/") {
+                label = "acme-priority"
+            }
+            requests.WithLabelValues(label).Inc()
+            next.ServeHTTP(w, r)
+        })
+    }
+  expected: positive
+  rationale: A named tenant's reporting policy is coupled to general metrics middleware.
+- id: special-general-mixture-subtle-python
+  language: Python
+  task: Add a reusable record deduplication function.
+  code: |
+    def deduplicate(records, key):
+        seen = set()
+        for record in records:
+            identity = key(record)
+            if record.get("source") == "legacy-payroll":
+                identity = identity.removeprefix("EMP-")
+            if identity not in seen:
+                seen.add(identity)
+                yield record
+  expected: positive
+  rationale: Legacy payroll normalization is specific ingestion policy inside a general deduplication algorithm.
+- id: special-general-mixture-subtle-typescript
+  language: TypeScript
+  task: Add a generic form state container.
+  code: |
+    class FormState<T extends object> {
+      set<K extends keyof T>(field: K, value: T[K]): void {
+        this.values[field] = value;
+        if (field === "country" && value === "US") {
+          this.values["taxRegion" as keyof T] = "domestic" as T[keyof T];
+        }
+      }
+    }
+  expected: positive
+  rationale: Product-specific tax behavior is smuggled into a container meant to manage arbitrary forms.
+- id: special-general-mixture-subtle-csharp
+  language: C#
+  task: Add a reusable message dispatcher.
+  code: |
+    public Task DispatchAsync(Message message, CancellationToken token)
+    {
+        if (message.Type == "TrialExpired")
+            message.Headers["SalesQueue"] = "retention";
+        return _transport.SendAsync(message, token);
+    }
+  expected: positive
+  rationale: A retention workflow decision is mixed into the generic transport dispatcher.
+- id: special-general-mixture-subtle-java
+  language: Java
+  task: Add a generic collection sorter.
+  code: |
+    <T> void sort(List<T> values, Comparator<T> comparator) {
+        values.sort(comparator);
+        if (!values.isEmpty() && values.get(0) instanceof SupportTicket) {
+            moveEnterpriseTicketsFirst(values);
+        }
+    }
+  expected: positive
+  rationale: Enterprise support priority is a product rule layered into a general sorting mechanism.
+- id: special-general-mixture-negative-obvious-go
+  language: Go
+  task: Apply enterprise pricing in the checkout policy layer.
+  code: |
+    func (p EnterprisePricing) Price(cart Cart) Money {
+        subtotal := p.base.Price(cart)
+        return subtotal.Multiply(decimal.NewFromFloat(0.9))
+    }
+  expected: negative
+  rationale: The enterprise-specific rule lives in an explicitly specific pricing policy.
+- id: special-general-mixture-negative-obvious-python
+  language: Python
+  task: Let a generic serializer accept a caller-provided field formatter.
+  code: |
+    def serialize(rows, format_field):
+        return [
+            {name: format_field(name, value) for name, value in row.items()}
+            for row in rows
+        ]
+  expected: negative
+  rationale: The general mechanism supplies an extension point without knowing any product-specific case.
+- id: special-general-mixture-negative-obvious-typescript
+  language: TypeScript
+  task: Configure the scheduler with the invoice workflow's calendar.
+  code: |
+    scheduler.schedule(
+      createMonthlyInvoiceJob(accountId),
+      invoiceCalendar.nextRun(account.timeZone),
+    );
+  expected: negative
+  rationale: The specific workflow computes its policy and passes a normal execution time to the general scheduler.
+- id: special-general-mixture-negative-obvious-csharp
+  language: C#
+  task: Register customer-specific validation outside the validation engine.
+  code: |
+    validators.Register<Order>(
+        customerId: Acme.Id,
+        validator: new AcmeOrderValidator(acmeContract));
+  expected: negative
+  rationale: The reusable engine remains general while its composition root installs an explicitly specific policy.
+- id: special-general-mixture-negative-obvious-java
+  language: Java
+  task: Give campaign entries a short TTL using the cache's public API.
+  code: |
+    cache.put(
+        campaignKey(campaign.id()),
+        campaign,
+        Duration.ofMinutes(2));
+  expected: negative
+  rationale: Campaign code chooses its required lifetime through a general cache contract.
+- id: special-general-mixture-negative-difficult-go
+  language: Go
+  code: |
+    type RetryPolicy interface {
+        ShouldRetry(*http.Response, error) bool
+        Delay(attempt int) time.Duration
+    }
+
+    client.Do(ctx, request, partnerRetryPolicy)
+  expected: negative
+  rationale: The HTTP client stays general and receives current partner behavior through an explicit policy boundary.
+- id: special-general-mixture-negative-difficult-python
+  language: Python
+  code: |
+    class CsvExporter:
+        def __init__(self, columns):
+            self.columns = columns
+
+        def export(self, records, output):
+            output.writerow(self.columns)
+            for record in records:
+                output.writerow([getattr(record, name) for name in self.columns])
+  expected: negative
+  rationale: Configurable columns are ordinary serialization behavior serving current exports, not embedded knowledge of a special case.
+- id: special-general-mixture-negative-difficult-typescript
+  language: TypeScript
+  code: |
+    eventBus.subscribe(TrialExpired, async event => {
+      await retentionQueue.enqueue({ accountId: event.accountId });
+    });
+  expected: negative
+  rationale: The special retention workflow is implemented by its own subscriber rather than inside the event bus.
+- id: special-general-mixture-negative-difficult-csharp
+  language: C#
+  code: |
+    var pipeline = new ImportPipeline<CustomerRow>(
+        normalize: row => legacyCustomerNormalizer.Normalize(row),
+        validate: row => customerValidator.Validate(row));
+  expected: negative
+  rationale: The generic pipeline composes caller-owned functions and contains no customer or legacy policy itself.
+- id: special-general-mixture-negative-difficult-java
+  language: Java
+  code: |
+    Comparator<SupportTicket> priority = Comparator
+        .comparing(SupportTicket::isEnterprise).reversed()
+        .thenComparing(SupportTicket::createdAt);
+
+    tickets.sort(priority);
+  expected: negative
+  rationale: The support layer expresses its own priority through the collection API's normal comparator contract.
