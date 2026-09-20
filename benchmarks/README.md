@@ -94,3 +94,29 @@ New baselines with provenance reject mismatched inputs even if metrics match.
 Historical baselines remain usable with an explicit warning that input equivalence
 cannot be verified. They are not silently upgraded or remeasured. A new context
 protocol must receive a new protocol version and a separately reviewed baseline.
+
+## Controlled question/context experiments
+
+`--benchmark-experiment path.json` is restricted to Git benchmarks. It accepts a
+version 1 JSON object with `name`, `context` (`current` or `snapshots`) and optional
+`questions` mapping existing signal IDs to revised instructions. Unknown fields
+and question IDs fail validation. Experiments do not modify `check`, configured
+thresholds, composition, eligibility or rule grouping. Signal evidence and request
+fingerprints describe the transformed request actually sent to the evaluator.
+The experiment specification has its own provenance hash.
+
+The four specifications in `experiments/auth-validation-v2` hold questions and
+context independently constant or vary them together. For example:
+
+```sh
+reaper eval --benchmark-dir benchmarks/quality-dev --benchmark-mode git --benchmark-grouping isolated --benchmark-experiment benchmarks/experiments/auth-validation-v2/questions.json --format json
+```
+
+Snapshot context appends the complete before/after file maps from the fixture as
+code evidence. It includes every fixture file, so use curated fixtures suitable
+for submission to the provider. It does not append expected labels, rationale or
+provenance. Evidence larger than 64 KiB fails instead of being truncated. This is
+a context experiment on small fixtures, not the production retrieval policy.
+Compare the four conditions on identical cases, model, grouping and thresholds;
+repeat borderline cases before proposing defaults. A score change from duplicated
+already-visible context does not establish a gain from additional information.

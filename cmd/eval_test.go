@@ -11,6 +11,7 @@ func TestEvalRejectsInvalidBenchmarkModesBeforeProviderSetup(t *testing.T) {
 		args []string
 		want string
 	}{
+		{[]string{"--benchmark-experiment", "spec.json"}, "requires --benchmark-dir and --benchmark-mode git"},
 		{[]string{"--benchmark-mode", "unknown"}, "must be snippet or git"},
 		{[]string{"--benchmark-mode", "git"}, "require --benchmark-dir"},
 		{[]string{"--benchmark-dir", "cases", "--benchmark-grouping", "isolated"}, "requires --benchmark-mode git"},

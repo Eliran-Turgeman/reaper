@@ -15,10 +15,11 @@ import (
 
 // Provenance binds an experiment to its inputs, independently of its scores.
 type Provenance struct {
-	Protocol     string `json:"protocol"`
-	CorpusSHA256 string `json:"corpus_sha256"`
-	RulesSHA256  string `json:"rules_sha256"`
-	ConfigSHA256 string `json:"config_sha256"`
+	ExperimentSHA256 string `json:"experiment_sha256,omitempty"`
+	Protocol         string `json:"protocol"`
+	CorpusSHA256     string `json:"corpus_sha256"`
+	RulesSHA256      string `json:"rules_sha256"`
+	ConfigSHA256     string `json:"config_sha256"`
 }
 
 // RequestRecord describes an actual evaluator call (after capability splitting).

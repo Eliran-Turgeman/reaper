@@ -178,6 +178,15 @@ func sortedPaths(files map[string]string) []string {
 }
 
 func RunGitBenchmark(ctx context.Context, client decision.Evaluator, dir string, cfg config.Config, grouping string) (Report, error) {
+	return RunGitExperiment(ctx, client, dir, cfg, grouping, nil)
+}
+
+func RunGitExperiment(ctx context.Context, client decision.Evaluator, dir string, cfg config.Config, grouping string, experiment *Experiment) (Report, error) {
+	if experiment != nil {
+		if err := experiment.validate(); err != nil {
+			return Report{}, err
+		}
+	}
 	if grouping != "configured" && grouping != "isolated" {
 		return Report{}, fmt.Errorf("benchmark grouping must be configured or isolated")
 	}
@@ -186,8 +195,11 @@ func RunGitBenchmark(ctx context.Context, client decision.Evaluator, dir string,
 		return Report{}, err
 	}
 	report := Report{Version: 1, Provider: cfg.Provider, Model: cfg.Model, Mode: "git", Grouping: grouping, Provenance: provenance("git-v1", cases, cfg)}
+	if experiment != nil {
+		report.Provenance.ExperimentSHA256 = fingerprint(experiment)
+	}
 	for _, c := range cases {
-		scored, err := runGitCase(ctx, client, c, cfg, grouping)
+		scored, err := runGitCaseExperiment(ctx, client, c, cfg, grouping, experiment)
 		if err != nil {
 			return Report{}, fmt.Errorf("benchmark %s: %w", c.ID, err)
 		}
@@ -203,6 +215,14 @@ func RunGitBenchmark(ctx context.Context, client decision.Evaluator, dir string,
 }
 
 func runGitCase(ctx context.Context, client decision.Evaluator, c GitCase, cfg config.Config, grouping string) (ScoredCase, error) {
+	return runGitCaseExperiment(ctx, client, c, cfg, grouping, nil)
+}
+
+func runGitCaseExperiment(ctx context.Context, client decision.Evaluator, c GitCase, cfg config.Config, grouping string, experiment *Experiment) (ScoredCase, error) {
+	evidence, err := experimentEvidence(c, experiment)
+	if err != nil {
+		return ScoredCase{}, err
+	}
 	root, patch, cleanup, err := materializeGitCase(ctx, c)
 	if err != nil {
 		return ScoredCase{}, err
@@ -220,8 +240,19 @@ func runGitCase(ctx context.Context, client decision.Evaluator, c GitCase, cfg c
 	}
 	evaluated := false
 	recorder := &recordingEvaluator{Evaluator: client}
+	var evaluator decision.Evaluator = recorder
+	if experiment != nil {
+		evaluator = &experimentEvaluator{Evaluator: recorder, experiment: experiment, evidence: evidence}
+	}
 	scored := ScoredCase{ID: c.ID, Rule: c.Rule, Expected: c.Expected, Split: c.Split, Evaluated: &evaluated}
-	engine := runner.Runner{Root: root, GitEnv: fixtureGitEnv(), Config: cfg, Client: recorder, Cache: cache.Disabled{}, Observe: func(o runner.Observation) {
+	engine := runner.Runner{Root: root, GitEnv: fixtureGitEnv(), Config: cfg, Client: evaluator, Cache: cache.Disabled{}, Observe: func(o runner.Observation) {
+		if experiment != nil {
+			for i, signal := range o.Signals {
+				if text, ok := experiment.Questions[o.Rule+":"+signal.ID]; ok {
+					o.Signals[i].Evidence = text
+				}
+			}
+		}
 		if o.Rule == c.Rule {
 			evaluated = true
 			scored.Observations = append(scored.Observations, o)

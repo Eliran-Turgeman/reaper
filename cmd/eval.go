@@ -21,6 +21,7 @@ type evalOptions struct {
 	benchmarkDir      string
 	benchmarkMode     string
 	benchmarkGrouping string
+	experimentFile    string
 	rule              string
 	threshold         float64
 	thresholdSet      bool
@@ -37,6 +38,17 @@ func newEval(app App) *cobra.Command {
 		Short: "Run the labeled semantic-rule benchmark",
 		Args:  cobra.NoArgs,
 		RunE: func(command *cobra.Command, _ []string) error {
+			var experiment *evalpkg.Experiment
+			if options.experimentFile != "" {
+				if options.benchmarkMode != "git" || options.benchmarkDir == "" {
+					return fmt.Errorf("--benchmark-experiment requires --benchmark-dir and --benchmark-mode git")
+				}
+				var err error
+				experiment, err = evalpkg.LoadExperiment(options.experimentFile)
+				if err != nil {
+					return err
+				}
+			}
 			if options.benchmarkMode != "snippet" && options.benchmarkMode != "git" {
 				return fmt.Errorf("--benchmark-mode must be snippet or git")
 			}
@@ -100,7 +112,7 @@ func newEval(app App) *cobra.Command {
 					return fmt.Errorf("benchmark uses its labeled rules and configured thresholds")
 				}
 				if options.benchmarkMode == "git" {
-					report, err = evalpkg.RunGitBenchmark(command.Context(), client, options.benchmarkDir, cfg, options.benchmarkGrouping)
+					report, err = evalpkg.RunGitExperiment(command.Context(), client, options.benchmarkDir, cfg, options.benchmarkGrouping, experiment)
 				} else {
 					report, err = evalpkg.RunBenchmark(command.Context(), client, options.benchmarkDir, cfg)
 				}
@@ -140,6 +152,7 @@ func newEval(app App) *cobra.Command {
 	flags.StringVar(&options.benchmarkDir, "benchmark-dir", "", "evaluate labeled coding-agent patches from cases.json")
 	flags.StringVar(&options.benchmarkMode, "benchmark-mode", "snippet", "benchmark input path: snippet or git")
 	flags.StringVar(&options.benchmarkGrouping, "benchmark-grouping", "configured", "Git benchmark rule grouping: configured or isolated")
+	flags.StringVar(&options.experimentFile, "benchmark-experiment", "", "Git-only JSON question/context experiment; does not change check defaults")
 	flags.StringVar(&options.rule, "rule", "", "evaluate one rule")
 	flags.Float64Var(&options.threshold, "threshold", 0, "override the configured threshold")
 	flags.StringVar(&options.format, "format", "text", "output format: text or json")

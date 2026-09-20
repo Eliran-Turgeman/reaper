@@ -23,12 +23,14 @@ func TestGateRejectsChangedInputsEvenWhenMetricsMatch(t *testing.T) {
 	if err := CheckBaseline(io.Discard, baseline, file, .02); err != nil {
 		t.Fatal(err)
 	}
-	for _, field := range []string{"corpus", "rules", "config", "protocol", "missing"} {
+	for _, field := range []string{"corpus", "rules", "config", "protocol", "experiment", "missing"} {
 		t.Run(field, func(t *testing.T) {
 			report := baseline
 			p := *baseline.Provenance
 			report.Provenance = &p
 			switch field {
+			case "experiment":
+				p.ExperimentSHA256 = fingerprint("changed experiment")
 			case "corpus":
 				p.CorpusSHA256 = fingerprint("changed body, same case ID")
 			case "rules":
