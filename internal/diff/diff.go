@@ -41,6 +41,12 @@ func Parse(input string) ([]FilePatch, error) {
 			files = append(files, FilePatch{OldPath: trimPrefix(parts[0]), NewPath: trimPrefix(parts[1])})
 			current = &files[len(files)-1]
 			hunk = nil
+		case current != nil && hunk == nil && strings.HasPrefix(line, "new file mode "):
+			current.OldPath = "/dev/null"
+		case current != nil && hunk == nil && strings.HasPrefix(line, "--- "):
+			current.OldPath = trimPrefix(strings.TrimPrefix(line, "--- "))
+		case current != nil && hunk == nil && strings.HasPrefix(line, "+++ "):
+			current.NewPath = trimPrefix(strings.TrimPrefix(line, "+++ "))
 		case strings.HasPrefix(line, "@@ "):
 			if current == nil {
 				return nil, fmt.Errorf("hunk before file header")
@@ -99,7 +105,7 @@ func Units(root, input string, contextLines int) ([]semantic.Unit, error) {
 				Diff: diffText, SurroundingCode: surrounding,
 				StartLine: hunk.NewStart, EndLine: max(hunk.NewStart, hunk.NewStart+max(hunk.NewCount, 1)-1),
 				IsTest: semantic.IsTestFile(path), ContainsComments: semantic.ContainsComment(language, addedContent(hunk)),
-				ExistingModified: hunk.OldCount > 0 && hasPrefix(hunk.Lines, "-"),
+				ExistingModified: patch.OldPath != "/dev/null" && (hasPrefix(hunk.Lines, "+") || hasPrefix(hunk.Lines, "-")),
 			})
 		}
 	}

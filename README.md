@@ -311,6 +311,10 @@ Action metadata follows [GitHub's composite Action format](https://docs.github.c
 | `removed-validation` | Removed validation while its guarded operation remains |
 | `swallowed-cancellation` | Newly discarded cancellation that continues work or reports success |
 
+Before-and-after regression rules also inspect insertion-only changes to existing
+files, such as a new early return that bypasses an unchanged authorization guard.
+New files remain excluded from rules that require existing protection to compare.
+
 Most rules are intentionally hunk-local: they report only behavior visible in
 the supplied change rather than making repository-wide architectural claims.
 Surrounding context now prefers the smallest enclosing declaration: Go uses its
