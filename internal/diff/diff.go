@@ -61,9 +61,7 @@ func Parse(input string) ([]FilePatch, error) {
 			})
 			hunk = &current.Hunks[len(current.Hunks)-1]
 		case hunk != nil && (strings.HasPrefix(line, " ") || strings.HasPrefix(line, "+") || strings.HasPrefix(line, "-")):
-			if !strings.HasPrefix(line, "+++") && !strings.HasPrefix(line, "---") {
-				hunk.Lines = append(hunk.Lines, line)
-			}
+			hunk.Lines = append(hunk.Lines, line)
 		}
 	}
 	return files, nil
@@ -199,7 +197,7 @@ func parseCount(value string) int {
 
 func hasPrefix(lines []string, prefix string) bool {
 	for _, line := range lines {
-		if strings.HasPrefix(line, prefix) && !strings.HasPrefix(line, prefix+prefix+prefix) {
+		if strings.HasPrefix(line, prefix) {
 			return true
 		}
 	}

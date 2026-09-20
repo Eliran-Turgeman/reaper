@@ -4,8 +4,30 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func TestHunkPreservesLeadingIncrementAndDecrement(t *testing.T) {
+	for _, tc := range []struct{ name, body, before, after string }{
+		{"insertion", "+++quota\n", "", "++quota"},
+		{"deletion", "---quota\n", "--quota", ""},
+		{"replacement", "---quota\n+++quota\n", "--quota", "++quota"},
+		{"header-like-content", "--- oldLabel\n+++ newLabel\n", "-- oldLabel", "++ newLabel"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			patch := "diff --git a/counter.js b/counter.js\n--- a/counter.js\n+++ b/counter.js\n@@ -1 +1 @@\n" + tc.body
+			units, err := Units(t.TempDir(), patch, 6)
+			if err != nil || len(units) != 1 {
+				t.Fatalf("extract: %+v, %v", units, err)
+			}
+			u := units[0]
+			if u.OldContent != tc.before || u.NewContent != tc.after || u.Diff != strings.TrimSuffix(tc.body, "\n") || !u.ExistingModified {
+				t.Fatalf("hunk code or eligibility lost: %+v", u)
+			}
+		})
+	}
+}
 
 func TestSnapshotSourceFailuresAndDeletion(t *testing.T) {
 	failure := errors.New("snapshot unavailable")

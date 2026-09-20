@@ -330,6 +330,8 @@ input retains the six-line hunk context. Changed before/after code and diagnosti
 locations remain tied to the original hunk; only surrounding context expands.
 Test directories (`test/`, `tests/`, and `__tests__/`) are recognized both at the
 repository root and when nested, in addition to test filename conventions.
+Inside a diff hunk, leading `++` and `--` source text is preserved as code;
+it is not interpreted as a file header or discarded from rule eligibility.
 Rules declare `local`, `patch`, or `repository-search` context. Only
 `unused-extensibility-point` currently requests repository search. Reaper searches
 up to four named introduced types in tracked, supported, nonexcluded files;
