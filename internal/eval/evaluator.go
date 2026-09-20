@@ -10,8 +10,11 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/Eliran-Turgeman/reaper/internal/config"
 	"github.com/Eliran-Turgeman/reaper/internal/decision"
+	"github.com/Eliran-Turgeman/reaper/internal/diagnostics"
 	"github.com/Eliran-Turgeman/reaper/internal/rules"
+	"github.com/Eliran-Turgeman/reaper/internal/runner"
 	"gopkg.in/yaml.v3"
 )
 
@@ -41,6 +44,7 @@ type RuleReport struct {
 }
 
 type Report struct {
+	Provenance  *Provenance   `json:"provenance,omitempty"`
 	Mode        string        `json:"mode,omitempty"`
 	Grouping    string        `json:"grouping,omitempty"`
 	Calibration []Calibration `json:"calibration,omitempty"`
@@ -81,6 +85,8 @@ func Run(ctx context.Context, client decision.Evaluator, dir, provider, model, o
 		selected = []rules.Rule{rule}
 	}
 	report := Report{Version: 1, Provider: provider, Model: model}
+	corpus := map[string][]Example{}
+	cfg := config.Config{Rules: map[string]config.RuleConfig{}}
 	for _, rule := range selected {
 		examples, err := Load(dir, rule.ID)
 		if err != nil {
@@ -90,18 +96,16 @@ func Run(ctx context.Context, client decision.Evaluator, dir, provider, model, o
 		if thresholdOverride != nil {
 			threshold = *thresholdOverride
 		}
+		corpus[rule.ID] = examples
+		cfg.Rules[rule.ID] = config.RuleConfig{Threshold: threshold}
 		result := RuleReport{Rule: rule.ID, Examples: len(examples), Threshold: threshold}
 		var positiveTotal, negativeTotal float64
 		var positives, negatives int
 		for _, example := range examples {
 			state := evalState(example)
-			request := decision.Request{Model: model, State: state}
-			for _, signal := range rule.Signals {
-				request.Questions = append(request.Questions, decision.Question{
-					ID: rule.QuestionID(signal), Instructions: signal.Instructions,
-				})
-			}
-			response, err := decision.Evaluate(ctx, client, request)
+			request := decision.Request{Model: model, State: state, Questions: rules.Questions([]rules.Rule{rule}, false, false)}
+			recorder := &recordingEvaluator{Evaluator: client}
+			response, err := decision.Evaluate(ctx, recorder, request)
 			if err != nil {
 				return Report{}, fmt.Errorf("evaluate example %s: %w", example.ID, err)
 			}
@@ -109,7 +113,11 @@ func Run(ctx context.Context, client decision.Evaluator, dir, provider, model, o
 			if !ok || score < 0 || score > 1 {
 				return Report{}, fmt.Errorf("invalid probability for example %s", example.ID)
 			}
-			report.Cases = append(report.Cases, ScoredCase{ID: example.ID, Rule: rule.ID, Expected: example.Expected, Score: score, Split: "dev"})
+			var signals []diagnostics.SignalScore
+			for _, signal := range rule.Signals {
+				signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: response.Scores[rule.QuestionID(signal)], Evidence: signal.Instructions})
+			}
+			report.Cases = append(report.Cases, ScoredCase{ID: example.ID, Rule: rule.ID, Expected: example.Expected, Score: score, Split: "dev", Requests: recorder.Records(), Observations: []runner.Observation{{Rule: rule.ID, Score: score, Signals: signals}}})
 			predicted := score >= threshold
 			if example.Expected == "positive" {
 				positives++
@@ -137,6 +145,7 @@ func Run(ctx context.Context, client decision.Evaluator, dir, provider, model, o
 		report.Rules = append(report.Rules, result)
 	}
 	sort.Slice(report.Rules, func(i, j int) bool { return report.Rules[i].Rule < report.Rules[j].Rule })
+	report.Provenance = provenance("seed-v1", corpus, cfg)
 	return report, nil
 }
 

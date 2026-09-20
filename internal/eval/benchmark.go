@@ -32,6 +32,7 @@ type PatchCase struct {
 }
 
 type ScoredCase struct {
+	Requests       []RequestRecord      `json:"requests,omitempty"`
 	Evaluated      *bool                `json:"evaluated,omitempty"`
 	CoverageReason string               `json:"coverage_reason,omitempty"`
 	Observations   []runner.Observation `json:"observations,omitempty"`
@@ -76,7 +77,7 @@ func RunBenchmark(ctx context.Context, client decision.Evaluator, dir string, cf
 	if err != nil {
 		return Report{}, err
 	}
-	report := Report{Version: 1, Provider: cfg.Provider, Model: cfg.Model}
+	report := Report{Version: 1, Provider: cfg.Provider, Model: cfg.Model, Provenance: provenance("snippet-v1", cases, cfg)}
 	for _, c := range cases {
 		caseCfg := cfg
 		caseCfg.Rules = map[string]config.RuleConfig{}
@@ -85,7 +86,9 @@ func RunBenchmark(ctx context.Context, client decision.Evaluator, dir string, cf
 		rc.Enabled = &enabled
 		rc.Threshold = 0
 		caseCfg.Rules[c.Rule] = rc
-		engine := runner.Runner{Config: caseCfg, Client: client, Cache: cache.Disabled{}}
+		recorder := &recordingEvaluator{Evaluator: client}
+		var observations []runner.Observation
+		engine := runner.Runner{Config: caseCfg, Client: recorder, Cache: cache.Disabled{}, Observe: func(o runner.Observation) { observations = append(observations, o) }}
 		unit := semantic.Unit{FilePath: c.File, Language: semantic.Language(c.File), OldContent: c.Before, NewContent: c.After, Diff: c.Diff, SurroundingCode: c.After, StartLine: 1, EndLine: strings.Count(c.After, "\n") + 1, ExistingModified: true, IsTest: semantic.IsTestFile(c.File), ContainsComments: semantic.ContainsComment(semantic.Language(c.File), c.After)}
 		result, err := engine.Run(ctx, []semantic.Unit{unit}, c.Task)
 		if err != nil {
@@ -97,7 +100,7 @@ func RunBenchmark(ctx context.Context, client decision.Evaluator, dir string, cf
 		if len(result.Diagnostics) != 1 {
 			return Report{}, fmt.Errorf("benchmark case %s does not exercise its rule", c.ID)
 		}
-		report.Cases = append(report.Cases, ScoredCase{ID: c.ID, Rule: c.Rule, Expected: c.Expected, Score: result.Diagnostics[0].Confidence, Split: c.Split})
+		report.Cases = append(report.Cases, ScoredCase{ID: c.ID, Rule: c.Rule, Expected: c.Expected, Score: result.Diagnostics[0].Confidence, Split: c.Split, Requests: recorder.Records(), Observations: observations})
 	}
 	for id, rc := range cfg.Rules {
 		metric := Metrics(id, report.Cases, rc.Threshold)

@@ -26,6 +26,11 @@ func CheckBaseline(w io.Writer, report Report, path string, tolerance float64) e
 	if baseline.Mode != report.Mode || baseline.Grouping != report.Grouping {
 		return fmt.Errorf("baseline evaluation mode or grouping mismatch")
 	}
+	if baseline.Provenance == nil {
+		fmt.Fprintln(w, "warning: legacy baseline has no corpus, rule or context fingerprints; input equivalence is not verified")
+	} else if report.Provenance == nil || *baseline.Provenance != *report.Provenance {
+		return fmt.Errorf("baseline corpus, rules, configuration or context protocol fingerprint mismatch")
+	}
 	if len(baseline.Rules) != len(report.Rules) {
 		return fmt.Errorf("baseline rule set mismatch")
 	}

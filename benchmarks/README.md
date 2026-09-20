@@ -69,3 +69,28 @@ forward-slash separated; `.git`, traversal and conflicting case aliases are
 rejected. Metadata (`id`, `task`, `rule`, `expected`, `rationale`, `provenance`,
 `split`) follows the existing format. `git-path/cases.json` is a small development
 suite for extraction and control-flow families, not independent holdout evidence.
+
+## Reproducing a measurement
+
+All evaluation modes now include constituent signals and per-case request
+records, including scores below the reporting threshold. Each record contains
+the requested model, actual grouped questions and scores, a context SHA-256 and
+a request SHA-256. Records follow provider capability splitting; concurrent calls
+are sorted by fingerprint for stable output. Provider-internal retries are not
+separate logical evaluations. Returned model identity is unavailable through the
+current decision endpoint adapter, so the requested ID is not proof of an
+unchanged backend revision.
+
+Report provenance binds the loaded corpus, rule versions/questions, relevant
+configuration and context protocol. Fingerprints hash JSON-encoded input values;
+request hashes cover the normalized request before provider wire serialization.
+Gold labels/rationales affect the corpus fingerprint, never the request. Git and
+CLI checks share request construction, with an integration test comparing their
+actual HTTP payloads on the same change. The seed and historical snippet modes
+retain their original state format so old measurements remain reproducible; use
+Git mode for production-path claims.
+
+New baselines with provenance reject mismatched inputs even if metrics match.
+Historical baselines remain usable with an explicit warning that input equivalence
+cannot be verified. They are not silently upgraded or remeasured. A new context
+protocol must receive a new protocol version and a separately reviewed baseline.

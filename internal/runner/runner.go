@@ -274,17 +274,15 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 	ruleCached := map[string]bool{}
 	var missing []decision.Question
 	cacheKeys := map[string]string{}
+	questions := map[string]decision.Question{}
+	for _, question := range rules.Questions(selected, r.Audit, retrieved != "") {
+		questions[question.ID] = question
+	}
 	for _, rule := range selected {
 		ruleCached[rule.ID] = true
 		for _, signal := range rule.Signals {
 			questionID := rule.QuestionID(signal)
-			instructions := signal.Instructions
-			if retrieved != "" {
-				instructions = "Use REPOSITORY SEARCH EVIDENCE as part of the supplied context. Distinct retrieved implementations or usages count as visible behavior. Do not infer absence of uses from a truncated or limited search. " + instructions
-			}
-			if r.Audit {
-				instructions = "Evaluate the current code as an existing-code audit, regardless of when it was introduced. " + instructions
-			}
+			instructions := questions[questionID].Instructions
 			key := cache.Key(
 				r.Version, strconv.Itoa(semantic.SchemaVersion), r.Config.Provider, r.Config.Model, state,
 				rule.ID, strconv.Itoa(rule.Version), signal.ID, instructions,
@@ -299,7 +297,7 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 				continue
 			}
 			ruleCached[rule.ID] = false
-			missing = append(missing, decision.Question{ID: questionID, Instructions: instructions})
+			missing = append(missing, questions[questionID])
 		}
 	}
 	if len(missing) > 0 {

@@ -185,7 +185,7 @@ func RunGitBenchmark(ctx context.Context, client decision.Evaluator, dir string,
 	if err != nil {
 		return Report{}, err
 	}
-	report := Report{Version: 1, Provider: cfg.Provider, Model: cfg.Model, Mode: "git", Grouping: grouping}
+	report := Report{Version: 1, Provider: cfg.Provider, Model: cfg.Model, Mode: "git", Grouping: grouping, Provenance: provenance("git-v1", cases, cfg)}
 	for _, c := range cases {
 		scored, err := runGitCase(ctx, client, c, cfg, grouping)
 		if err != nil {
@@ -219,8 +219,9 @@ func runGitCase(ctx context.Context, client decision.Evaluator, c GitCase, cfg c
 		cfg.Rules = map[string]config.RuleConfig{c.Rule: rc}
 	}
 	evaluated := false
+	recorder := &recordingEvaluator{Evaluator: client}
 	scored := ScoredCase{ID: c.ID, Rule: c.Rule, Expected: c.Expected, Split: c.Split, Evaluated: &evaluated}
-	engine := runner.Runner{Root: root, GitEnv: fixtureGitEnv(), Config: cfg, Client: client, Cache: cache.Disabled{}, Observe: func(o runner.Observation) {
+	engine := runner.Runner{Root: root, GitEnv: fixtureGitEnv(), Config: cfg, Client: recorder, Cache: cache.Disabled{}, Observe: func(o runner.Observation) {
 		if o.Rule == c.Rule {
 			evaluated = true
 			scored.Observations = append(scored.Observations, o)
@@ -239,5 +240,6 @@ func runGitCase(ctx context.Context, client decision.Evaluator, c GitCase, cfg c
 	if !evaluated {
 		scored.CoverageReason = "no evaluation of labeled rule after extraction, configuration and applicability checks"
 	}
+	scored.Requests = recorder.Records()
 	return scored, nil
 }
