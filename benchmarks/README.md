@@ -99,6 +99,10 @@ Historical baselines remain usable with an explicit warning that input equivalen
 cannot be verified. They are not silently upgraded or remeasured. A new context
 protocol must receive a new protocol version and a separately reviewed baseline.
 
+`git-v2` identifies the corrected root-test-directory classification and hunk
+extraction that retains leading increment/decrement code. Previous `git-v1`
+results remain historical; do not silently replace their provenance.
+
 ## Controlled question/context experiments
 
 `--benchmark-experiment path.json` is restricted to Git benchmarks. It accepts a
@@ -121,6 +125,17 @@ code evidence. It includes every fixture file, so use curated fixtures suitable
 for submission to the provider. It does not append expected labels, rationale or
 provenance. Evidence larger than 64 KiB fails instead of being truncated. This is
 a context experiment on small fixtures, not the production retrieval policy.
+
+The `matched` and `targeted` experimental context modes preserve each focal hunk
+and add source-located Go function bodies from both fixture snapshots. `targeted`
+also includes one-hop direct function candidates from the same package directory;
+it omits unrelated functions, test files, imports and receiver-method resolution.
+Lexical candidates are not type-checked proof of enforcement. Notes identify
+unresolved calls, parse failures and limits: 128 files / 1 MiB scanned per side,
+256 KiB per helper file, and 16 KiB of added evidence per unit. Whole functions
+are omitted when the evidence budget is exhausted. These modes use explicit
+fixture snapshots, not live repository discovery, and do not change production
+questions, thresholds, rule scope, or retrieval behavior.
 Compare the four conditions on identical cases, model, grouping and thresholds;
 repeat borderline cases before proposing defaults. A score change from duplicated
 already-visible context does not establish a gain from additional information.

@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "purpose": "Separate extraction correctness, matched function context, targeted helper context and already-frozen question changes.",
+  "before_commit": "34c2117539876a7d60a832181984964ff0d3d745",
+  "model": "typesafe/jev-1.13",
+  "provider": "openrouter",
+  "extraction_comparison": {
+    "corpus": "benchmarks/validation",
+    "grouping": "configured",
+    "conditions": [
+      "before",
+      "after"
+    ],
+    "compare": "Actual per-case request fingerprints as well as scores; identical requests cannot establish an extraction-driven quality gain."
+  },
+  "context_comparison": {
+    "corpus": "cases",
+    "grouping": "isolated",
+    "conditions": [
+      "current",
+      "matched",
+      "targeted",
+      "questions",
+      "targeted-questions"
+    ],
+    "runs": 3
+  },
+  "fixed": [
+    "production thresholds",
+    "minimum signal composition",
+    "corpus",
+    "requested model",
+    "question text within each context comparison"
+  ],
+  "limitations": [
+    "12 synthetic correlated Go cases, 6 positive and 6 negative",
+    "One-hop same-package lexical helpers only",
+    "No release or production-prompt promotion based on this experiment"
+  ]
+}

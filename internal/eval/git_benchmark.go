@@ -194,7 +194,7 @@ func RunGitExperiment(ctx context.Context, client decision.Evaluator, dir string
 	if err != nil {
 		return Report{}, err
 	}
-	report := Report{Version: 1, Provider: cfg.Provider, Model: cfg.Model, Mode: "git", Grouping: grouping, Provenance: provenance("git-v1", cases, cfg)}
+	report := Report{Version: 1, Provider: cfg.Provider, Model: cfg.Model, Mode: "git", Grouping: grouping, Provenance: provenance("git-v2", cases, cfg)}
 	if experiment != nil {
 		report.Provenance.ExperimentSHA256 = fingerprint(experiment)
 	}
@@ -231,6 +231,11 @@ func runGitCaseExperiment(ctx context.Context, client decision.Evaluator, c GitC
 	units, err := diff.Units(root, patch, 6)
 	if err != nil {
 		return ScoredCase{}, err
+	}
+	if experiment != nil && (experiment.Context == "matched" || experiment.Context == "targeted") {
+		if err := addTargetedContext(c, patch, units, experiment.Context == "targeted"); err != nil {
+			return ScoredCase{}, err
+		}
 	}
 	if grouping == "isolated" {
 		rc := cfg.Rules[c.Rule]

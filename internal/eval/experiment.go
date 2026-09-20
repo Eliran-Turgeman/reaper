@@ -41,8 +41,8 @@ func LoadExperiment(file string) (*Experiment, error) {
 }
 
 func (e Experiment) validate() error {
-	if e.Version != 1 || e.Name == "" || (e.Context != "current" && e.Context != "snapshots") {
-		return fmt.Errorf("experiment requires version 1, a name, and context current or snapshots")
+	if e.Version != 1 || e.Name == "" || (e.Context != "current" && e.Context != "snapshots" && e.Context != "matched" && e.Context != "targeted") {
+		return fmt.Errorf("experiment requires version 1, a name, and context current, snapshots, matched or targeted")
 	}
 	known := map[string]bool{}
 	for _, q := range rules.Questions(rules.All(), false, false) {
