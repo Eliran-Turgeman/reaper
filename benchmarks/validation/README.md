@@ -29,3 +29,8 @@ Compare all results at current defaults and both preselected candidate
 thresholds, including failures. Treat any promising result as grounds for
 larger independently labeled validation, not automatic approval to lower a
 blocking threshold.
+
+The [measured comparison](report.md) records all results and candidate errors.
+Default thresholds caught 1 of 12 positives; the candidate comparisons exposed
+missed regressions and false positives. These results do not justify a general
+threshold reduction.

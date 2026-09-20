@@ -31,3 +31,13 @@ These are development-set candidates, not recommendations ready for release. The
 - Removed authorization and validation are promising candidates for independent validation. Their two development corpora suggest similar thresholds, but neither measures real repository base rates.
 - Keep current defaults until a separately labeled validation corpus supports a reviewed change. Do not recalibrate on a hidden test set.
 - The existing full-patch scope check remains incomplete when the provider rejects its context size; group-level checks do not establish whole-patch coverage.
+
+## Subsequent validation
+
+The [separately frozen 32-case validation set](validation/report.md) tested both
+candidate families without retuning them. Authorization candidates caught 2/3
+positives with 0/5 false positives; validation candidates caught only 1/3.
+Cancellation candidates flagged explicitly permitted independent work, and
+the patch-derived failure-fallback candidate flagged an explicit cache fallback.
+Current defaults caught only 1/12 positives overall. Keep defaults unchanged;
+these small synthetic samples do not support a release-quality claim.

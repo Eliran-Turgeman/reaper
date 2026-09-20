@@ -64,6 +64,13 @@ that these changes have been merged or released.
   for separate review without lowering thresholds automatically.
   [The calibration review](../benchmarks/calibration-review.md) records the
   current candidates and their precision/recall tradeoffs. Defaults are unchanged.
+- A [separately frozen 32-case validation set](../benchmarks/validation/report.md)
+  tested the preselected thresholds across six languages. Current defaults
+  detected 1/12 positives with 0/20 false positives. Candidate thresholds exposed
+  missed authorization/validation regressions and false positives for permitted
+  fallback/cancellation behavior. All labels and thresholds were committed before
+  inference; these remain synthetic cases without independent human review.
+  The PR remains in draft, and no defaults or release baselines were changed.
 - Logical extraction keeps changed hunks/locations and expands surrounding
   context. Non-Go scanners are deliberately conservative and are not complete
   parsers; unusual syntax falls back. Repository retrieval is lexical, bounded,

@@ -24,3 +24,6 @@ baseline. Provider-side behavior can change even for an unchanged model ID.
 
 See [the calibration review](calibration-review.md) for candidates computed from
 the measured scores without additional inference or changes to defaults.
+The [prospective validation report](validation/report.md) compares those frozen
+candidates on 32 separately authored patches, including hard negatives. It
+records generalization failures and keeps all defaults unchanged.
