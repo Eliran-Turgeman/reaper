@@ -209,8 +209,11 @@ func (c *HTTPClient) do(ctx context.Context, body []byte, questions []Question) 
 		result.Probabilities[question.ID] = *answer.Noul
 	}
 	c.mu.Lock()
-	c.stats.InputTokens += wireResp.Usage.InputTokens
-	c.stats.OutputTokens += wireResp.Usage.OutputTokens
+	if wireResp.Usage != nil {
+		c.stats.InputTokens += wireResp.Usage.InputTokens
+		c.stats.OutputTokens += wireResp.Usage.OutputTokens
+		c.stats.UsageResponses++
+	}
 	c.mu.Unlock()
 	return result, 0, nil
 }
@@ -245,7 +248,7 @@ type wireQuestion struct {
 type wireResponse struct {
 	Model   string                `json:"model"`
 	Answers map[string]wireAnswer `json:"answers"`
-	Usage   wireUsage             `json:"usage"`
+	Usage   *wireUsage            `json:"usage"`
 }
 
 type wireAnswer struct {

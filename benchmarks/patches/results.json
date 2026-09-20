@@ -1,0 +1,289 @@
+{
+  "cases": [
+    {
+      "id": "deleteinvoice-guard-removed",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.84,
+      "split": "dev"
+    },
+    {
+      "id": "deleteinvoice-success-default",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.9,
+      "split": "dev"
+    },
+    {
+      "id": "deleteinvoice-timing",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "deleteinvoice-trace",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "deleteinvoice-log",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "deleteinvoice-wrap",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "deleteinvoice-comment",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "deleteinvoice-cleanup",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "applycredit-guard-removed",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.53,
+      "split": "dev"
+    },
+    {
+      "id": "applycredit-success-default",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.67,
+      "split": "dev"
+    },
+    {
+      "id": "applycredit-timing",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "applycredit-trace",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "applycredit-log",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "applycredit-wrap",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "applycredit-comment",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "applycredit-cleanup",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "dispatchbatch-guard-removed",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.38,
+      "split": "dev"
+    },
+    {
+      "id": "dispatchbatch-success-default",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.81,
+      "split": "dev"
+    },
+    {
+      "id": "dispatchbatch-timing",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.04,
+      "split": "dev"
+    },
+    {
+      "id": "dispatchbatch-trace",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.05,
+      "split": "dev"
+    },
+    {
+      "id": "dispatchbatch-log",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "dispatchbatch-wrap",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.06,
+      "split": "dev"
+    },
+    {
+      "id": "dispatchbatch-comment",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "dispatchbatch-cleanup",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.06,
+      "split": "dev"
+    },
+    {
+      "id": "loadconfiguration-guard-removed",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.19,
+      "split": "dev"
+    },
+    {
+      "id": "loadconfiguration-success-default",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.85,
+      "split": "dev"
+    },
+    {
+      "id": "loadconfiguration-timing",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "loadconfiguration-trace",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.05,
+      "split": "dev"
+    },
+    {
+      "id": "loadconfiguration-log",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "loadconfiguration-wrap",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "loadconfiguration-comment",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.04,
+      "split": "dev"
+    },
+    {
+      "id": "loadconfiguration-cleanup",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.04,
+      "split": "dev"
+    }
+  ],
+  "version": 1,
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13",
+  "rules": [
+    {
+      "rule": "removed-authorization-check",
+      "examples": 8,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 6,
+      "false_negative": 2,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.87,
+      "average_negative_score": 0.02666666666666667
+    },
+    {
+      "rule": "removed-validation",
+      "examples": 8,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 6,
+      "false_negative": 2,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.6000000000000001,
+      "average_negative_score": 0.021666666666666667
+    },
+    {
+      "rule": "silent-failure-fallback",
+      "examples": 8,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 6,
+      "false_negative": 2,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.92,
+      "average_positive_score": 0.52,
+      "average_negative_score": 0.03333333333333333
+    },
+    {
+      "rule": "swallowed-cancellation",
+      "examples": 8,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 6,
+      "false_negative": 2,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.595,
+      "average_negative_score": 0.045000000000000005
+    }
+  ]
+}

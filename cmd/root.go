@@ -39,6 +39,8 @@ func NewWith(app App) *cobra.Command {
 	root.SetOut(app.Out)
 	root.SetErr(app.ErrOut)
 	root.AddCommand(
+		newBaseline(),
+		newFeedback(),
 		newCheck(app),
 		newInit(app),
 		newRules(app),

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Eliran-Turgeman/repear/internal/config"
+	"github.com/Eliran-Turgeman/reaper/internal/config"
 	"github.com/spf13/cobra"
 )
 

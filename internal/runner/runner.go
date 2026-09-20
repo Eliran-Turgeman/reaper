@@ -3,26 +3,29 @@ package runner
 import (
 	"context"
 	"fmt"
+	"math"
 	"path"
 	"regexp"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
-	"github.com/Eliran-Turgeman/repear/internal/cache"
-	"github.com/Eliran-Turgeman/repear/internal/config"
-	"github.com/Eliran-Turgeman/repear/internal/diagnostics"
-	"github.com/Eliran-Turgeman/repear/internal/jev"
-	"github.com/Eliran-Turgeman/repear/internal/rules"
-	"github.com/Eliran-Turgeman/repear/internal/semantic"
+	"github.com/Eliran-Turgeman/reaper/internal/cache"
+	"github.com/Eliran-Turgeman/reaper/internal/config"
+	"github.com/Eliran-Turgeman/reaper/internal/decision"
+	"github.com/Eliran-Turgeman/reaper/internal/diagnostics"
+	"github.com/Eliran-Turgeman/reaper/internal/rules"
+	"github.com/Eliran-Turgeman/reaper/internal/semantic"
 )
 
 type VerboseFunc func(format string, args ...any)
 
 type Runner struct {
+	Root    string
 	Config  config.Config
-	Client  jev.Client
+	Client  decision.Evaluator
 	Cache   cache.Store
 	Version string
 	Verbose VerboseFunc
@@ -48,16 +51,22 @@ type result struct {
 }
 
 type evaluation struct {
-	rule       string
-	file       string
-	startLine  int
-	confidence float64
-	threshold  float64
-	violation  bool
-	cached     bool
+	contextEvidence string
+	rule            string
+	file            string
+	startLine       int
+	confidence      float64
+	threshold       float64
+	violation       bool
+	cached          bool
 }
 
 func (r *Runner) Run(ctx context.Context, units []semantic.Unit, task string) (diagnostics.Report, error) {
+	started := time.Now()
+	before := decision.Stats{}
+	if r.Client != nil {
+		before = r.Client.Stats()
+	}
 	jobs := r.jobs(units, task, true)
 	results := make([]result, len(jobs))
 	limit := make(chan struct{}, r.Config.Concurrency)
@@ -81,13 +90,21 @@ func (r *Runner) Run(ctx context.Context, units []semantic.Unit, task string) (d
 	summary := diagnostics.Summary{}
 	var items []diagnostics.Diagnostic
 	var evaluations []evaluation
-	for _, item := range results {
-		if item.err != nil {
-			return diagnostics.Report{}, item.err
-		}
-		if item.skipped {
+	var skipped []diagnostics.SkippedUnit
+	for i, item := range results {
+		if item.err != nil || item.skipped {
+			unit := jobs[i].unit
+			reason := item.skipMessage
+			if item.err != nil {
+				reason = "evaluation failed: " + item.err.Error()
+			}
+			ids := make([]string, 0, len(jobs[i].rules))
+			for _, rule := range jobs[i].rules {
+				ids = append(ids, rule.ID)
+			}
+			skipped = append(skipped, diagnostics.SkippedUnit{File: unit.FilePath, StartLine: unit.StartLine, EndLine: unit.EndLine, Rules: ids, Reason: reason})
 			summary.UnitsSkipped++
-			r.notice("%s", item.skipMessage)
+			r.notice("%s", reason)
 			continue
 		}
 		summary.UnitsEvaluated++
@@ -107,6 +124,9 @@ func (r *Runner) Run(ctx context.Context, units []semantic.Unit, task string) (d
 			return evaluations[i].rule < evaluations[j].rule
 		})
 		for _, item := range evaluations {
+			if item.contextEvidence != "" {
+				r.log("context %s for %s:%d\n%s", item.rule, item.file, item.startLine, item.contextEvidence)
+			}
 			outcome := "pass"
 			if item.violation {
 				outcome = "violation"
@@ -123,11 +143,34 @@ func (r *Runner) Run(ctx context.Context, units []semantic.Unit, task string) (d
 		}
 	}
 	if r.Client != nil {
-		summary.JevRequests = r.Client.Stats().Requests
+		after := r.Client.Stats()
+		summary.Requests = after.Requests - before.Requests
+		summary.JevRequests = summary.Requests
+		summary.Retries = after.Retries - before.Retries
+		summary.InputTokens = after.InputTokens - before.InputTokens
+		summary.OutputTokens = after.OutputTokens - before.OutputTokens
+		summary.UsageResponses = after.UsageResponses - before.UsageResponses
+	}
+	summary.UsageComplete = summary.UsageResponses == summary.Requests
+	if summary.SemanticChecks > 0 {
+		summary.CacheHitRate = float64(summary.CacheHits) / float64(summary.SemanticChecks)
+	}
+	summary.DurationMS = float64(time.Since(started).Microseconds()) / 1000
+	if summary.Requests == 0 {
+		zero := 0.0
+		summary.EstimatedCostUSD = &zero
+	} else if summary.UsageResponses > 0 && r.Config.Pricing.InputPerMillion != nil && r.Config.Pricing.OutputPerMillion != nil {
+		cost := (float64(summary.InputTokens)**r.Config.Pricing.InputPerMillion + float64(summary.OutputTokens)**r.Config.Pricing.OutputPerMillion) / 1e6
+		summary.EstimatedCostUSD = &cost
 	}
 	report := diagnostics.New(items, summary)
+	if r.Client != nil {
+		capabilities := r.Client.Capabilities()
+		report.Capabilities = &capabilities
+	}
 	report.Provider = r.Config.Provider
 	report.Model = r.Config.Model
+	report.SetIncomplete(skipped, r.Config.IncompleteAnalysis)
 	return report, nil
 }
 
@@ -159,7 +202,17 @@ func (r *Runner) jobs(units []semantic.Unit, task string, logSkips bool) []job {
 			applicable = append(applicable, rule)
 		}
 		if len(applicable) > 0 {
-			out = append(out, job{index: len(out), unit: unit, rules: applicable})
+			var local []rules.Rule
+			for _, rule := range applicable {
+				if rule.Context == "repository-search" && r.Root != "" {
+					out = append(out, job{index: len(out), unit: unit, rules: []rules.Rule{rule}})
+				} else {
+					local = append(local, rule)
+				}
+			}
+			if len(local) > 0 {
+				out = append(out, job{index: len(out), unit: unit, rules: local})
+			}
 		}
 	}
 	if len(units) > 0 {
@@ -180,7 +233,16 @@ func (r *Runner) jobs(units []semantic.Unit, task string, logSkips bool) []job {
 				}
 				continue
 			}
-			patch := aggregate(units)
+			var included []semantic.Unit
+			for _, unit := range units {
+				if r.matches(rule, unit.FilePath) {
+					included = append(included, unit)
+				}
+			}
+			if len(included) == 0 {
+				continue
+			}
+			patch := aggregate(included)
 			out = append(out, job{index: len(out), unit: patch, rules: []rules.Rule{rule}})
 		}
 	}
@@ -189,15 +251,29 @@ func (r *Runner) jobs(units []semantic.Unit, task string, logSkips bool) []job {
 
 func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []rules.Rule, task string) result {
 	state := buildState(unit, task, r.Audit)
+	retrieved := ""
+	if len(selected) == 1 {
+		var err error
+		retrieved, err = r.repositoryContext(ctx, unit, selected[0])
+		if err != nil {
+			return result{err: err}
+		}
+		if retrieved != "" {
+			state += "\n\nREPOSITORY SEARCH EVIDENCE\n" + retrieved
+		}
+	}
 	signalProbabilities := map[string]float64{}
 	ruleCached := map[string]bool{}
-	var missing []jev.Question
+	var missing []decision.Question
 	cacheKeys := map[string]string{}
 	for _, rule := range selected {
 		ruleCached[rule.ID] = true
 		for _, signal := range rule.Signals {
 			questionID := rule.QuestionID(signal)
 			instructions := signal.Instructions
+			if retrieved != "" {
+				instructions = "Use REPOSITORY SEARCH EVIDENCE as part of the supplied context. Distinct retrieved implementations or usages count as visible behavior. Do not infer absence of uses from a truncated or limited search. " + instructions
+			}
 			if r.Audit {
 				instructions = "Evaluate the current code as an existing-code audit, regardless of when it was introduced. " + instructions
 			}
@@ -215,17 +291,17 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 				continue
 			}
 			ruleCached[rule.ID] = false
-			missing = append(missing, jev.Question{ID: questionID, Instructions: instructions})
+			missing = append(missing, decision.Question{ID: questionID, Instructions: instructions})
 		}
 	}
 	if len(missing) > 0 {
 		if r.Client == nil {
-			return result{err: fmt.Errorf("Jev client is required for uncached semantic checks")}
+			return result{err: fmt.Errorf("an evaluator is required for uncached semantic checks")}
 		}
-		request := jev.EvaluationRequest{Model: r.Config.Model, State: state, Questions: missing}
-		response, err := r.Client.Evaluate(ctx, request)
+		request := decision.Request{Model: r.Config.Model, State: state, Questions: missing}
+		response, err := decision.Evaluate(ctx, r.Client, request)
 		if err != nil {
-			if jev.IsTokenLimitError(err) {
+			if decision.IsContextLimit(err) {
 				return result{
 					skipped: true,
 					skipMessage: fmt.Sprintf(
@@ -237,12 +313,12 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 			return result{err: fmt.Errorf("evaluate %s:%d: %w", unit.FilePath, unit.StartLine, err)}
 		}
 		for _, question := range missing {
-			value, ok := response.Probabilities[question.ID]
+			value, ok := response.Scores[question.ID]
 			if !ok {
-				return result{err: fmt.Errorf("Jev response omitted probability for %s", question.ID)}
+				return result{err: fmt.Errorf("evaluator response omitted score for %s", question.ID)}
 			}
-			if value < 0 || value > 1 {
-				return result{err: fmt.Errorf("Jev probability for %s outside [0,1]", question.ID)}
+			if math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || value > 1 {
+				return result{err: fmt.Errorf("evaluator score for %s outside [0,1]", question.ID)}
 			}
 			signalProbabilities[question.ID] = value
 			if err := r.Cache.Put(cacheKeys[question.ID], value); err != nil {
@@ -262,7 +338,8 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		rc := r.Config.Rules[rule.ID]
 		violation := probability >= rc.Threshold
 		out.evaluations = append(out.evaluations, evaluation{
-			rule: rule.ID, file: unit.FilePath, startLine: unit.StartLine,
+			contextEvidence: retrieved,
+			rule:            rule.ID, file: unit.FilePath, startLine: unit.StartLine,
 			confidence: probability, threshold: rc.Threshold,
 			violation: violation, cached: ruleCached[rule.ID],
 		})
@@ -270,13 +347,32 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 			continue
 		}
 		severity, _ := rules.ValidateSeverity(rc.Severity)
+		signals := make([]diagnostics.SignalScore, 0, len(rule.Signals))
+		for _, signal := range rule.Signals {
+			signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: signalProbabilities[rule.QuestionID(signal)], Evidence: signal.Instructions})
+		}
 		out.diagnostics = append(out.diagnostics, diagnostics.Diagnostic{
-			Rule: rule.ID, Severity: severity, Probability: probability,
+			ContextEvidence: retrieved,
+			Fingerprint:     findingFingerprint(rule.ID, unit),
+			Rule:            rule.ID, Severity: severity, Confidence: probability, Signals: signals,
 			Threshold: rc.Threshold, File: unit.FilePath, StartLine: unit.StartLine,
 			EndLine: unit.EndLine, Message: rule.Message,
 		})
 	}
 	return out
+}
+
+func findingFingerprint(rule string, unit semantic.Unit) string {
+	var changed []string
+	for _, line := range strings.Split(unit.Diff, "\n") {
+		if (strings.HasPrefix(line, "+") || strings.HasPrefix(line, "-")) && !strings.HasPrefix(line, "+++") && !strings.HasPrefix(line, "---") {
+			changed = append(changed, line[:1]+strings.Join(strings.Fields(line[1:]), " "))
+		}
+	}
+	if len(changed) == 0 {
+		changed = strings.Fields(unit.NewContent)
+	}
+	return cache.Key(rule, unit.FilePath, strings.Join(changed, "\n"))
 }
 
 func (r *Runner) enabled(rule rules.Rule) bool {

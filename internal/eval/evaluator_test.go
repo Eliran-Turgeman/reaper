@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Eliran-Turgeman/repear/internal/rules"
+	"github.com/Eliran-Turgeman/reaper/internal/rules"
 )
 
 func TestSeedCorpusHasTwentyBalancedExamplesPerRule(t *testing.T) {

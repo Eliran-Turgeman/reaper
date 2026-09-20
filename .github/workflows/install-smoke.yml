@@ -1,0 +1,30 @@
+name: Installation smoke test
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    if: github.event_name != 'workflow_run' || (github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+      - name: Install through documented Go path
+        run: |
+          go install github.com/Eliran-Turgeman/reaper/cmd/reaper@latest
+          reaper version
+      - name: Install through documented shell path
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/Eliran-Turgeman/reaper/main/scripts/install.sh -o install.sh
+          REAPER_INSTALL_DIR="$RUNNER_TEMP/reaper-bin" sh install.sh
+          "$RUNNER_TEMP/reaper-bin/reaper" version

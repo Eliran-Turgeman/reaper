@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Eliran-Turgeman/repear/internal/semantic"
+	"github.com/Eliran-Turgeman/reaper/internal/semantic"
 )
 
 var hunkHeader = regexp.MustCompile(`^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@`)
@@ -89,6 +89,10 @@ func Units(root, input string, contextLines int) ([]semantic.Unit, error) {
 			}
 			diffText := strings.Join(hunk.Lines, "\n")
 			language := semantic.Language(path)
+			first, last := changedRange(hunk)
+			if logical, ok := logicalContext(language, string(source), first, last); ok {
+				surrounding = logical
+			}
 			units = append(units, semantic.Unit{
 				FilePath: path, Language: language,
 				OldContent: strings.Join(oldLines, "\n"), NewContent: strings.Join(newLines, "\n"),

@@ -23,8 +23,9 @@ type Client interface {
 }
 
 type Stats struct {
-	Requests     int `json:"jev_requests"`
-	Retries      int `json:"retries,omitempty"`
-	InputTokens  int `json:"input_tokens,omitempty"`
-	OutputTokens int `json:"output_tokens,omitempty"`
+	UsageResponses int `json:"usage_responses"`
+	Requests       int `json:"jev_requests"`
+	Retries        int `json:"retries,omitempty"`
+	InputTokens    int `json:"input_tokens,omitempty"`
+	OutputTokens   int `json:"output_tokens,omitempty"`
 }

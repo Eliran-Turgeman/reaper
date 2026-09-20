@@ -5,12 +5,13 @@ import (
 	"strings"
 )
 
-const SchemaVersion = 1
+const SchemaVersion = 2
 
 var sourceLanguagesByExtension = map[string]string{
 	".c":     "c",
 	".cc":    "cpp",
 	".cpp":   "cpp",
+	".cjs":   "javascript",
 	".cs":    "csharp",
 	".cts":   "typescript",
 	".cxx":   "cpp",

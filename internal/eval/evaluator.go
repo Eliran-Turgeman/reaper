@@ -10,8 +10,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Eliran-Turgeman/repear/internal/jev"
-	"github.com/Eliran-Turgeman/repear/internal/rules"
+	"github.com/Eliran-Turgeman/reaper/internal/decision"
+	"github.com/Eliran-Turgeman/reaper/internal/rules"
 	"gopkg.in/yaml.v3"
 )
 
@@ -41,10 +41,12 @@ type RuleReport struct {
 }
 
 type Report struct {
-	Version  int          `json:"version"`
-	Provider string       `json:"provider"`
-	Model    string       `json:"model"`
-	Rules    []RuleReport `json:"rules"`
+	Calibration []Calibration `json:"calibration,omitempty"`
+	Cases       []ScoredCase  `json:"cases,omitempty"`
+	Version     int           `json:"version"`
+	Provider    string        `json:"provider"`
+	Model       string        `json:"model"`
+	Rules       []RuleReport  `json:"rules"`
 }
 
 func Load(dir, id string) ([]Example, error) {
@@ -67,7 +69,7 @@ func Load(dir, id string) ([]Example, error) {
 	return examples, nil
 }
 
-func Run(ctx context.Context, client jev.Client, dir, provider, model, onlyRule string, thresholdOverride *float64, thresholds map[string]float64) (Report, error) {
+func Run(ctx context.Context, client decision.Evaluator, dir, provider, model, onlyRule string, thresholdOverride *float64, thresholds map[string]float64) (Report, error) {
 	selected := rules.All()
 	if onlyRule != "" {
 		rule, ok := rules.Get(onlyRule)
@@ -91,20 +93,21 @@ func Run(ctx context.Context, client jev.Client, dir, provider, model, onlyRule 
 		var positives, negatives int
 		for _, example := range examples {
 			state := evalState(example)
-			request := jev.EvaluationRequest{Model: model, State: state}
+			request := decision.Request{Model: model, State: state}
 			for _, signal := range rule.Signals {
-				request.Questions = append(request.Questions, jev.Question{
+				request.Questions = append(request.Questions, decision.Question{
 					ID: rule.QuestionID(signal), Instructions: signal.Instructions,
 				})
 			}
-			response, err := client.Evaluate(ctx, request)
+			response, err := decision.Evaluate(ctx, client, request)
 			if err != nil {
 				return Report{}, fmt.Errorf("evaluate example %s: %w", example.ID, err)
 			}
-			score, ok := rule.Compose(response.Probabilities)
+			score, ok := rule.Compose(response.Scores)
 			if !ok || score < 0 || score > 1 {
 				return Report{}, fmt.Errorf("invalid probability for example %s", example.ID)
 			}
+			report.Cases = append(report.Cases, ScoredCase{ID: example.ID, Rule: rule.ID, Expected: example.Expected, Score: score, Split: "dev"})
 			predicted := score >= threshold
 			if example.Expected == "positive" {
 				positives++
@@ -142,6 +145,13 @@ func WriteJSON(w io.Writer, report Report) error {
 }
 
 func WriteText(w io.Writer, report Report) error {
+	for _, c := range report.Calibration {
+		if c.Candidate == nil {
+			fmt.Fprintf(w, "%s: no threshold meets the recall constraint\n", c.Rule)
+		} else {
+			fmt.Fprintf(w, "%s candidate threshold=%.2f precision=%.3f recall=%.3f (report only)\n", c.Rule, c.Candidate.Threshold, c.Candidate.Precision, c.Candidate.Recall)
+		}
+	}
 	fmt.Fprintf(w, "Provider: %s\nModel: %s\n\n", report.Provider, report.Model)
 	for i, result := range report.Rules {
 		if i > 0 {

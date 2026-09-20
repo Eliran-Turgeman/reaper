@@ -29,6 +29,7 @@ func TestSupportedSourceWhitelist(t *testing.T) {
 		{path: "plugin.lua", language: "lua", supported: true},
 		{path: "ViewController.m", language: "objective-c", supported: true},
 		{path: "module.mjs", language: "javascript", supported: true},
+		{path: "action.cjs", language: "javascript", supported: true},
 		{path: "types.mts", language: "typescript", supported: true},
 		{path: "README.md", language: "text", supported: false},
 		{path: "emails.txt", language: "text", supported: false},

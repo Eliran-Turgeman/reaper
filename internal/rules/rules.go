@@ -2,9 +2,10 @@ package rules
 
 import (
 	"fmt"
+	"math"
 	"sort"
 
-	"github.com/Eliran-Turgeman/repear/internal/semantic"
+	"github.com/Eliran-Turgeman/reaper/internal/semantic"
 )
 
 type Severity string
@@ -27,6 +28,8 @@ type Signal struct {
 }
 
 type Rule struct {
+	Context             string
+	Pack                string
 	ID                  string
 	Description         string
 	Signals             []Signal
@@ -51,7 +54,7 @@ func (r Rule) Compose(probabilities map[string]float64) (float64, bool) {
 	score := 1.0
 	for _, signal := range r.Signals {
 		value, ok := probabilities[r.QuestionID(signal)]
-		if !ok {
+		if !ok || math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || value > 1 {
 			return 0, false
 		}
 		if value < score {
@@ -62,6 +65,39 @@ func (r Rule) Compose(probabilities map[string]float64) (float64, bool) {
 }
 
 var registry = map[string]Rule{
+	"removed-authorization-check": {
+		ID: "removed-authorization-check", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect removal of an existing authorization guard without equivalent protection.",
+		Message:          "Change removes visible authorization protection from a protected operation.",
+		DefaultThreshold: .95, DefaultSeverity: SeverityError,
+		AuditSkipReason: "requires a before-and-after authorization change",
+		Signals: []Signal{
+			{ID: "removes-authorization", Instructions: "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."},
+			{ID: "loses-protection", Instructions: "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."},
+		}, Applicable: changedExisting,
+	},
+	"removed-validation": {
+		ID: "removed-validation", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect removal of input validation without an equivalent enforced contract.",
+		Message:          "Change removes visible validation while retaining the operation that requires it.",
+		DefaultThreshold: .95, DefaultSeverity: SeverityError,
+		AuditSkipReason: "requires a before-and-after validation change",
+		Signals: []Signal{
+			{ID: "removes-validation", Instructions: "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."},
+			{ID: "retains-unsafe-operation", Instructions: "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."},
+		}, Applicable: changedExisting,
+	},
+	"swallowed-cancellation": {
+		ID: "swallowed-cancellation", Version: 1, Scope: ScopeHunk,
+		Description:      "Detect cancellation replaced with continued work or successful results.",
+		Message:          "Change appears to discard cancellation and continue work or report success.",
+		DefaultThreshold: .95, DefaultSeverity: SeverityError,
+		AuditSkipReason: "requires a before-and-after cancellation change",
+		Signals: []Signal{
+			{ID: "discards-cancellation", Instructions: "Score whether the change newly suppresses a cancellation exception, ignores a canceled context or abort signal, or replaces a cancelable context with a background context. Require before-and-after evidence."},
+			{ID: "violates-cancellation-contract", Instructions: "Score whether cancellation now results in successful output or continued main operation. Exclude bounded cleanup that preserves the original cancellation, explicit independently owned background work required by the task, and equivalent cancellation propagation."},
+		}, Applicable: changedExisting,
+	},
 	"narrating-comment": {
 		ID: "narrating-comment", Version: 1, Scope: ScopeHunk,
 		Description:      "Detect changed comments that merely narrate adjacent code.",
@@ -276,9 +312,18 @@ func alwaysApplicable(semantic.Unit, string) (bool, string) {
 	return true, ""
 }
 
+func changedExisting(u semantic.Unit, _ string) (bool, string) {
+	if !u.ExistingModified || u.IsTest {
+		return false, "requires modified existing production code"
+	}
+	return true, ""
+}
+
 func All() []Rule {
 	out := make([]Rule, 0, len(registry))
 	for _, rule := range registry {
+		rule.Pack = rulePack(rule.ID)
+		rule.Context = contextRequirement(rule.ID)
 		out = append(out, rule)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
@@ -287,7 +332,36 @@ func All() []Rule {
 
 func Get(id string) (Rule, bool) {
 	rule, ok := registry[id]
+	rule.Pack = rulePack(id)
+	rule.Context = contextRequirement(id)
 	return rule, ok
+}
+
+func contextRequirement(id string) string {
+	if id == "unused-extensibility-point" {
+		return "repository-search"
+	}
+	if id == "scope-creep" {
+		return "patch"
+	}
+	return "local"
+}
+
+func rulePack(id string) string {
+	switch id {
+	case "silent-failure-fallback", "weakened-test-assertion", "scope-creep", "removed-authorization-check", "removed-validation", "swallowed-cancellation":
+		return "regressions"
+	case "narrating-comment", "boolean-mode-parameter":
+		return "style"
+	case "ceremonial-abstraction", "unused-extensibility-point", "unchanged-argument-forwarder":
+		return "agent-slop"
+	default:
+		return "architecture"
+	}
+}
+
+func ValidPack(pack string) bool {
+	return pack == "regressions" || pack == "agent-slop" || pack == "architecture" || pack == "style"
 }
 
 func ValidateSeverity(value string) (Severity, error) {

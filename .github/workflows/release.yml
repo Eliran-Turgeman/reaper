@@ -1,6 +1,7 @@
 name: Release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*"
@@ -10,7 +11,7 @@ permissions:
 
 jobs:
   release:
-    name: Publish release
+    name: Validate and optionally publish
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
@@ -27,7 +28,18 @@ jobs:
       - name: Run tests
         run: go test ./...
 
+      - name: Benchmark quality gate
+        run: go run ./cmd/reaper eval --benchmark-dir benchmarks/patches --provider openrouter --model typesafe/jev-1.13 --metrics-baseline benchmarks/patches/results.json
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
+      - name: Rule corpus quality gate
+        run: go run ./cmd/reaper eval --provider openrouter --model typesafe/jev-1.13 --metrics-baseline evals/expected-metrics.json --tolerance 0.02
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+
       - name: Publish release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser

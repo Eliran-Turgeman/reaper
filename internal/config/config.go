@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"time"
 
-	"github.com/Eliran-Turgeman/repear/internal/rules"
+	"github.com/Eliran-Turgeman/reaper/internal/rules"
 	"gopkg.in/yaml.v3"
 )
 
@@ -62,23 +63,32 @@ type CacheConfig struct {
 }
 
 type Config struct {
-	Version        int                   `yaml:"version"`
-	Provider       string                `yaml:"provider"`
-	Model          string                `yaml:"model"`
-	BaseURL        string                `yaml:"base_url,omitempty"`
-	RequestTimeout time.Duration         `yaml:"-"`
-	TimeoutText    string                `yaml:"request_timeout,omitempty"`
-	Concurrency    int                   `yaml:"concurrency,omitempty"`
-	Exclude        []string              `yaml:"exclude,omitempty"`
-	Cache          CacheConfig           `yaml:"cache,omitempty"`
-	Rules          map[string]RuleConfig `yaml:"rules"`
+	Pricing            Pricing               `yaml:"pricing,omitempty"`
+	Packs              []string              `yaml:"packs"`
+	IncompleteAnalysis string                `yaml:"incomplete_analysis,omitempty"`
+	Version            int                   `yaml:"version"`
+	Provider           string                `yaml:"provider"`
+	Model              string                `yaml:"model"`
+	BaseURL            string                `yaml:"base_url,omitempty"`
+	RequestTimeout     time.Duration         `yaml:"-"`
+	TimeoutText        string                `yaml:"request_timeout,omitempty"`
+	Concurrency        int                   `yaml:"concurrency,omitempty"`
+	Exclude            []string              `yaml:"exclude,omitempty"`
+	Cache              CacheConfig           `yaml:"cache,omitempty"`
+	Rules              map[string]RuleConfig `yaml:"rules"`
+}
+
+type Pricing struct {
+	InputPerMillion  *float64 `yaml:"input_per_million_usd,omitempty"`
+	OutputPerMillion *float64 `yaml:"output_per_million_usd,omitempty"`
 }
 
 func Defaults() Config {
-	enabled := true
 	cacheEnabled := true
 	cfg := Config{
-		Version: 1, Provider: ProviderTypeSafe, Model: DefaultModel(ProviderTypeSafe),
+		Packs:              []string{"regressions"},
+		IncompleteAnalysis: "error",
+		Version:            1, Provider: ProviderTypeSafe, Model: DefaultModel(ProviderTypeSafe),
 		RequestTimeout: 30 * time.Second,
 		TimeoutText:    "30s", Concurrency: 4,
 		Exclude: []string{"vendor/**", "generated/**", "dist/**", "node_modules/**", "**/*.lock"},
@@ -86,6 +96,7 @@ func Defaults() Config {
 		Rules:   map[string]RuleConfig{},
 	}
 	for _, rule := range rules.All() {
+		enabled := rule.Pack == "regressions"
 		cfg.Rules[rule.ID] = RuleConfig{
 			Enabled: &enabled, Threshold: rule.DefaultThreshold, Severity: string(rule.DefaultSeverity),
 			thresholdSet: true,
@@ -103,6 +114,11 @@ func Load(start string) (Config, string, error) {
 	if !found {
 		return cfg, "", nil
 	}
+	return LoadFile(path)
+}
+
+func LoadFile(path string) (Config, string, error) {
+	cfg := Defaults()
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Config{}, path, fmt.Errorf("read config: %w", err)
@@ -146,6 +162,29 @@ func Find(start string) (string, bool, error) {
 }
 
 func merge(dst *Config, src Config) {
+	if src.Pricing.InputPerMillion != nil {
+		dst.Pricing.InputPerMillion = src.Pricing.InputPerMillion
+	}
+	if src.Pricing.OutputPerMillion != nil {
+		dst.Pricing.OutputPerMillion = src.Pricing.OutputPerMillion
+	}
+	if src.Packs != nil {
+		dst.Packs = src.Packs
+		for _, rule := range rules.All() {
+			enabled := false
+			for _, pack := range src.Packs {
+				if rule.Pack == pack {
+					enabled = true
+				}
+			}
+			rc := dst.Rules[rule.ID]
+			rc.Enabled = &enabled
+			dst.Rules[rule.ID] = rc
+		}
+	}
+	if src.IncompleteAnalysis != "" {
+		dst.IncompleteAnalysis = src.IncompleteAnalysis
+	}
 	if src.Version != 0 {
 		dst.Version = src.Version
 	}
@@ -195,6 +234,19 @@ func merge(dst *Config, src Config) {
 }
 
 func (c *Config) Validate() error {
+	for _, price := range []*float64{c.Pricing.InputPerMillion, c.Pricing.OutputPerMillion} {
+		if price != nil && (math.IsNaN(*price) || math.IsInf(*price, 0) || *price < 0) {
+			return fmt.Errorf("token prices must be finite nonnegative values")
+		}
+	}
+	for _, pack := range c.Packs {
+		if !rules.ValidPack(pack) {
+			return fmt.Errorf("unknown pack %q", pack)
+		}
+	}
+	if c.IncompleteAnalysis != "error" && c.IncompleteAnalysis != "warning" && c.IncompleteAnalysis != "ignore" {
+		return fmt.Errorf("incomplete_analysis must be error, warning, or ignore")
+	}
 	if c.Version != 1 {
 		return fmt.Errorf("unsupported version %d", c.Version)
 	}
@@ -216,7 +268,7 @@ func (c *Config) Validate() error {
 		if _, ok := rules.Get(id); !ok {
 			return fmt.Errorf("unknown rule %q", id)
 		}
-		if rc.Threshold < 0 || rc.Threshold > 1 {
+		if math.IsNaN(rc.Threshold) || math.IsInf(rc.Threshold, 0) || rc.Threshold < 0 || rc.Threshold > 1 {
 			return fmt.Errorf("rule %s threshold must be between 0 and 1", id)
 		}
 		if _, err := rules.ValidateSeverity(rc.Severity); err != nil {
