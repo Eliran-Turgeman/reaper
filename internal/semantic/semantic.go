@@ -78,7 +78,7 @@ func IsMinifiedSource(path string) bool {
 }
 
 func IsTestFile(path string) bool {
-	p := strings.ToLower(filepath.ToSlash(path))
+	p := "/" + strings.TrimLeft(strings.ToLower(filepath.ToSlash(path)), "/")
 	base := strings.ToLower(filepath.Base(path))
 	return strings.Contains(p, "/test/") ||
 		strings.Contains(p, "/tests/") ||

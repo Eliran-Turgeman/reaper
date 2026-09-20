@@ -95,6 +95,19 @@ func TestExpandedLanguageTestFiles(t *testing.T) {
 	}
 }
 
+func TestTestDirectoryClassification(t *testing.T) {
+	for _, path := range []string{"test/contracts.ts", "tests/contracts.ts", "__tests__/contracts.ts", "src/tests/contracts.ts", "./tests/contracts.ts", "TESTS/contracts.ts"} {
+		if !IsTestFile(path) {
+			t.Errorf("test directory missed: %s", path)
+		}
+	}
+	for _, path := range []string{"contest/contracts.ts", "tests-support/contracts.ts", "src/testing/contracts.ts", "tests.ts"} {
+		if IsTestFile(path) {
+			t.Errorf("production path classified as test: %s", path)
+		}
+	}
+}
+
 func TestMinifiedSourceDetection(t *testing.T) {
 	for _, path := range []string{"jquery.min.js", "vendor-MIN.mjs", "client.min.ts"} {
 		if !IsMinifiedSource(path) {

@@ -328,6 +328,8 @@ and literals masked. These scanners are not complete parsers (multiline signatur
 JS regex literals, and unusual syntax may fall back). Malformed or unsupported
 input retains the six-line hunk context. Changed before/after code and diagnostic
 locations remain tied to the original hunk; only surrounding context expands.
+Test directories (`test/`, `tests/`, and `__tests__/`) are recognized both at the
+repository root and when nested, in addition to test filename conventions.
 Rules declare `local`, `patch`, or `repository-search` context. Only
 `unused-extensibility-point` currently requests repository search. Reaper searches
 up to four named introduced types in tracked, supported, nonexcluded files;
