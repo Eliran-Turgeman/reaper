@@ -370,6 +370,9 @@ had **0/8 detected positives and 0/24 false positives** at current defaults.
 Recall was 0%; precision is undefined with no predicted positives (JSON uses 0).
 This is a small pilot exposing a threshold limitation, not evidence of production
 accuracy. Run `reaper eval --benchmark-dir benchmarks/patches --format json`.
+Add `--benchmark-mode git` to exercise real Git extraction and configured rule
+grouping, including eligibility misses and below-threshold signal scores. See
+[Git benchmark modes and fixtures](benchmarks/README.md#evaluating-the-real-git-path).
 Release CI compares the pinned-model results against the checked-in metrics.
 It also runs all labeled rule examples against `evals/expected-metrics.json`,
 printing precision/recall deltas and blocking drops larger than 0.02.

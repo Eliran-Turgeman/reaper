@@ -154,6 +154,14 @@ func splitLines(value string) []string {
 }
 
 func trimPrefix(path string) string {
+	// Git appends a tab separator to unquoted file headers containing spaces.
+	// Literal tabs in filenames are escaped inside a quoted path.
+	path, _, _ = strings.Cut(path, "\t")
+	if strings.HasPrefix(path, "\"") {
+		if unquoted, err := strconv.Unquote(path); err == nil {
+			path = unquoted
+		}
+	}
 	path = strings.TrimPrefix(path, "a/")
 	path = strings.TrimPrefix(path, "b/")
 	return path

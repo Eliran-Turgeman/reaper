@@ -28,6 +28,16 @@ func TestQualityGateRejectsRegressionAndModelChanges(t *testing.T) {
 		t.Fatal("model drift passed")
 	}
 	baseline.Model = "pinned"
+	baseline.Mode = "git"
+	if err := CheckBaseline(io.Discard, baseline, path, .02); err == nil {
+		t.Fatal("evaluation mode drift passed")
+	}
+	baseline.Mode = ""
+	baseline.Grouping = "isolated"
+	if err := CheckBaseline(io.Discard, baseline, path, .02); err == nil {
+		t.Fatal("request grouping drift passed")
+	}
+	baseline.Grouping = ""
 	baseline.Rules[0].Threshold = .5
 	if err := CheckBaseline(io.Discard, baseline, path, .02); err == nil {
 		t.Fatal("threshold drift passed")

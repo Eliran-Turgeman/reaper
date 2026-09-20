@@ -23,6 +23,8 @@ import (
 type VerboseFunc func(format string, args ...any)
 
 type Runner struct {
+	Observe func(Observation)
+	GitEnv  []string
 	Root    string
 	Config  config.Config
 	Client  decision.Evaluator
@@ -51,6 +53,7 @@ type result struct {
 }
 
 type evaluation struct {
+	observation     Observation
 	contextEvidence string
 	rule            string
 	file            string
@@ -109,6 +112,11 @@ func (r *Runner) Run(ctx context.Context, units []semantic.Unit, task string) (d
 		}
 		summary.UnitsEvaluated++
 		items = append(items, item.diagnostics...)
+		if r.Observe != nil {
+			for _, evaluated := range item.evaluations {
+				r.Observe(evaluated.observation)
+			}
+		}
 		evaluations = append(evaluations, item.evaluations...)
 		summary.SemanticChecks += item.checks
 		summary.CacheHits += item.cacheHits
@@ -337,7 +345,13 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		}
 		rc := r.Config.Rules[rule.ID]
 		violation := probability >= rc.Threshold
+		signals := make([]diagnostics.SignalScore, 0, len(rule.Signals))
+		for _, signal := range rule.Signals {
+			signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: signalProbabilities[rule.QuestionID(signal)], Evidence: signal.Instructions})
+		}
+		sort.Slice(signals, func(i, j int) bool { return signals[i].ID < signals[j].ID })
 		out.evaluations = append(out.evaluations, evaluation{
+			observation:     Observation{Rule: rule.ID, File: unit.FilePath, StartLine: unit.StartLine, EndLine: unit.EndLine, Score: probability, Signals: signals},
 			contextEvidence: retrieved,
 			rule:            rule.ID, file: unit.FilePath, startLine: unit.StartLine,
 			confidence: probability, threshold: rc.Threshold,
@@ -347,10 +361,6 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 			continue
 		}
 		severity, _ := rules.ValidateSeverity(rc.Severity)
-		signals := make([]diagnostics.SignalScore, 0, len(rule.Signals))
-		for _, signal := range rule.Signals {
-			signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: signalProbabilities[rule.QuestionID(signal)], Evidence: signal.Instructions})
-		}
 		out.diagnostics = append(out.diagnostics, diagnostics.Diagnostic{
 			ContextEvidence: retrieved,
 			Fingerprint:     findingFingerprint(rule.ID, unit),

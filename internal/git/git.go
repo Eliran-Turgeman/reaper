@@ -21,10 +21,18 @@ type Options struct {
 
 type CommandCollector struct {
 	Dir string
+	// Env optionally isolates Git configuration and repository environment.
+	Env []string
+}
+
+func (c CommandCollector) command(ctx context.Context, args ...string) *exec.Cmd {
+	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd.Env = c.Env
+	return cmd
 }
 
 func (c CommandCollector) Diff(ctx context.Context, opts Options) (string, string, error) {
-	rootBytes, err := exec.CommandContext(ctx, "git", "-C", c.Dir, "rev-parse", "--show-toplevel").Output()
+	rootBytes, err := c.command(ctx, "-C", c.Dir, "rev-parse", "--show-toplevel").Output()
 	if err != nil {
 		return "", "", errors.New("current directory is not inside a Git repository")
 	}
@@ -46,7 +54,7 @@ func (c CommandCollector) Diff(ctx context.Context, opts Options) (string, strin
 		args = append(args, "--")
 		args = append(args, opts.Paths...)
 	}
-	cmd := exec.CommandContext(ctx, "git", args...)
+	cmd := c.command(ctx, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", root, fmt.Errorf("git diff: %s", strings.TrimSpace(string(output)))
@@ -55,7 +63,7 @@ func (c CommandCollector) Diff(ctx context.Context, opts Options) (string, strin
 }
 
 func (c CommandCollector) emptyTree(ctx context.Context) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", "-C", c.Dir, "hash-object", "-t", "tree", "--stdin")
+	cmd := c.command(ctx, "-C", c.Dir, "hash-object", "-t", "tree", "--stdin")
 	cmd.Stdin = strings.NewReader("")
 	output, err := cmd.CombinedOutput()
 	if err != nil {

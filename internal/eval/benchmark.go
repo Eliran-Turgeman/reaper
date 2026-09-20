@@ -32,11 +32,14 @@ type PatchCase struct {
 }
 
 type ScoredCase struct {
-	ID       string  `json:"id"`
-	Rule     string  `json:"rule"`
-	Expected string  `json:"expected"`
-	Score    float64 `json:"score"`
-	Split    string  `json:"split"`
+	Evaluated      *bool                `json:"evaluated,omitempty"`
+	CoverageReason string               `json:"coverage_reason,omitempty"`
+	Observations   []runner.Observation `json:"observations,omitempty"`
+	ID             string               `json:"id"`
+	Rule           string               `json:"rule"`
+	Expected       string               `json:"expected"`
+	Score          float64              `json:"score"`
+	Split          string               `json:"split"`
 }
 
 func LoadPatches(dir string) ([]PatchCase, error) {
@@ -113,16 +116,17 @@ func Metrics(rule string, cases []ScoredCase, threshold float64) RuleReport {
 			continue
 		}
 		m.Examples++
+		predicted := (c.Evaluated == nil || *c.Evaluated) && c.Score >= threshold
 		if c.Expected == "positive" {
 			m.AveragePositiveScore += c.Score
-			if c.Score >= threshold {
+			if predicted {
 				m.TruePositive++
 			} else {
 				m.FalseNegative++
 			}
 		} else {
 			m.AverageNegativeScore += c.Score
-			if c.Score >= threshold {
+			if predicted {
 				m.FalsePositive++
 			} else {
 				m.TrueNegative++

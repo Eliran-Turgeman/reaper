@@ -14,18 +14,20 @@ import (
 )
 
 type evalOptions struct {
-	optimize        string
-	minRecall       float64
-	metricsBaseline string
-	tolerance       float64
-	benchmarkDir    string
-	rule            string
-	threshold       float64
-	thresholdSet    bool
-	format          string
-	dir             string
-	provider        string
-	model           string
+	optimize          string
+	minRecall         float64
+	metricsBaseline   string
+	tolerance         float64
+	benchmarkDir      string
+	benchmarkMode     string
+	benchmarkGrouping string
+	rule              string
+	threshold         float64
+	thresholdSet      bool
+	format            string
+	dir               string
+	provider          string
+	model             string
 }
 
 func newEval(app App) *cobra.Command {
@@ -35,6 +37,18 @@ func newEval(app App) *cobra.Command {
 		Short: "Run the labeled semantic-rule benchmark",
 		Args:  cobra.NoArgs,
 		RunE: func(command *cobra.Command, _ []string) error {
+			if options.benchmarkMode != "snippet" && options.benchmarkMode != "git" {
+				return fmt.Errorf("--benchmark-mode must be snippet or git")
+			}
+			if options.benchmarkGrouping != "configured" && options.benchmarkGrouping != "isolated" {
+				return fmt.Errorf("--benchmark-grouping must be configured or isolated")
+			}
+			if (command.Flags().Changed("benchmark-mode") || command.Flags().Changed("benchmark-grouping")) && options.benchmarkDir == "" {
+				return fmt.Errorf("benchmark mode/grouping require --benchmark-dir")
+			}
+			if command.Flags().Changed("benchmark-grouping") && options.benchmarkMode != "git" {
+				return fmt.Errorf("--benchmark-grouping requires --benchmark-mode git")
+			}
 			if options.optimize != "" && options.optimize != "precision" {
 				return fmt.Errorf("--optimize must be precision")
 			}
@@ -85,7 +99,11 @@ func newEval(app App) *cobra.Command {
 				if options.rule != "" || options.thresholdSet {
 					return fmt.Errorf("benchmark uses its labeled rules and configured thresholds")
 				}
-				report, err = evalpkg.RunBenchmark(command.Context(), client, options.benchmarkDir, cfg)
+				if options.benchmarkMode == "git" {
+					report, err = evalpkg.RunGitBenchmark(command.Context(), client, options.benchmarkDir, cfg, options.benchmarkGrouping)
+				} else {
+					report, err = evalpkg.RunBenchmark(command.Context(), client, options.benchmarkDir, cfg)
+				}
 			} else {
 				report, err = evalpkg.Run(command.Context(), client, dir, cfg.Provider, cfg.Model, options.rule, override, thresholds)
 			}
@@ -120,6 +138,8 @@ func newEval(app App) *cobra.Command {
 	flags.StringVar(&options.metricsBaseline, "metrics-baseline", "", "expected evaluation metrics JSON for a quality gate")
 	flags.Float64Var(&options.tolerance, "tolerance", .02, "maximum precision/recall drop allowed by the metrics baseline")
 	flags.StringVar(&options.benchmarkDir, "benchmark-dir", "", "evaluate labeled coding-agent patches from cases.json")
+	flags.StringVar(&options.benchmarkMode, "benchmark-mode", "snippet", "benchmark input path: snippet or git")
+	flags.StringVar(&options.benchmarkGrouping, "benchmark-grouping", "configured", "Git benchmark rule grouping: configured or isolated")
 	flags.StringVar(&options.rule, "rule", "", "evaluate one rule")
 	flags.Float64Var(&options.threshold, "threshold", 0, "override the configured threshold")
 	flags.StringVar(&options.format, "format", "text", "output format: text or json")

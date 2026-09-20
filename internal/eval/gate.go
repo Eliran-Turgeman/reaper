@@ -23,6 +23,9 @@ func CheckBaseline(w io.Writer, report Report, path string, tolerance float64) e
 	if baseline.Version != report.Version || baseline.Provider != report.Provider || baseline.Model != report.Model || len(baseline.Rules) == 0 {
 		return fmt.Errorf("baseline schema/provider/model mismatch or empty baseline")
 	}
+	if baseline.Mode != report.Mode || baseline.Grouping != report.Grouping {
+		return fmt.Errorf("baseline evaluation mode or grouping mismatch")
+	}
 	if len(baseline.Rules) != len(report.Rules) {
 		return fmt.Errorf("baseline rule set mismatch")
 	}

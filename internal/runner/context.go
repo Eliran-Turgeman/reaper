@@ -30,7 +30,9 @@ func (r *Runner) repositoryContext(ctx context.Context, unit semantic.Unit, rule
 	}
 	sort.Strings(names)
 	pattern := regexp.MustCompile(`\b(?:` + strings.Join(names, "|") + `)\b`)
-	output, err := exec.CommandContext(ctx, "git", "-C", r.Root, "ls-files", "-z").Output()
+	cmd := exec.CommandContext(ctx, "git", "-C", r.Root, "ls-files", "-z")
+	cmd.Env = r.GitEnv
+	output, err := cmd.Output()
 	if err != nil {
 		return "", fmt.Errorf("list repository context files: %w", err)
 	}

@@ -41,6 +41,8 @@ type RuleReport struct {
 }
 
 type Report struct {
+	Mode        string        `json:"mode,omitempty"`
+	Grouping    string        `json:"grouping,omitempty"`
 	Calibration []Calibration `json:"calibration,omitempty"`
 	Cases       []ScoredCase  `json:"cases,omitempty"`
 	Version     int           `json:"version"`
