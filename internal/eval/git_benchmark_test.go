@@ -43,6 +43,29 @@ func TestQualityDevelopmentCorpusRetainsBothLabelsPerLanguage(t *testing.T) {
 	}
 }
 
+func TestContractDevelopmentCorpusExercisesLabeledRules(t *testing.T) {
+	cases, err := LoadGitCases("../../benchmarks/contract-dev")
+	if err != nil {
+		t.Fatal(err)
+	}
+	coverage := map[string]int{}
+	for _, c := range cases {
+		result, err := runGitCase(context.Background(), &benchmarkEvaluator{score: .5}, c, config.Defaults(), "isolated")
+		if err != nil || result.Evaluated == nil || !*result.Evaluated {
+			t.Fatalf("%s did not exercise its rule: %v", c.ID, err)
+		}
+		coverage[c.Rule+":"+c.Expected]++
+	}
+	if len(cases) != 12 || len(coverage) != 6 {
+		t.Fatalf("missing contract coverage: %v", coverage)
+	}
+	for _, variant := range []string{"current", "questions"} {
+		if _, err := LoadExperiment("../../benchmarks/experiments/contracts-v2/" + variant + ".json"); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 func (e *benchmarkEvaluator) Evaluate(_ context.Context, r decision.Request) (decision.Response, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
