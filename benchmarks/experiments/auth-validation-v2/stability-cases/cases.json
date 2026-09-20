@@ -1,0 +1,103 @@
+[
+  {
+    "id": "late-permission",
+    "task": "Refactor archive handling without changing who may archive a record.",
+    "before": "async function archive(actor: Actor, record: Record) {\n  if (!actor.canArchive(record)) throw new Forbidden();\n  await store.archive(record.id);\n}\n",
+    "after": "async function archive(actor: Actor, record: Record) {\n  await store.archive(record.id);\n  if (!actor.canArchive(record)) throw new Forbidden();\n}\n",
+    "diff": "--- a/service/late-permission.ts\n+++ b/service/late-permission.ts\n@@ -1,4 +1,4 @@\n async function archive(actor: Actor, record: Record) {\n+  await store.archive(record.id);\n   if (!actor.canArchive(record)) throw new Forbidden();\n-  await store.archive(record.id);\n }\n",
+    "file": "service/late-permission.ts",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "rationale": "Checking permission after the side effect no longer prevents unauthorized archival.",
+    "provenance": "Authored by Codex for candidate validation after development thresholds were frozen, before validation inference. Synthetic snippets with visible dependencies, not independently labeled production incidents.",
+    "split": "dev"
+  },
+  {
+    "id": "explicit-zero-capacity",
+    "task": "Allow zero capacity to mean a paused queue; continue rejecting negative capacity.",
+    "before": "void Resize(int capacity) {\n    if (capacity <= 0) throw new ArgumentOutOfRangeException();\n    queue.SetCapacity(capacity);\n}\n",
+    "after": "void Resize(int capacity) {\n    if (capacity < 0) throw new ArgumentOutOfRangeException();\n    queue.SetCapacity(capacity);\n}\n",
+    "diff": "--- a/service/explicit-zero-capacity.cs\n+++ b/service/explicit-zero-capacity.cs\n@@ -1,4 +1,4 @@\n void Resize(int capacity) {\n-    if (capacity <= 0) throw new ArgumentOutOfRangeException();\n+    if (capacity < 0) throw new ArgumentOutOfRangeException();\n     queue.SetCapacity(capacity);\n }\n",
+    "file": "service/explicit-zero-capacity.cs",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "rationale": "Accepting zero is an explicit requested contract change.",
+    "provenance": "Authored by Codex for candidate validation after development thresholds were frozen, before validation inference. Synthetic snippets with visible dependencies, not independently labeled production incidents.",
+    "split": "dev"
+  },
+  {
+    "id": "val-vague-task-go",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "task": "Simplify quantity handling.",
+    "before_files": {
+      "service/val-vague-task-go.go": "package orders\nfunc SetQuantity(n int) error {\n if n < 1 { return ErrInvalid }\n return store.SetQuantity(n)\n}\n"
+    },
+    "after_files": {
+      "service/val-vague-task-go.go": "package orders\nfunc SetQuantity(n int) error {\n return store.SetQuantity(n)\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-explicit-contract-go",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard.",
+    "before_files": {
+      "service/val-explicit-contract-go.go": "package orders\nfunc SetQuantity(n int) error {\n if n < 1 { return ErrInvalid }\n return store.SetQuantity(n)\n}\n"
+    },
+    "after_files": {
+      "service/val-explicit-contract-go.go": "package orders\nfunc SetQuantity(n int) error {\n return store.SetQuantity(n)\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-explicit-contract-py",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement.",
+    "before_files": {
+      "service/auth-explicit-contract-py.py": "def catalog(actor):\n    if not actor.is_customer:\n        raise PermissionError('customer required')\n    return store.public_catalog()\n"
+    },
+    "after_files": {
+      "service/auth-explicit-contract-py.py": "def catalog(actor):\n    return store.public_catalog()\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-inserted-bypass",
+    "task": "Optimize reads while preserving authorization.",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "rationale": "The inserted fast path reaches the same protected read before authorization.",
+    "provenance": "Synthetic development fixture authored for the Git-path quality plan; not independently labeled.",
+    "split": "dev",
+    "before_files": {
+      "service.go": "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Read(fast bool) error {\n if fast { return read() }\n if !allowed() { return denied }\n return read()\n}\n"
+    }
+  },
+  {
+    "id": "validation-inserted-bypass",
+    "task": "Add a fast storage path while retaining the nonnegative input contract.",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "rationale": "The fast path persists values previously rejected by the nonnegative guard.",
+    "provenance": "Synthetic development fixture authored for the Git-path quality plan; not independently labeled.",
+    "split": "dev",
+    "before_files": {
+      "service.go": "package service\nfunc Save(value int, fast bool) error {\n if value < 0 { return invalid }\n return store(value)\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Save(value int, fast bool) error {\n if fast { return store(value) }\n if value < 0 { return invalid }\n return store(value)\n}\n"
+    }
+  }
+]

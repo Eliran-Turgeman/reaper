@@ -59,7 +59,7 @@ func TestContractDevelopmentCorpusExercisesLabeledRules(t *testing.T) {
 	if len(cases) != 12 || len(coverage) != 6 {
 		t.Fatalf("missing contract coverage: %v", coverage)
 	}
-	for _, variant := range []string{"current", "questions"} {
+	for _, variant := range []string{"current", "questions", "ownership"} {
 		if _, err := LoadExperiment("../../benchmarks/experiments/contracts-v2/" + variant + ".json"); err != nil {
 			t.Fatal(err)
 		}

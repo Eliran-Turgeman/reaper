@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "name": "cancellation-ownership-v3",
+  "context": "current",
+  "questions": {
+    "swallowed-cancellation:violates-cancellation-contract": "Return the probability that the changed operation is required to share the caller's cancellation lifetime. Main request queries and fetches normally share that lifetime. Use explicit task requirements when they assign a different lifetime: an audit operation required to complete after request cancellation does not share the request's lifetime, even if awaited. Judge ownership, not merely the presence of Background or an exception handler."
+  }
+}

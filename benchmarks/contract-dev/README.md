@@ -18,3 +18,9 @@ and isolated grouping. The candidate keeps the existing minimum composition and
 all default thresholds. It changes only benchmark questions; no production rule
 is promoted by this experiment. Evaluate original validation cancellation/fallback
 cases too, because improvement on newly paired fixtures alone is insufficient.
+
+The first revised cancellation wording continued to rank independent audit work
+above main-operation regressions. `ownership.json` is a subsequent development
+experiment: retain the original propagation predicate and ask the second predicate
+only whether the work shares the caller's cancellation lifetime. It is not a frozen
+holdout candidate or a production rule change.
