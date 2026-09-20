@@ -16,6 +16,7 @@ import (
 	gitpkg "github.com/Eliran-Turgeman/reaper/internal/git"
 	"github.com/Eliran-Turgeman/reaper/internal/provider"
 	"github.com/Eliran-Turgeman/reaper/internal/runner"
+	"github.com/Eliran-Turgeman/reaper/internal/semantic"
 	"github.com/spf13/cobra"
 )
 
@@ -102,7 +103,15 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 	if err != nil {
 		return err
 	}
-	units, err := diffpkg.Units(root, rawDiff, 6)
+	var units []semantic.Unit
+	if options.staged {
+		index := gitpkg.CommandCollector{Dir: root}
+		units, err = diffpkg.UnitsWithSource(rawDiff, 6, func(path string) ([]byte, error) {
+			return index.IndexSource(ctx, path)
+		})
+	} else {
+		units, err = diffpkg.Units(root, rawDiff, 6)
+	}
 	if err != nil {
 		return fmt.Errorf("extract semantic units: %w", err)
 	}

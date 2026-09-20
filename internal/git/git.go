@@ -71,3 +71,12 @@ func (c CommandCollector) emptyTree(ctx context.Context) (string, error) {
 	}
 	return strings.TrimSpace(string(output)), nil
 }
+
+// IndexSource returns the staged blob using a repository-relative path.
+func (c CommandCollector) IndexSource(ctx context.Context, path string) ([]byte, error) {
+	data, err := c.command(ctx, "-C", c.Dir, "show", ":"+path).Output()
+	if err != nil {
+		return nil, fmt.Errorf("read staged blob %s: %w", path, err)
+	}
+	return data, nil
+}

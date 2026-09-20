@@ -80,4 +80,20 @@ func TestGitBenchmarkAndCheckSendIdenticalRequests(t *testing.T) {
 	if len(check) == 0 || !reflect.DeepEqual(check, benchmark) {
 		t.Fatalf("CLI and benchmark requests differ:\ncheck=%v\nbenchmark=%v", check, benchmark)
 	}
+	// The staged diff and its context must describe the index even when the
+	// working tree restores the deleted guard or removes the file entirely.
+	git("-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "--quiet", "-m", "before")
+	git("add", "--", "service.go")
+	write(filepath.Join(root, "service.go"), before)
+	staged := run("check", "--staged", "--task", task, "--no-cache", "--format", "json")
+	if !reflect.DeepEqual(check, staged) {
+		t.Fatalf("unstaged content leaked into staged requests:\nwant=%v\ngot=%v", check, staged)
+	}
+	if err := os.Remove(filepath.Join(root, "service.go")); err != nil {
+		t.Fatal(err)
+	}
+	staged = run("check", "--staged", "--task", task, "--no-cache", "--format", "json")
+	if !reflect.DeepEqual(check, staged) {
+		t.Fatal("unstaged deletion changed staged context")
+	}
 }

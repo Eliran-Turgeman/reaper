@@ -70,6 +70,18 @@ func Parse(input string) ([]FilePatch, error) {
 }
 
 func Units(root, input string, contextLines int) ([]semantic.Unit, error) {
+	return UnitsWithSource(input, contextLines, func(path string) ([]byte, error) {
+		data, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
+		if os.IsNotExist(err) {
+			return nil, nil
+		}
+		return data, err
+	})
+}
+
+// UnitsWithSource reads surrounding code from the same snapshot as the diff's
+// after side. Deleted files have no after-side source and are not read.
+func UnitsWithSource(input string, contextLines int, readSource func(string) ([]byte, error)) ([]semantic.Unit, error) {
 	patches, err := Parse(input)
 	if err != nil {
 		return nil, err
@@ -83,7 +95,13 @@ func Units(root, input string, contextLines int) ([]semantic.Unit, error) {
 		if !semantic.IsSupportedSource(path) || semantic.IsMinifiedSource(path) {
 			continue
 		}
-		source, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(path)))
+		var source []byte
+		if patch.NewPath != "/dev/null" {
+			source, err = readSource(path)
+			if err != nil {
+				return nil, fmt.Errorf("read context for %s: %w", path, err)
+			}
+		}
 		sourceLines := splitLines(string(source))
 		for _, hunk := range patch.Hunks {
 			oldLines, newLines := hunkContent(hunk)

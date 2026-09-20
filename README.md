@@ -130,6 +130,10 @@ Check staged changes:
 reaper check --staged
 ```
 
+Staged checks read surrounding changed-file context from the Git index, so
+unstaged edits cannot contradict the staged diff. Deleted files have no current
+surrounding context. Failure to read a required staged blob stops extraction.
+
 Audit every supported Git-tracked source file in the current codebase:
 
 ```sh

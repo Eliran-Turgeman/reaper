@@ -1,10 +1,27 @@
 package diff
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
 )
+
+func TestSnapshotSourceFailuresAndDeletion(t *testing.T) {
+	failure := errors.New("snapshot unavailable")
+	patch := "diff --git a/service.go b/service.go\n--- a/service.go\n+++ b/service.go\n@@ -1 +1 @@\n-old\n+new\n"
+	if _, err := UnitsWithSource(patch, 6, func(string) ([]byte, error) { return nil, failure }); !errors.Is(err, failure) {
+		t.Fatalf("source failure must stop extraction: %v", err)
+	}
+	deleted := "diff --git a/service.go b/service.go\n--- a/service.go\n+++ /dev/null\n@@ -1 +0,0 @@\n-old\n"
+	units, err := UnitsWithSource(deleted, 6, func(string) ([]byte, error) {
+		t.Fatal("deleted source must not be read")
+		return nil, failure
+	})
+	if err != nil || len(units) != 1 || units[0].SurroundingCode != "" || units[0].OldContent != "old" {
+		t.Fatalf("deleted file extraction: %+v, %v", units, err)
+	}
+}
 
 func TestUnitsExtractsBeforeAfterAndContext(t *testing.T) {
 	root := t.TempDir()
