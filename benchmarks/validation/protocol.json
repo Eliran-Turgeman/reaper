@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "date": "2026-09-20",
+  "model": "typesafe/jev-1.13",
+  "provider": "openrouter",
+  "cases_sha256": "3b6c26e64a000f232c4764d90eba02bca63e5797e9a956436c73ada5e7235467",
+  "purpose": "Prospective validation of already selected candidates. Public synthetic development data; not a hidden test set or independent human review.",
+  "candidates": {
+    "removed-authorization-check": {
+      "patch": 0.84,
+      "seed": 0.85
+    },
+    "removed-validation": {
+      "patch": 0.53,
+      "seed": 0.52
+    },
+    "silent-failure-fallback": {
+      "patch": 0.19,
+      "seed": 0.39
+    },
+    "swallowed-cancellation": {
+      "patch": 0.38,
+      "seed": 0.66
+    }
+  },
+  "acceptance": "Exploratory only. Report all confusion counts at defaults and both preselected thresholds. Do not tune on these scores or change blocking defaults."
+}
