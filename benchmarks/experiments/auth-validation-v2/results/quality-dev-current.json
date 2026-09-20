@@ -1,0 +1,1246 @@
+{
+  "provenance": {
+    "experiment_sha256": "a8091a7433142732b65a21cc859868c5459efaba48ffbbc7eb779409dc40a1e1",
+    "protocol": "git-v1",
+    "corpus_sha256": "3bab318641b7dc5546c21ab82f1e00e32d19a122d771e65603af572d7c646aa4",
+    "rules_sha256": "f035b56f7c7fe113b44ffe9ba68b17014877111f36782a49a3c07d28aa490245",
+    "config_sha256": "87e2e0d3e5aa2c99d070aa58435c3e3a2a7301e24cd535c67b607c3cfbac81b6"
+  },
+  "mode": "git",
+  "grouping": "isolated",
+  "cases": [
+    {
+      "requests": [
+        {
+          "sha256": "09fadbbdf8a9829149699565c1d64020d354a210479b2fd51da391241e8bf0c7",
+          "state_sha256": "a12d1526cec508c5304cc4853852fb18912016ea7d972c19b04a98a0ea82a095",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.43,
+            "removed-authorization-check:removes-authorization": 0.96
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-go.go",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.43,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.43,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.96,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-go",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.43,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "71365ff2c0fe2114d990cb0a8d52ea778569657de2126f182008d946cf0ba055",
+          "state_sha256": "28ed554c3ca4c1dfade4a223006a4e28a026734516ec4b1057db507fd9169d11",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.21,
+            "removed-authorization-check:removes-authorization": 0.97
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-go.go",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.21,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.21,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-go",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.21,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "7f125ea39a1461dd866852be1a39da43a43047439d60e3db0aea8b397631340d",
+          "state_sha256": "cf1bc716ae9f416726e360711dc282187c1c8b1498f9d4dc1939e9f79e25aef0",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.33
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-go.go",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.33,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.33,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-go",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.33,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "94f12235c7c70550190bcd16e706dbee234e1387b5fc5636c7bc341ede3c7810",
+          "state_sha256": "09a1d89b5d360a39178cb553372b2fbd8c3ed49b3c79968e6ed023f165cd786d",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.11
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-go.go",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.11,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.11,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-go",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.11,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "5fb9711cb2225f9f5757eb2f40a0697a1b51463d798e98df0fe3ea68d75d2367",
+          "state_sha256": "be8723d2a2c170d8e45ab79e13b9e300354749b3fce65c73cde339dbbf997be8",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.62,
+            "removed-authorization-check:removes-authorization": 0.97
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-py.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.62,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.62,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-py",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.62,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "06400597eda5fc4b97d953bfbd7d441ead2d8915a081139a3ee63a442a664715",
+          "state_sha256": "4d50e3c6eae747fd3495836316f4984e93e33d5b636b33ac6c849c9c142fd714",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.2,
+            "removed-authorization-check:removes-authorization": 0.98
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-py.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.2,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.2,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.98,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-py",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.2,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "0915d5043015d3d4471d7c1e53c6d91838e7a93251879e68f19c2bf88e36bf5f",
+          "state_sha256": "a0135c80f3af4ef0852f38908773ff3950a86a385f354fa33af46e6d428b67e5",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.46
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-py.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.46,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.46,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-py",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.46,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "22908aeab474ce7bb0ac3e2d0d358f4745c5aecf0e583f010b3c99cae599e921",
+          "state_sha256": "f363c9f068b0babc335d825d9a4623b730af387ea3f9ac46f0583ee12b2dbec3",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.14
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-py.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.14,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.14,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-py",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.14,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "047e90451acac1a8b20850e4ddc50a7f825a4eddf127e1328903399497a73284",
+          "state_sha256": "17c49ad761c19caf0c7522aa9cb561fa22a4fe6226433a391a47bd6be41daa3f",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.55,
+            "removed-authorization-check:removes-authorization": 0.96
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-ts.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.55,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.55,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.96,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-ts",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.55,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "2bc658c26028689959ee78b34164e02a5f914cec1f3bc8174f1d7a6aef34dfd0",
+          "state_sha256": "eb9d427b8f9b350a52e1a4512983d7e037dafda438d6e17e0a77378736b363d3",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.19,
+            "removed-authorization-check:removes-authorization": 0.97
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-ts.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.19,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.19,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-ts",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.19,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "87414bc575ce585b6f027653c923b4a7d85256a2b82d735f1dfdf92f16c9581d",
+          "state_sha256": "b79396211b31aa119a328d82fa11a8ca2ab58df4a858de47fdef244e74007d1a",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.25
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-ts.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.25,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.25,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-ts",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.25,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "2494281c792df2d1cdceb6821738e6fc91a069b946ca74f9ba0063633dcb6300",
+          "state_sha256": "bf5323903ac5d76366e96fc1287a38983d52490c7a68d5477f72c61334af0250",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.13
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-ts.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.13,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.13,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-ts",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.13,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "994c4288af8ef7db42732eb89c3eac5741b6e7b9271f1e2aab717067d44672d0",
+          "state_sha256": "db92aed83e52226d836f1c1d7f26c350d54fb6c211af504e4854d31fa291b797",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.61,
+            "removed-authorization-check:removes-authorization": 0.96
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-js.js",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.61,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.61,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.96,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-js",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.61,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "c8987282f4c64dad1823ae31fbb2a9302ce1484e9ff09fe199718676946eb7fd",
+          "state_sha256": "90b082b181ad6740ef4d28e80b2917ac57a21723738e1789e5c425da92d5c247",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.19,
+            "removed-authorization-check:removes-authorization": 0.97
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-js.js",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.19,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.19,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-js",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.19,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "78e99158f03993509d692d4174c719983cb2da3dd4c608a1db8ff8bb95918015",
+          "state_sha256": "e0b23bd2aa9f4ec1ac1971b1ac2b5fe75e85fb6f5650724c16a61650230f06ad",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.45
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-js.js",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.45,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.45,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-js",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.45,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "201a381840bd19df1a9524784bf1c6fbc5277432628638f9ceeff8807f59d7a5",
+          "state_sha256": "6e57e46784f53c6ddaed5fd61336f6ed9d55573fea4cccef980aa6680c7a5ea8",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.13
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-js.js",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.13,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.13,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-js",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.13,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "2618792aaef9b7689ae96e668470090c334178633b432d3a095830e5c5ef92b6",
+          "state_sha256": "834e95c9d7077cc8fc46ac65579525d555c546416c58daf29d137705ab0be8cd",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.57,
+            "removed-authorization-check:removes-authorization": 0.96
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-java.java",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.57,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.57,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.96,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-java",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.57,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "543b3d56af26e5dea03cb2111569f42bdee37b3a964c1a041a057a73c35335fd",
+          "state_sha256": "c9f784f918c7aee6f9bf08e0479adaed8b84431a7c9b8bde8df71a11ef97020d",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.21,
+            "removed-authorization-check:removes-authorization": 0.98
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-java.java",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.21,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.21,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.98,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-java",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.21,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "5fc208d4d21fd4b226b9a3e6d61cd8fb0569acab291e826f14c597c984496d9d",
+          "state_sha256": "40685112668315a428ac6df213f0c5517c2d5c705d80024193d452bcd0064787",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.35
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-java.java",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.35,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.35,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-java",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.35,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "f7b8e6169ea5cb12f58ac8cf84aaaf5b7822ea997521865a850a541acd5905f0",
+          "state_sha256": "cd902570ddbb76809992f1620db0620e214a5016de23db1034965324010c5898",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.12
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-java.java",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.12,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.12,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-java",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.12,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "e8639ed1bf0b66093721b14be8e598746ecc73c4a3532b4c08b94d017d2fbe26",
+          "state_sha256": "3452cc4a73d39ce0701de76763f9bd336d27c86ca88715ea7657bbde85f0c712",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.7,
+            "removed-authorization-check:removes-authorization": 0.96
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-cs.cs",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.7,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.7,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.96,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-cs",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.7,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "44b794b4a360e855a63a5bd8b256d79ee4ae190b1f2076c49e14280bef7f6843",
+          "state_sha256": "6c92da9b100a430d17077f7924d97a14562000cb9b8d029bfa518a99d7f66814",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.25,
+            "removed-authorization-check:removes-authorization": 0.97
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-cs.cs",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.25,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.25,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-cs",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.25,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "5764985facb647c1b6ae455b05614ce311d55870a4f07b786427d6e48a42a56a",
+          "state_sha256": "447bb0e336c76702f70dd286a43395cbeecad228196956cc39a6ffb7a53ec1ac",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.41
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-cs.cs",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.41,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.41,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-cs",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.41,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "3c548a9d9bfc863041ac3d90259782b0783fc9a726674796d7a91b941ddfd19c",
+          "state_sha256": "f87f80eb4d26eb224a4ec5a5d610bedc903a4ca592e0e416949ca1050b6ec096",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.13
+          }
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-cs.cs",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.13,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.13,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-cs",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.13,
+      "split": "dev"
+    }
+  ],
+  "version": 1,
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13",
+  "rules": [
+    {
+      "rule": "removed-authorization-check",
+      "examples": 12,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 6,
+      "false_negative": 6,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.58,
+      "average_negative_score": 0.20833333333333334
+    },
+    {
+      "rule": "removed-validation",
+      "examples": 12,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 6,
+      "false_negative": 6,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.375,
+      "average_negative_score": 0.12666666666666668
+    }
+  ]
+}

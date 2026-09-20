@@ -35,4 +35,7 @@ func TestReleasePolicyFailsBeforeProviderWithoutIndependentReview(t *testing.T) 
 	if ExitCode(err) != 1 || !strings.Contains(err.Error(), "independent corpus review is missing") {
 		t.Fatalf("gate did not fail before provider setup: %v", err)
 	}
+	if !strings.Contains(output.String(), "independent corpus review is missing") {
+		t.Fatal("exit-1 failure must explain the unmet release requirement")
+	}
 }

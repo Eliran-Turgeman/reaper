@@ -49,6 +49,7 @@ func newEval(app App) *cobra.Command {
 					return err
 				}
 				if err := policy.Ready(); err != nil {
+					fmt.Fprintln(command.ErrOrStderr(), "reaper:", err)
 					return &ExitError{Code: 1, Err: err}
 				}
 				qualityPolicy = &policy
@@ -163,6 +164,7 @@ func newEval(app App) *cobra.Command {
 			}
 			if qualityPolicy != nil {
 				if err := evalpkg.CheckQualityPolicy(command.ErrOrStderr(), report, *qualityPolicy); err != nil {
+					fmt.Fprintln(command.ErrOrStderr(), "reaper:", err)
 					return &ExitError{Code: 1, Err: err}
 				}
 			}

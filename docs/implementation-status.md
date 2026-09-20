@@ -79,3 +79,36 @@ that these changes have been merged or released.
   null; partial usage is identified. The latency pilot used three Windows
   samples per generated workload, with medians 0.57/1.30/3.32 seconds for
   1/8/32 changed files, respectively.
+
+## Rule-quality follow-up (20 September 2026)
+
+The [measured experiment report](../benchmarks/experiments/rule-quality-report.md)
+contains exact case references, constituent signal records, four-condition
+comparisons and repeated-request stability. This follow-up keeps production
+questions, thresholds and historical result baselines unchanged.
+
+| Approved plan step | Status and evidence |
+|---|---|
+| Fix eligibility and use real Git fixtures | Complete. Insertion-only existing-file changes reach regression rules; new files retain their exclusion. Actual Git tests cover renamed, empty and deleted files; spaced paths are parsed correctly. |
+| Shared request path and signal/provenance records | Complete for production-path evaluation. Git benchmark/check HTTP payload parity is tested. Seed/snippet legacy state formats remain explicit; question assembly is shared and every mode records signals and requests. |
+| Review label contracts and expand fixtures | User approved specific-task exemptions. Added 24 cross-language task-policy cases, 12 cancellation/fallback/assertion cases, six extraction cases and four multi-file context cases. Ambiguous historical labels are documented without rewriting history. Independent review remains outstanding. |
+| Authorization/validation question-context experiment | Complete as a development experiment: current, questions, context, both; matched inputs and fixed thresholds. Added a follow-up that supplies otherwise invisible helper implementations. No universal candidate is ready to promote. |
+| Cancellation/fallback/assertion semantics | Candidate questions measured. Assertion and fallback separation improve on paired cases; cancellation requires the simpler ownership question to separate independent work. Default-threshold recall is still inadequate. Production promotion is deferred. |
+| Freeze candidates and evaluate fresh cases | Two additional runs on a committed seven-case stability subset are complete; exact request fingerprints match. Three of 28 case-condition combinations cross exploratory probe cutoffs. Final candidate selection and independently reviewed fresh holdout evaluation remain outstanding. |
+| Absolute release gates and default review | Implemented with the user's approved >=80% recall, <=1% false positives, and >=20 positive/100 negative independently reviewed cases per blocking rule. Missing review fails before inference. No default change is approved or applied. |
+
+`go test ./...` passed between implementation steps. Formatting, vet, build,
+Node Action tests and actionlint passed. Each bounded Reaper check completed
+without findings. The new release gate intentionally fails on the current
+unreviewed synthetic corpus; this supersedes the earlier passing relative gates
+as a release-readiness decision. PR CI remains separate from release readiness.
+
+A combined Reaper check of the quality follow-up against `03a9515` completed
+77 units / 387 semantic checks without warnings or errors. This covers the
+follow-up changes; the earlier whole-roadmap scope-context limit remains recorded
+above. The release-gate CLI prints its missing-review reason before exiting 1.
+
+The next implementation direction is bounded retrieval of referenced enforcement
+helpers, with explicit evidence provenance and coverage, followed by fresh
+independent review and candidate validation. Four synthetic Go helper cases are
+insufficient to justify broad repository transmission or production thresholds.

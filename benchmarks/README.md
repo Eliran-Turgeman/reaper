@@ -1,5 +1,9 @@
 # Patch benchmark
 
+See the [rule-quality experiment report](experiments/rule-quality-report.md) for
+the Git-path measurements, revised-question/context comparisons, per-case scores,
+repeatability results and current release blockers.
+
 `reaper eval --benchmark-dir benchmarks/patches --format json` evaluates labeled
 patches through the same runner as `check`. Every case stores its task, before
 and after code, diff, source path, expected label, rationale, rule, provenance,
