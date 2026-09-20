@@ -25,6 +25,13 @@ func TestDistributionIncludesLicense(t *testing.T) {
 }
 
 func TestCIKeepsReleaseSeparate(t *testing.T) {
+	attributes, err := os.ReadFile("../.gitattributes")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(attributes), "*.go text eol=lf") {
+		t.Fatal("Go checkout line endings must be stable for Windows formatting checks")
+	}
 	data, err := os.ReadFile("../.github/workflows/ci.yml")
 	if err != nil {
 		t.Fatal(err)
