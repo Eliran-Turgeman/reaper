@@ -1,8 +1,9 @@
 # Priority roadmap implementation status
 
 Implemented in the supplied P0 → P1 → P2 → P3 order, with `go test ./...`
-passing before proceeding between rows. This record describes the working-tree
-implementation; it does not claim that unpublished GitHub changes are live.
+passing before proceeding between rows. This record describes the implementation
+in [PR #1](https://github.com/Eliran-Turgeman/reaper/pull/1); it does not claim
+that these changes have been merged or released.
 
 | Priority | Row | Delivered |
 |---|---|---|
@@ -37,8 +38,16 @@ implementation; it does not claim that unpublished GitHub changes are live.
 - The public `go install github.com/Eliran-Turgeman/reaper/cmd/reaper@latest`
   still resolves to v0.4.0 with the old module declaration. A maintainer must
   publish the corrected module before that required public smoke check passes.
-  GitHub license detection, hosted CI, the Action reference, and release smoke
-  execution likewise require publishing these changes.
+  The stable Action reference and release smoke execution likewise require
+  merging and publishing these changes.
+- [Hosted CI](https://github.com/Eliran-Turgeman/reaper/actions/runs/35505148098)
+  passed on Linux, Windows, and macOS, including Linux race testing and local
+  installation on all three platforms. The first Windows run exposed CRLF
+  checkout conversion; `.gitattributes` now preserves LF for Go source files.
+- [Manual release validation](https://github.com/Eliran-Turgeman/reaper/actions/runs/35505066556)
+  passed both pinned-model quality gates using the dedicated repository secret.
+  Precision and recall deltas were zero for every rule. Publishing was skipped
+  as intended. This validates gate operation, not satisfactory detection quality.
 - Full-patch Reaper analysis encountered the provider's context limit for the
   patch-scoped `scope-creep` rule. The report correctly remained incomplete
   (exit 2); no rule or policy was weakened. Six bounded code groups passed,
@@ -46,8 +55,7 @@ implementation; it does not claim that unpublished GitHub changes are live.
   missing whole-patch evaluation.
 - `go test -race ./...` passed on the current source in an isolated Ubuntu WSL
   workspace using checksum-verified Go 1.25.1 and GCC. Native Windows CGO was
-  unavailable. The Linux CI job also includes race testing; remote CI has not
-  been executed here.
+  unavailable. The hosted Linux CI job also passed race testing.
 - The patch corpus is a small generated **development** pilot, not independently
   mined agent history or a hidden test set. At default thresholds it detected
   0/8 positives with 0/24 false positives. The measured full corpus also exposes
