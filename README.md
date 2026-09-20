@@ -373,6 +373,13 @@ accuracy. Run `reaper eval --benchmark-dir benchmarks/patches --format json`.
 Add `--benchmark-mode git` to exercise real Git extraction and configured rule
 grouping, including eligibility misses and below-threshold signal scores. See
 [Git benchmark modes and fixtures](benchmarks/README.md#evaluating-the-real-git-path).
+
+Release publication additionally requires the absolute targets in
+[`benchmarks/release-policy.json`](benchmarks/release-policy.json): at least 80%
+recall, at most 1% false positives, and at least 20 positive/100 negative
+independently reviewed cases for each blocking rule. The current synthetic
+corpora do not meet these requirements, so the release workflow intentionally
+stops at that gate. Ordinary pull-request CI remains available.
 Release CI compares the pinned-model results against the checked-in metrics.
 It also runs all labeled rule examples against `evals/expected-metrics.json`,
 printing precision/recall deltas and blocking drops larger than 0.02.

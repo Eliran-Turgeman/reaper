@@ -11,6 +11,7 @@ func TestEvalRejectsInvalidBenchmarkModesBeforeProviderSetup(t *testing.T) {
 		args []string
 		want string
 	}{
+		{[]string{"--quality-policy", "policy.json"}, "requires configured Git benchmarking"},
 		{[]string{"--benchmark-experiment", "spec.json"}, "requires --benchmark-dir and --benchmark-mode git"},
 		{[]string{"--benchmark-mode", "unknown"}, "must be snippet or git"},
 		{[]string{"--benchmark-mode", "git"}, "require --benchmark-dir"},
@@ -23,5 +24,15 @@ func TestEvalRejectsInvalidBenchmarkModesBeforeProviderSetup(t *testing.T) {
 		if err := command.Execute(); err == nil || !strings.Contains(err.Error(), tc.want) {
 			t.Fatalf("args %v: got %v, want %s", tc.args, err, tc.want)
 		}
+	}
+}
+
+func TestReleasePolicyFailsBeforeProviderWithoutIndependentReview(t *testing.T) {
+	var output bytes.Buffer
+	command := NewWith(App{Out: &output, ErrOut: &output, Getenv: func(string) string { return "" }})
+	command.SetArgs([]string{"eval", "--benchmark-dir", "../benchmarks/validation", "--benchmark-mode", "git", "--quality-policy", "../benchmarks/release-policy.json"})
+	err := command.Execute()
+	if ExitCode(err) != 1 || !strings.Contains(err.Error(), "independent corpus review is missing") {
+		t.Fatalf("gate did not fail before provider setup: %v", err)
 	}
 }

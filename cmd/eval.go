@@ -22,6 +22,7 @@ type evalOptions struct {
 	benchmarkMode     string
 	benchmarkGrouping string
 	experimentFile    string
+	qualityPolicyFile string
 	rule              string
 	threshold         float64
 	thresholdSet      bool
@@ -38,6 +39,20 @@ func newEval(app App) *cobra.Command {
 		Short: "Run the labeled semantic-rule benchmark",
 		Args:  cobra.NoArgs,
 		RunE: func(command *cobra.Command, _ []string) error {
+			var qualityPolicy *evalpkg.QualityPolicy
+			if options.qualityPolicyFile != "" {
+				if options.benchmarkDir == "" || options.benchmarkMode != "git" || options.benchmarkGrouping != "configured" || options.experimentFile != "" {
+					return fmt.Errorf("--quality-policy requires configured Git benchmarking without experiment overrides")
+				}
+				policy, err := evalpkg.LoadQualityPolicy(options.qualityPolicyFile)
+				if err != nil {
+					return err
+				}
+				if err := policy.Ready(); err != nil {
+					return &ExitError{Code: 1, Err: err}
+				}
+				qualityPolicy = &policy
+			}
 			var experiment *evalpkg.Experiment
 			if options.experimentFile != "" {
 				if options.benchmarkMode != "git" || options.benchmarkDir == "" {
@@ -86,6 +101,11 @@ func newEval(app App) *cobra.Command {
 			}
 			if err := applyProviderOverrides(&cfg, options.provider, options.model); err != nil {
 				return err
+			}
+			if qualityPolicy != nil {
+				if err := qualityPolicy.CheckConfig(cfg); err != nil {
+					return err
+				}
 			}
 			client, err := provider.New(cfg.Provider, provider.Options{
 				BaseURL: cfg.BaseURL, APIKey: app.Getenv(config.APIKeyEnv(cfg.Provider)),
@@ -141,6 +161,11 @@ func newEval(app App) *cobra.Command {
 					return &ExitError{Code: 1, Err: err}
 				}
 			}
+			if qualityPolicy != nil {
+				if err := evalpkg.CheckQualityPolicy(command.ErrOrStderr(), report, *qualityPolicy); err != nil {
+					return &ExitError{Code: 1, Err: err}
+				}
+			}
 			return nil
 		},
 	}
@@ -153,6 +178,7 @@ func newEval(app App) *cobra.Command {
 	flags.StringVar(&options.benchmarkMode, "benchmark-mode", "snippet", "benchmark input path: snippet or git")
 	flags.StringVar(&options.benchmarkGrouping, "benchmark-grouping", "configured", "Git benchmark rule grouping: configured or isolated")
 	flags.StringVar(&options.experimentFile, "benchmark-experiment", "", "Git-only JSON question/context experiment; does not change check defaults")
+	flags.StringVar(&options.qualityPolicyFile, "quality-policy", "", "absolute release-quality policy with independent corpus review")
 	flags.StringVar(&options.rule, "rule", "", "evaluate one rule")
 	flags.Float64Var(&options.threshold, "threshold", 0, "override the configured threshold")
 	flags.StringVar(&options.format, "format", "text", "output format: text or json")

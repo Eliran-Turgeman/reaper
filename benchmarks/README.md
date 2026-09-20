@@ -120,3 +120,31 @@ a context experiment on small fixtures, not the production retrieval policy.
 Compare the four conditions on identical cases, model, grouping and thresholds;
 repeat borderline cases before proposing defaults. A score change from duplicated
 already-visible context does not establish a gain from additional information.
+
+## Absolute release requirements
+
+The user approved `release-policy.json` on 20 September 2026. Every default
+blocking rule must achieve recall >= 0.80 and false-positive rate <= 0.01 on at
+least 20 positive and 100 negative independently reviewed examples. These are
+point-estimate targets, not statistical confidence bounds or proof of deployment
+precision. The release workflow checks them before relative development baselines.
+
+Run `reaper eval --benchmark-dir benchmarks/validation --benchmark-mode git
+--quality-policy benchmarks/release-policy.json`. Without an independent review,
+this exits 1 before making provider requests. The checked-in `review: null` is
+intentional: no agent-authored corpus is asserted to have independent human review.
+Normal PR CI and exploratory evaluations continue to work.
+
+After an independent reviewer approves the full corpus and labels, record a
+review object with `reviewer`, `evidence` (a review record reference),
+`independent: true`, and `corpus_sha256` from that corpus's Git evaluation report.
+The reviewer must be independent of fixture authorship. Software verifies the
+hash binding and attestation fields; it cannot authenticate the person or quality
+of their review. Any corpus edit invalidates that binding. Review metadata is
+never sent to the evaluator. Select the reviewed corpus directory in the workflow
+when it is ready, without changing these targets to make a failing run pass.
+
+The gate accepts only configured Git evaluations of production rules, rejects
+experiment overrides or missing blocking rules, and recomputes metrics from case
+results. Extraction misses remain in recall. Provider failures already fail the
+evaluation before the gate. Passing an old zero-recall baseline is insufficient.
