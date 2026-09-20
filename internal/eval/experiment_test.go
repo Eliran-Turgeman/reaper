@@ -65,3 +65,29 @@ func TestExperimentRejectsUnknownQuestionsAndOversizedContext(t *testing.T) {
 		t.Fatal("oversized context silently accepted")
 	}
 }
+
+func TestContextFixturesSupplyPreviouslyInvisibleHelperBodies(t *testing.T) {
+	cases, err := LoadGitCases("../../benchmarks/context-dev")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cases) != 4 {
+		t.Fatal("missing paired context fixtures")
+	}
+	for _, c := range cases {
+		for _, mode := range []string{"current", "snapshots"} {
+			client := &benchmarkEvaluator{score: .5}
+			_, err := runGitCaseExperiment(context.Background(), client, c, config.Defaults(), "isolated", &Experiment{Version: 1, Name: "context test", Context: mode})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(client.requests) != 1 {
+				t.Fatal("fixture must produce one changed-unit request")
+			}
+			hasHelper := strings.Contains(client.requests[0].State, "func ensurePermission(") || strings.Contains(client.requests[0].State, "func validateAmount(")
+			if hasHelper != (mode == "snapshots") {
+				t.Fatalf("%s/%s supplied incorrect helper evidence", c.ID, mode)
+			}
+		}
+	}
+}
