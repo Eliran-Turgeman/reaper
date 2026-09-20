@@ -11,6 +11,7 @@ import (
 
 	"github.com/Eliran-Turgeman/reaper/internal/config"
 	"github.com/Eliran-Turgeman/reaper/internal/decision"
+	"github.com/Eliran-Turgeman/reaper/internal/semantic"
 )
 
 type benchmarkEvaluator struct {
@@ -18,6 +19,28 @@ type benchmarkEvaluator struct {
 	requests []decision.Request
 	score    float64
 	err      error
+}
+
+func TestQualityDevelopmentCorpusRetainsBothLabelsPerLanguage(t *testing.T) {
+	cases, err := LoadGitCases("../../benchmarks/quality-dev")
+	if err != nil {
+		t.Fatal(err)
+	}
+	coverage := map[string]int{}
+	for _, c := range cases {
+		if c.Split != "dev" {
+			t.Fatal("task-policy fixtures must not become holdout data")
+		}
+		for name := range c.AfterFiles {
+			coverage[c.Rule+":"+semantic.Language(name)+":"+c.Expected]++
+		}
+	}
+	if len(cases) != 24 || len(coverage) != 24 {
+		t.Fatalf("missing rule/language/label coverage: %v", coverage)
+	}
+	if _, err := LoadGitCases("../../benchmarks/git-path"); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func (e *benchmarkEvaluator) Evaluate(_ context.Context, r decision.Request) (decision.Response, error) {
