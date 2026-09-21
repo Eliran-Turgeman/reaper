@@ -112,3 +112,36 @@ The next implementation direction is bounded retrieval of referenced enforcement
 helpers, with explicit evidence provenance and coverage, followed by fresh
 independent review and candidate validation. Four synthetic Go helper cases are
 insufficient to justify broad repository transmission or production thresholds.
+
+## Correctness and targeted-context follow-up
+
+The three confirmed edge cases are fixed: staged changed-file context now uses
+index blobs, root test directories receive test-rule eligibility, and hunk source
+beginning with increment/decrement operators is preserved. Each fix has regression
+tests, documentation, a passing full Go suite, and a clean Reaper check.
+
+The original 32-case validation corpus sends identical requests before/after these
+fixes and remains at 1/12 detected positives with 0/20 false positives. The fixes
+improve correctness on their regression cases; they do not explain those existing
+benchmark misses.
+
+Benchmark-only matched-function and targeted-helper modes now preserve focal
+locations and provide bounded, source-located Go evidence from both snapshots.
+Five initial conditions plus an enforcement-focused question follow-up were each
+repeated three times over 12 correlated development cases. Unsafe helpers score
+0.86–0.89 under the follow-up, versus 0.06–0.09 for safe equivalents. Production
+thresholds still miss all six positive helper cases.
+
+Broader repeated comparisons cover original validation, six-language task-contract
+fixtures and Git-path fixtures. Post-hoc development cutoffs can achieve robust
+13/13 authorization and 12/13 validation recall with no observed false positives,
+but the data is synthetic and under the independently reviewed support target.
+Validation bypass and specifically permitted contract-change scores still overlap.
+Production questions, retrieval, thresholds and strict release policy are unchanged.
+
+See the [complete report](../benchmarks/experiments/targeted-context-v3/report.md)
+for code changes, all scores/signals, protocols, limitations and next steps.
+The combined Reaper check against `34c2117` completes 31 units / 159 semantic
+checks with zero warnings or errors. Formatting, full tests, vet, build, Node
+Action tests and actionlint pass. PR #1 stays draft; independent review and final
+candidate validation remain outstanding.

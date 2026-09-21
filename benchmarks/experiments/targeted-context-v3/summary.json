@@ -1,0 +1,210 @@
+{
+  "identical_validation_requests": 32,
+  "stable_context_conditions": 72,
+  "broader_metrics": [
+    {
+      "corpus": "validation",
+      "rule": "removed-authorization-check",
+      "condition": "targeted-questions",
+      "true_positive": [
+        0,
+        0,
+        0
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "validation",
+      "rule": "removed-authorization-check",
+      "condition": "enforcement-questions",
+      "true_positive": [
+        0,
+        0,
+        0
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "validation",
+      "rule": "removed-validation",
+      "condition": "targeted-questions",
+      "true_positive": [
+        1,
+        1,
+        1
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "validation",
+      "rule": "removed-validation",
+      "condition": "enforcement-questions",
+      "true_positive": [
+        1,
+        1,
+        1
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "quality-dev",
+      "rule": "removed-authorization-check",
+      "condition": "targeted-questions",
+      "true_positive": [
+        0,
+        0,
+        0
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "quality-dev",
+      "rule": "removed-authorization-check",
+      "condition": "enforcement-questions",
+      "true_positive": [
+        0,
+        0,
+        0
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "quality-dev",
+      "rule": "removed-validation",
+      "condition": "targeted-questions",
+      "true_positive": [
+        0,
+        0,
+        0
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "quality-dev",
+      "rule": "removed-validation",
+      "condition": "enforcement-questions",
+      "true_positive": [
+        0,
+        0,
+        0
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "git-path",
+      "rule": "removed-authorization-check",
+      "condition": "targeted-questions",
+      "true_positive": [
+        0,
+        0,
+        0
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "git-path",
+      "rule": "removed-authorization-check",
+      "condition": "enforcement-questions",
+      "true_positive": [
+        0,
+        0,
+        0
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "git-path",
+      "rule": "removed-validation",
+      "condition": "targeted-questions",
+      "true_positive": [
+        0,
+        0,
+        0
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "corpus": "git-path",
+      "rule": "removed-validation",
+      "condition": "enforcement-questions",
+      "true_positive": [
+        0,
+        0,
+        0
+      ],
+      "false_positive": [
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "development_calibration": [
+    {
+      "rule": "removed-authorization-check",
+      "positives": 13,
+      "negatives": 17,
+      "min_positive_score": 0.61,
+      "max_negative_score": 0.44,
+      "best_robust_recall": 1.0,
+      "exploratory_cutoff": 0.61,
+      "true_positive": 13,
+      "false_positive": 0
+    },
+    {
+      "rule": "removed-validation",
+      "positives": 13,
+      "negatives": 14,
+      "min_positive_score": 0.6,
+      "max_negative_score": 0.62,
+      "best_robust_recall": 0.9230769230769231,
+      "exploratory_cutoff": 0.75,
+      "true_positive": 12,
+      "false_positive": 0
+    }
+  ]
+}

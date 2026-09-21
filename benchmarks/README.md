@@ -1,5 +1,9 @@
 # Patch benchmark
 
+Latest: [correctness and targeted-context follow-up](experiments/targeted-context-v3/report.md),
+including the three extraction fixes, repeated helper-context experiments,
+enforcement-focused question candidate, and remaining calibration overlap.
+
 See the [rule-quality experiment report](experiments/rule-quality-report.md) for
 the Git-path measurements, revised-question/context comparisons, per-case scores,
 repeatability results and current release blockers.

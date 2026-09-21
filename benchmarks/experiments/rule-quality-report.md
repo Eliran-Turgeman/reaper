@@ -1,5 +1,9 @@
 # Rule-quality implementation and experiment report
 
+Follow-up: [correctness fixes and targeted-context measurements](targeted-context-v3/report.md)
+records the next phase, including a stronger enforcement question candidate.
+The measurements below remain the historical first-phase results.
+
 Measured 20 September 2026 with `openrouter / typesafe/jev-1.13`. Production prompts, thresholds and historical result baselines are unchanged. PR #1 remains a draft.
 
 ## What changed
