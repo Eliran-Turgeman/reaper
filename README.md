@@ -132,6 +132,7 @@ reaper check --staged
 
 Staged checks read changed-file and repository-search context from captured
 Git index blobs, so unstaged edits or deletions cannot change the evidence.
+Snapshots cover the repository even when the command runs from a subdirectory.
 If the index changes while collecting the diff, the check asks you to retry.
 Deleted files have no current
 surrounding context. Failure to read a required staged blob stops extraction.

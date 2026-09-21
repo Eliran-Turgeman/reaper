@@ -5,8 +5,39 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
+
+func TestIndexSnapshotIncludesWholeRepositoryFromNestedDirectory(t *testing.T) {
+	dir := t.TempDir()
+	runGit(t, dir, "init", "--quiet")
+	nested := filepath.Join(dir, "service")
+	if err := os.Mkdir(nested, 0700); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"root.go", "service/handler.go"} {
+		if err := os.WriteFile(filepath.Join(dir, filepath.FromSlash(name)), []byte(name), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	runGit(t, dir, "add", ".")
+	rootSnapshot, err := (CommandCollector{Dir: dir}).SnapshotIndex(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	nestedSnapshot, err := (CommandCollector{Dir: nested}).SnapshotIndex(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(nestedSnapshot.Files(), rootSnapshot.Files()) || nestedSnapshot.Fingerprint != rootSnapshot.Fingerprint {
+		t.Fatalf("nested snapshot omitted repository evidence: %v versus %v", nestedSnapshot.Files(), rootSnapshot.Files())
+	}
+	data, err := nestedSnapshot.Read(context.Background(), "root.go", 100)
+	if err != nil || string(data) != "root.go" {
+		t.Fatal("cannot read captured root source from nested directory", string(data), err)
+	}
+}
 
 func TestIndexSnapshotPinsRegularBlobContentsAndBoundsReads(t *testing.T) {
 	dir := t.TempDir()

@@ -12,7 +12,7 @@ is ready to replace the production defaults.**
 
 The 84 completed runs show that simpler language alone is insufficient. Factual
 questions improve several scores, but permission composition and missing source
-evidence remain significant problems. We fixed two source-collection bugs and
+evidence remain significant problems. We fixed source-collection bugs and
 added an opt-in bounded helper-context path. Questions, thresholds, historical
 baselines, and strict release requirements remain unchanged by default.
 
@@ -23,7 +23,7 @@ baselines, and strict release requirements remain unchanged by default.
 | Faithful measurement | Exact state, questions and criteria, raw signal values, composition/version, request fingerprints, resolved model, provider request ID, token usage, reported cost and elapsed request time are retained. Missing usage remains unknown. |
 | Structured state and criteria | Native object/array state and explicit Noul true/false criteria work through the decision API, provider adapter, cache and benchmark. Legacy text remains supported; invalid or ambiguous state fails before dispatch. |
 | All-rule wording sweep | Frozen shorter instructions for all 28 signals, reducing instruction words from 940 to 620. Thirty repeated runs separate wording, representation and criteria changes. |
-| Before/after source consistency | Staged changed-file extraction and repository search both read captured index blobs. Unstaged edits/deletions cannot change their evidence; an index change during diff collection requires a retry. |
+| Before/after source consistency | Staged changed-file extraction and repository search both read captured index blobs. Snapshots include the whole repository when invoked from a subdirectory. Unstaged edits/deletions cannot change their evidence; an index change during diff collection requires a retry. |
 | Targeted helper evidence | The benchmark and opt-in CLI share one bounded Go collector. Authorization and validation receive matched functions and one-hop same-package helper candidates, with exclusions and resolution limits recorded. Irrelevant test files no longer consume the helper budget. |
 | Factual versus permission questions | Fifty-four repeated runs compare baseline, factual-only, and factual-plus-permission conditions for authorization, validation, cancellation, assertions and fallback. Experiments preserve raw permission P(yes) separately from the complemented score. |
 | Advisory rules | All nine are included in the language/state/criteria comparisons. Parser-based candidate selection, richer architecture evidence and scope-group composition remain follow-up work. |
@@ -158,7 +158,7 @@ Each meaningful implementation step was followed by the full `go test ./...`
 suite and the formatter/vet/build/Reaper workflow before the next item. Tests
 cover metadata propagation, structured state and criteria validation, unchanged
 legacy requests, cache separation, experimental signal composition, snapshot
-immutability, HTTP payload parity, exclusions, bounded helper retrieval and test
+immutability, nested-directory snapshot coverage, HTTP payload parity, exclusions, bounded helper retrieval and test
 files exhausting the source budget. The final local full suite, `go vet ./...`,
 build and Reaper check pass; Reaper reports complete analysis with no diagnostics
 for the final incremental code change. Earlier step checks likewise passed.

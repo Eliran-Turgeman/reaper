@@ -48,7 +48,9 @@ func (c CommandCollector) SnapshotTree(ctx context.Context, ref string) (*Source
 }
 
 func (c CommandCollector) SnapshotIndex(ctx context.Context) (*SourceSnapshot, error) {
-	data, err := c.command(ctx, "-C", c.Dir, "ls-files", "--full-name", "--stage", "-z").Output()
+	// --full-name affects output paths, not selection. Anchor the pathspec to
+	// the repository root so callers in subdirectories capture the same index.
+	data, err := c.command(ctx, "-C", c.Dir, "ls-files", "--full-name", "--stage", "-z", "--", ":/").Output()
 	if err != nil {
 		return nil, fmt.Errorf("capture index: %w", err)
 	}
