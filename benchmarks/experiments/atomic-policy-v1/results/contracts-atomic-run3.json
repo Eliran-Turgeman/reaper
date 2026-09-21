@@ -1,0 +1,1078 @@
+{
+  "provenance": {
+    "experiment_sha256": "6e53ba429ec5d9acc9fd7eb35e758660b16ac090f5d09f82618b7787ba8df87c",
+    "protocol": "git-v2",
+    "corpus_sha256": "5bcda6d4e2e9f1ddaff7005776a1c65a637f0494b59bf10339bc750844458a1e",
+    "rules_sha256": "f035b56f7c7fe113b44ffe9ba68b17014877111f36782a49a3c07d28aa490245",
+    "config_sha256": "87e2e0d3e5aa2c99d070aa58435c3e3a2a7301e24cd535c67b607c3cfbac81b6"
+  },
+  "mode": "git",
+  "grouping": "isolated",
+  "cases": [
+    {
+      "requests": [
+        {
+          "sha256": "a3301ccaf86731a6405d6e1725ece5bda854e4ac19cf2c4495a7d6655d475539",
+          "state_sha256": "624e8f3447e9e448b954f03a2a7352a4cf69360cd2f7265f49d910d0b9fb0918",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.95,
+            "swallowed-cancellation:main-work-continues": 0.88
+          },
+          "structured_state": {
+            "current_code": "func Load(ctx context.Context) (Rows, error) {\n return db.Query(context.Background())\n}",
+            "diff": " func Load(ctx context.Context) (Rows, error) {\n- return db.Query(ctx)\n+ return db.Query(context.Background())\n }",
+            "file": "service/query.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Load(ctx context.Context) (Rows, error) {\n return db.Query(ctx)\n}",
+            "task": "Make the request handler more reliable."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970282-7jrvSA27QbO7Gx1hiVYG",
+              "usage": {
+                "input_tokens": 600,
+                "output_tokens": 60,
+                "cost_usd": 2.52e-05
+              }
+            }
+          ],
+          "elapsed_ms": 404.445
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/query.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.88,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.95,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.88,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "cancel-main-query",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.88,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "3b851e5593d7ea42c175fb373f6313e6446df1d283d7fd77dd44f9518704376b",
+          "state_sha256": "f3f1347e37e6796aec48cb6ed411cfcc71e96280231eee30a09bebc347416957",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.94,
+            "swallowed-cancellation:main-work-continues": 0.88
+          },
+          "structured_state": {
+            "current_code": "func Audit(ctx context.Context, event Event) error {\n return audit.Write(context.Background(), event)\n}",
+            "diff": " func Audit(ctx context.Context, event Event) error {\n- return audit.Write(ctx, event)\n+ return audit.Write(context.Background(), event)\n }",
+            "file": "service/audit.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Audit(ctx context.Context, event Event) error {\n return audit.Write(ctx, event)\n}",
+            "task": "Audit writes are independently owned: complete this write even if the request is canceled. The caller may wait for completion."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970282-MnEq8aVppNAx5wYNiP2r",
+              "usage": {
+                "input_tokens": 622,
+                "output_tokens": 60,
+                "cost_usd": 2.6124e-05
+              }
+            }
+          ],
+          "elapsed_ms": 335.094
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/audit.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.88,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.94,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.88,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "cancel-independent-audit",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.88,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "e457c06319a4a3fc40317b5770262ab4792988740f53ebf8d6557a69103d385c",
+          "state_sha256": "cc0f27e01c96ca21733ed6276e2f466bf675adddc5809c318be658c07b9ccd70",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.84,
+            "swallowed-cancellation:main-work-continues": 0.73
+          },
+          "structured_state": {
+            "current_code": "import asyncio\nasync def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        return []",
+            "diff": " import asyncio\n async def load():\n-    return await fetch()\n+    try:\n+        return await fetch()\n+    except asyncio.CancelledError:\n+        return []",
+            "file": "service/load.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "import asyncio\nasync def load():\n    return await fetch()",
+            "surrounding_context": "async def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        return []",
+            "task": "Improve cancellation handling while preserving request cancellation."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970283-8gw6givCZlqzah87lbu0",
+              "usage": {
+                "input_tokens": 641,
+                "output_tokens": 60,
+                "cost_usd": 2.6922e-05
+              }
+            }
+          ],
+          "elapsed_ms": 292.169
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/load.py",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.73,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.84,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.73,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "cancel-success-result",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.73,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "63e8b2231317e330a230b5c4471fb3d18fa1012f90ef34c1b4f203f50a10e637",
+          "state_sha256": "4859b6dfecb4c865f371ec5b5c3f8582312d838995b1a5d6bedefb9d9cbea70c",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.06,
+            "swallowed-cancellation:main-work-continues": 0.31
+          },
+          "structured_state": {
+            "current_code": "import asyncio\nasync def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        handle.close()\n        raise",
+            "diff": " import asyncio\n async def load():\n-    return await fetch()\n+    try:\n+        return await fetch()\n+    except asyncio.CancelledError:\n+        handle.close()\n+        raise",
+            "file": "service/load.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "import asyncio\nasync def load():\n    return await fetch()",
+            "surrounding_context": "async def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        handle.close()\n        raise",
+            "task": "Close the local handle on cancellation and propagate the original cancellation."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970284-XU2R4PcPbxokyh8CxJR8",
+              "usage": {
+                "input_tokens": 654,
+                "output_tokens": 60,
+                "cost_usd": 2.7468e-05
+              }
+            }
+          ],
+          "elapsed_ms": 305.832
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/load.py",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.06,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.06,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.31,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "cancel-cleanup-rethrow",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.06,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "1407f3f699713a461dc0206d1945ab9ac817eab7b0e73521e45d66a5e1d11fee",
+          "state_sha256": "deff777686e5f99c9d09eac2a6aa9c9342dd450eb289736159a7a166e1e5ca61",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.94,
+            "silent-failure-fallback:handles-failure": 0.96
+          },
+          "structured_state": {
+            "current_code": "ZoneId parseZone(String raw) {\n    try {\n        return ZoneId.of(raw);\n    } catch (DateTimeException invalid) {\n        return ZoneOffset.UTC;\n    }\n}",
+            "diff": " ZoneId parseZone(String raw) {\n-    return ZoneId.of(raw);\n+    try {\n+        return ZoneId.of(raw);\n+    } catch (DateTimeException invalid) {\n+        return ZoneOffset.UTC;\n+    }\n }",
+            "file": "service/zone.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "ZoneId parseZone(String raw) {\n    return ZoneId.of(raw);\n}",
+            "task": "Parse the required internal billing timezone. Invalid stored configuration must be reported; silently changing it can change billing dates."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970285-7Dk8IlVyf1bNmbo4zNZd",
+              "usage": {
+                "input_tokens": 664,
+                "output_tokens": 58,
+                "cost_usd": 2.7888e-05
+              }
+            }
+          ],
+          "elapsed_ms": 339.888
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/zone.java",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.94,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.94,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.96,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "fallback-required-zone",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.94,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "b6d062a752e1a9cce5fadaa332256d9e72469c3ddfa6eb093f4f1048a462d311",
+          "state_sha256": "112e30b803d4b6504a144e4a5f291fee008485398e0b3c5b4fde86b280c02f8b",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.95,
+            "silent-failure-fallback:handles-failure": 0.98
+          },
+          "structured_state": {
+            "current_code": "ZoneId parseZone(String raw) {\n    try {\n        return ZoneId.of(raw);\n    } catch (DateTimeException invalid) {\n        return ZoneOffset.UTC;\n    }\n}",
+            "diff": " ZoneId parseZone(String raw) {\n-    return ZoneId.of(raw);\n+    try {\n+        return ZoneId.of(raw);\n+    } catch (DateTimeException invalid) {\n+        return ZoneOffset.UTC;\n+    }\n }",
+            "file": "service/zone.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "ZoneId parseZone(String raw) {\n    return ZoneId.of(raw);\n}",
+            "task": "Parse an optional client display preference. The specified display policy is to use UTC if the preference is invalid."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970286-EqbrI0YSqOdwndOPQQ43",
+              "usage": {
+                "input_tokens": 663,
+                "output_tokens": 58,
+                "cost_usd": 2.7846e-05
+              }
+            }
+          ],
+          "elapsed_ms": 306.231
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/zone.java",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.95,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.95,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.98,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "fallback-optional-zone",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.95,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "bedb0a12bda760a56cebac43d49861eb298d0d077ae1fd40df77e58e52d4d088",
+          "state_sha256": "b924c2ea626908eeb90d77c57c98fa8cab3290fbac864b59dba596732d7f1e09",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.94,
+            "silent-failure-fallback:handles-failure": 0.95
+          },
+          "structured_state": {
+            "current_code": "function readDraft(raw: string): Draft {\n  try {\n    return schema.parse(JSON.parse(raw));\n  } catch {\n    return createEmptyDraft();\n  }\n}",
+            "diff": " function readDraft(raw: string): Draft {\n-  return schema.parse(JSON.parse(raw));\n+  try {\n+    return schema.parse(JSON.parse(raw));\n+  } catch {\n+    return createEmptyDraft();\n+  }\n }",
+            "file": "service/draft.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function readDraft(raw: string): Draft {\n  return schema.parse(JSON.parse(raw));\n}",
+            "task": "Read the authoritative persisted draft. Preserve and report corrupt data instead of replacing the user's saved work."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970286-eGtHp6eAb3OeyUuWoFYd",
+              "usage": {
+                "input_tokens": 648,
+                "output_tokens": 58,
+                "cost_usd": 2.7216e-05
+              }
+            }
+          ],
+          "elapsed_ms": 324.412
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/draft.ts",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.94,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.94,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.95,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "fallback-required-draft",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.94,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "7a9e9670bd6b53ad683eade8b3a8223951708dde73ee2dc47bd7d49dc8ef78fa",
+          "state_sha256": "8a6e475b31a7efa87b6ed4425299c1742a6f9d46c2a316547837a44547da3724",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.95,
+            "silent-failure-fallback:handles-failure": 0.98
+          },
+          "structured_state": {
+            "current_code": "function readDraft(raw: string): Draft {\n  try {\n    return schema.parse(JSON.parse(raw));\n  } catch {\n    return createEmptyDraft();\n  }\n}",
+            "diff": " function readDraft(raw: string): Draft {\n-  return schema.parse(JSON.parse(raw));\n+  try {\n+    return schema.parse(JSON.parse(raw));\n+  } catch {\n+    return createEmptyDraft();\n+  }\n }",
+            "file": "service/draft.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function readDraft(raw: string): Draft {\n  return schema.parse(JSON.parse(raw));\n}",
+            "task": "Read a disposable local preview draft. If decoding or schema validation fails, the specified recovery policy is to return a new empty draft; authoritative saved work is stored separately."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970287-NOefuFBCnVylLLkJbL3s",
+              "usage": {
+                "input_tokens": 661,
+                "output_tokens": 58,
+                "cost_usd": 2.7762e-05
+              }
+            }
+          ],
+          "elapsed_ms": 314.359
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/draft.ts",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.95,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.95,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.98,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "fallback-disposable-draft",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.95,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "dc4906452f13dca350f4172db87e8857f3d94fece923477d3156e4f7549c30cc",
+          "state_sha256": "7fa134a740ddc6e93658f2fb59a05b8552072f81eb5aa0146db7abdc6def9b4f",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "weakened-test-assertion:protection-lost",
+              "Instructions": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?",
+              "Criteria": {
+                "true": "A previously checked requirement is no longer enforced by the test, including weaker comparisons, wider tolerance, or skipped behavior.",
+                "false": "Equivalent visible assertions, including supplied assertion helpers, still enforce the same requirement."
+              }
+            }
+          ],
+          "scores": {
+            "weakened-test-assertion:protection-lost": 0.85
+          },
+          "structured_state": {
+            "current_code": "func TestKeys(t *testing.T) {\n require.ElementsMatch(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}",
+            "diff": " func TestKeys(t *testing.T) {\n- require.Equal(t, []string{\"blue\", \"green\", \"red\"}, keys())\n+ require.ElementsMatch(t, []string{\"blue\", \"green\", \"red\"}, keys())\n }",
+            "file": "service/keys_test.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func TestKeys(t *testing.T) {\n require.Equal(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}",
+            "task": "Simplify the test for ranked search keys without changing its order guarantee."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970288-mjSDVRziGXt7hGKx5rtZ",
+              "usage": {
+                "input_tokens": 594,
+                "output_tokens": 32,
+                "cost_usd": 2.4948e-05
+              }
+            }
+          ],
+          "elapsed_ms": 298.681
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "weakened-test-assertion",
+          "file": "service/keys_test.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.85,
+          "signals": [
+            {
+              "id": "protection-lost",
+              "score": 0.85,
+              "evidence": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?"
+            }
+          ]
+        }
+      ],
+      "id": "assert-order-required",
+      "rule": "weakened-test-assertion",
+      "expected": "positive",
+      "score": 0.85,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "2d35289520a8b59868b8340dd021723f1739dd8c9afbbe39f54a6780dc62e71b",
+          "state_sha256": "b5cfa1630e3342e11122807c20388dfa9f3d720af3fdc9d735ecf68b8c7d81de",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "weakened-test-assertion:protection-lost",
+              "Instructions": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?",
+              "Criteria": {
+                "true": "A previously checked requirement is no longer enforced by the test, including weaker comparisons, wider tolerance, or skipped behavior.",
+                "false": "Equivalent visible assertions, including supplied assertion helpers, still enforce the same requirement."
+              }
+            }
+          ],
+          "scores": {
+            "weakened-test-assertion:protection-lost": 0.93
+          },
+          "structured_state": {
+            "current_code": "func TestKeys(t *testing.T) {\n require.ElementsMatch(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}",
+            "diff": " func TestKeys(t *testing.T) {\n- require.Equal(t, []string{\"blue\", \"green\", \"red\"}, keys())\n+ require.ElementsMatch(t, []string{\"blue\", \"green\", \"red\"}, keys())\n }",
+            "file": "service/keys_test.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func TestKeys(t *testing.T) {\n require.Equal(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}",
+            "task": "Map key order is intentionally unspecified. Remove the accidental order requirement while retaining every expected key and count."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970288-tNiiUty1riy7KNc9WALz",
+              "usage": {
+                "input_tokens": 599,
+                "output_tokens": 32,
+                "cost_usd": 2.5158e-05
+              }
+            }
+          ],
+          "elapsed_ms": 446.231
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "weakened-test-assertion",
+          "file": "service/keys_test.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.93,
+          "signals": [
+            {
+              "id": "protection-lost",
+              "score": 0.93,
+              "evidence": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?"
+            }
+          ]
+        }
+      ],
+      "id": "assert-order-unspecified",
+      "rule": "weakened-test-assertion",
+      "expected": "negative",
+      "score": 0.93,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "89b2985b1b1546583af654e7846a54e52bb638406d0f4b951ca82aad2a03af04",
+          "state_sha256": "30e5f460292519d2953f19f94b786bfa87c7b58730d3aa775aa25ea6f8579188",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "weakened-test-assertion:protection-lost",
+              "Instructions": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?",
+              "Criteria": {
+                "true": "A previously checked requirement is no longer enforced by the test, including weaker comparisons, wider tolerance, or skipped behavior.",
+                "false": "Equivalent visible assertions, including supplied assertion helpers, still enforce the same requirement."
+              }
+            }
+          ],
+          "scores": {
+            "weakened-test-assertion:protection-lost": 0.94
+          },
+          "structured_state": {
+            "current_code": "def test_parse():\n    with pytest.raises(ValueError):\n        parse(value)",
+            "diff": " def test_parse():\n-    with pytest.raises(ValueError, match=\"legacy parser failed\"):\n+    with pytest.raises(ValueError):\n         parse(value)",
+            "file": "tests/test_parse.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def test_parse():\n    with pytest.raises(ValueError, match=\"legacy parser failed\"):\n        parse(value)",
+            "task": "Refactor this test while retaining the externally documented error message and exception type."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970289-Dhz0tHsoFYnySvD6YSO8",
+              "usage": {
+                "input_tokens": 552,
+                "output_tokens": 32,
+                "cost_usd": 2.3184e-05
+              }
+            }
+          ],
+          "elapsed_ms": 331.712
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "weakened-test-assertion",
+          "file": "tests/test_parse.py",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.94,
+          "signals": [
+            {
+              "id": "protection-lost",
+              "score": 0.94,
+              "evidence": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?"
+            }
+          ]
+        }
+      ],
+      "id": "assert-message-required",
+      "rule": "weakened-test-assertion",
+      "expected": "positive",
+      "score": 0.94,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "d7b77ad0653568e0ee47ea425650c304a3255b50d3b03498c7c211e0c04c69ad",
+          "state_sha256": "4eeed1d609c98c838720489f9322b4e67080257c6822caccbbc035dba22f9703",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "weakened-test-assertion:protection-lost",
+              "Instructions": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?",
+              "Criteria": {
+                "true": "A previously checked requirement is no longer enforced by the test, including weaker comparisons, wider tolerance, or skipped behavior.",
+                "false": "Equivalent visible assertions, including supplied assertion helpers, still enforce the same requirement."
+              }
+            }
+          ],
+          "scores": {
+            "weakened-test-assertion:protection-lost": 0.96
+          },
+          "structured_state": {
+            "current_code": "def test_parse():\n    with pytest.raises(ValueError):\n        parse(value)",
+            "diff": " def test_parse():\n-    with pytest.raises(ValueError, match=\"legacy parser failed\"):\n+    with pytest.raises(ValueError):\n         parse(value)",
+            "file": "tests/test_parse.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def test_parse():\n    with pytest.raises(ValueError, match=\"legacy parser failed\"):\n        parse(value)",
+            "task": "The legacy parser message is no longer part of the contract. Remove its assertion while retaining the required ValueError exception type."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970290-8YsMTPmpKqhb71IaKzyC",
+              "usage": {
+                "input_tokens": 563,
+                "output_tokens": 32,
+                "cost_usd": 2.3646e-05
+              }
+            }
+          ],
+          "elapsed_ms": 328.86
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "weakened-test-assertion",
+          "file": "tests/test_parse.py",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.96,
+          "signals": [
+            {
+              "id": "protection-lost",
+              "score": 0.96,
+              "evidence": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?"
+            }
+          ]
+        }
+      ],
+      "id": "assert-message-retired",
+      "rule": "weakened-test-assertion",
+      "expected": "negative",
+      "score": 0.96,
+      "split": "dev"
+    }
+  ],
+  "version": 1,
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13",
+  "rules": [
+    {
+      "rule": "silent-failure-fallback",
+      "examples": 4,
+      "true_positive": 2,
+      "false_positive": 2,
+      "true_negative": 0,
+      "false_negative": 0,
+      "precision": 0.5,
+      "recall": 1,
+      "false_positive_rate": 1,
+      "threshold": 0.92,
+      "average_positive_score": 0.94,
+      "average_negative_score": 0.95
+    },
+    {
+      "rule": "swallowed-cancellation",
+      "examples": 4,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 2,
+      "false_negative": 2,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.8049999999999999,
+      "average_negative_score": 0.47
+    },
+    {
+      "rule": "weakened-test-assertion",
+      "examples": 4,
+      "true_positive": 1,
+      "false_positive": 2,
+      "true_negative": 0,
+      "false_negative": 1,
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "false_positive_rate": 1,
+      "threshold": 0.93,
+      "average_positive_score": 0.895,
+      "average_negative_score": 0.9450000000000001
+    }
+  ]
+}

@@ -1,5 +1,9 @@
 # Patch benchmark
 
+The latest [Jev implementation and measurement report](../docs/jev-implementation-results.md)
+summarizes 84 controlled runs, links exact diffs/questions/scores, and explains
+why the measured candidates are not ready to replace production defaults.
+
 New request records retain the supplied fixture state separately from scores,
 the requested model and provider-reported resolved model, request/provider ID,
 per-call token usage and reported cost when available, and elapsed milliseconds

@@ -1,0 +1,2066 @@
+{
+  "provenance": {
+    "experiment_sha256": "05748fefba4efbb84d62383cd850207e7275ed9b8adcc2e7ec65e53d644a3802",
+    "protocol": "git-v2",
+    "corpus_sha256": "3bab318641b7dc5546c21ab82f1e00e32d19a122d771e65603af572d7c646aa4",
+    "rules_sha256": "f035b56f7c7fe113b44ffe9ba68b17014877111f36782a49a3c07d28aa490245",
+    "config_sha256": "87e2e0d3e5aa2c99d070aa58435c3e3a2a7301e24cd535c67b607c3cfbac81b6"
+  },
+  "mode": "git",
+  "grouping": "isolated",
+  "cases": [
+    {
+      "requests": [
+        {
+          "sha256": "bb2bc48edb9ad71453b4316ac6442bd7aad18f0ee940c9f732b42bb97114e0f9",
+          "state_sha256": "99d3bd814b2039dc000295bc37d894d661558095c097bb0c3c79ece746fbcb68",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.67,
+            "removed-authorization-check:removes-authorization": 0.96
+          },
+          "structured_state": {
+            "current_code": "package catalog\nfunc Catalog(actor User) (CatalogData, error) {\n return store.PublicCatalog()\n}",
+            "diff": " package catalog\n func Catalog(actor User) (CatalogData, error) {\n- if !actor.IsCustomer { return CatalogData{}, ErrForbidden }\n  return store.PublicCatalog()\n }",
+            "file": "service/auth-vague-task-go.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service/auth-vague-task-go.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Catalog(actor User) (CatalogData, error) {\n if !actor.IsCustomer { return CatalogData{}, ErrForbidden }\n return store.PublicCatalog()\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service/auth-vague-task-go.go",
+                  "start_line": 2,
+                  "end_line": 4,
+                  "kind": "changed-function",
+                  "code": "func Catalog(actor User) (CatalogData, error) {\n return store.PublicCatalog()\n}"
+                }
+              ],
+              "limitations": [
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement",
+                "after: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package catalog\nfunc Catalog(actor User) (CatalogData, error) {\n if !actor.IsCustomer { return CatalogData{}, ErrForbidden }\n return store.PublicCatalog()\n}",
+            "surrounding_context": "func Catalog(actor User) (CatalogData, error) {\n return store.PublicCatalog()\n}",
+            "task": "Simplify the catalog handler."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970324-vlXprpMJDfTLhTEzsaci",
+              "usage": {
+                "input_tokens": 877,
+                "output_tokens": 56,
+                "cost_usd": 3.6834e-05
+              }
+            }
+          ],
+          "elapsed_ms": 371.271
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-go.go",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.67,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.67,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.96,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-go",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.67,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "57217897c628f2adac4ae23cc7e611842631bdf1c92b369ab55dbd1167538192",
+          "state_sha256": "261104705987c847163a0ad909c33fc96e281462fe1ed21558dcb6a7888026f4",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.31,
+            "removed-authorization-check:removes-authorization": 0.97
+          },
+          "structured_state": {
+            "current_code": "package catalog\nfunc Catalog(actor User) (CatalogData, error) {\n return store.PublicCatalog()\n}",
+            "diff": " package catalog\n func Catalog(actor User) (CatalogData, error) {\n- if !actor.IsCustomer { return CatalogData{}, ErrForbidden }\n  return store.PublicCatalog()\n }",
+            "file": "service/auth-explicit-contract-go.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service/auth-explicit-contract-go.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Catalog(actor User) (CatalogData, error) {\n if !actor.IsCustomer { return CatalogData{}, ErrForbidden }\n return store.PublicCatalog()\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service/auth-explicit-contract-go.go",
+                  "start_line": 2,
+                  "end_line": 4,
+                  "kind": "changed-function",
+                  "code": "func Catalog(actor User) (CatalogData, error) {\n return store.PublicCatalog()\n}"
+                }
+              ],
+              "limitations": [
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement",
+                "after: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package catalog\nfunc Catalog(actor User) (CatalogData, error) {\n if !actor.IsCustomer { return CatalogData{}, ErrForbidden }\n return store.PublicCatalog()\n}",
+            "surrounding_context": "func Catalog(actor User) (CatalogData, error) {\n return store.PublicCatalog()\n}",
+            "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970324-SZ9XDJGj4fWYKzUOWoMA",
+              "usage": {
+                "input_tokens": 894,
+                "output_tokens": 56,
+                "cost_usd": 3.7548e-05
+              }
+            }
+          ],
+          "elapsed_ms": 330.97
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-go.go",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.31,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.31,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-go",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.31,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "ca1eb9b371a912d375db26d6e8f0c23a245074aba152c09d8e16ac51cfcdc985",
+          "state_sha256": "99d751118698610ea34ee576b4f5c8ff808e1e318ad88e7e424acd77141fe31c",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.4
+          },
+          "structured_state": {
+            "current_code": "package orders\nfunc SetQuantity(n int) error {\n return store.SetQuantity(n)\n}",
+            "diff": " package orders\n func SetQuantity(n int) error {\n- if n < 1 { return ErrInvalid }\n  return store.SetQuantity(n)\n }",
+            "file": "service/val-vague-task-go.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service/val-vague-task-go.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func SetQuantity(n int) error {\n if n < 1 { return ErrInvalid }\n return store.SetQuantity(n)\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service/val-vague-task-go.go",
+                  "start_line": 2,
+                  "end_line": 4,
+                  "kind": "changed-function",
+                  "code": "func SetQuantity(n int) error {\n return store.SetQuantity(n)\n}"
+                }
+              ],
+              "limitations": [
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement",
+                "after: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package orders\nfunc SetQuantity(n int) error {\n if n < 1 { return ErrInvalid }\n return store.SetQuantity(n)\n}",
+            "surrounding_context": "func SetQuantity(n int) error {\n return store.SetQuantity(n)\n}",
+            "task": "Simplify quantity handling."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970325-qtn0n6iOQTZqode0BXa1",
+              "usage": {
+                "input_tokens": 816,
+                "output_tokens": 48,
+                "cost_usd": 3.4272e-05
+              }
+            }
+          ],
+          "elapsed_ms": 305.266
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-go.go",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.4,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.4,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-go",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.4,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "80c1feda722f18280deb6464ab081182f75f4b058d09783eed7ab726aa6c888e",
+          "state_sha256": "f46b6d29c86ff65bbd0e1aa749ea99cf2af2025eeac3b362b4a4498062297ee1",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.15
+          },
+          "structured_state": {
+            "current_code": "package orders\nfunc SetQuantity(n int) error {\n return store.SetQuantity(n)\n}",
+            "diff": " package orders\n func SetQuantity(n int) error {\n- if n < 1 { return ErrInvalid }\n  return store.SetQuantity(n)\n }",
+            "file": "service/val-explicit-contract-go.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service/val-explicit-contract-go.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func SetQuantity(n int) error {\n if n < 1 { return ErrInvalid }\n return store.SetQuantity(n)\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service/val-explicit-contract-go.go",
+                  "start_line": 2,
+                  "end_line": 4,
+                  "kind": "changed-function",
+                  "code": "func SetQuantity(n int) error {\n return store.SetQuantity(n)\n}"
+                }
+              ],
+              "limitations": [
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement",
+                "after: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package orders\nfunc SetQuantity(n int) error {\n if n < 1 { return ErrInvalid }\n return store.SetQuantity(n)\n}",
+            "surrounding_context": "func SetQuantity(n int) error {\n return store.SetQuantity(n)\n}",
+            "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970326-ReBfEVRP4koJJ2MimaEa",
+              "usage": {
+                "input_tokens": 840,
+                "output_tokens": 48,
+                "cost_usd": 3.528e-05
+              }
+            }
+          ],
+          "elapsed_ms": 332.385
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-go.go",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.15,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.15,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-go",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.15,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "81ad38233de778ea4b018d59a3a109de1c653c0a6cbca2ba6cb0ca3e5b5aba64",
+          "state_sha256": "f7fcef2ae6463f388abfd73d0acb85abc5abc1bebaaae945f5436f4603dace95",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.64,
+            "removed-authorization-check:removes-authorization": 0.97
+          },
+          "structured_state": {
+            "current_code": "def catalog(actor):\n    return store.public_catalog()",
+            "diff": " def catalog(actor):\n-    if not actor.is_customer:\n-        raise PermissionError('customer required')\n     return store.public_catalog()",
+            "file": "service/auth-vague-task-py.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def catalog(actor):\n    if not actor.is_customer:\n        raise PermissionError('customer required')\n    return store.public_catalog()",
+            "task": "Simplify the catalog handler."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970327-2hpIG0vvYvHaUkMxrvuD",
+              "usage": {
+                "input_tokens": 564,
+                "output_tokens": 56,
+                "cost_usd": 2.3688e-05
+              }
+            }
+          ],
+          "elapsed_ms": 304.35
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-py.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.64,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.64,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-py",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.64,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "7089ba27dcaf6d66f1a0a4e7794d00e28614bf1fa28d92e47170fe78d79aec6d",
+          "state_sha256": "4480c9343d3c8063a879cacceedc97db60ed376caea6a514205f5bf51d1a2876",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.2,
+            "removed-authorization-check:removes-authorization": 0.98
+          },
+          "structured_state": {
+            "current_code": "def catalog(actor):\n    return store.public_catalog()",
+            "diff": " def catalog(actor):\n-    if not actor.is_customer:\n-        raise PermissionError('customer required')\n     return store.public_catalog()",
+            "file": "service/auth-explicit-contract-py.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def catalog(actor):\n    if not actor.is_customer:\n        raise PermissionError('customer required')\n    return store.public_catalog()",
+            "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970327-IWJw6qbtJoq7z6u0s8aG",
+              "usage": {
+                "input_tokens": 577,
+                "output_tokens": 56,
+                "cost_usd": 2.4234e-05
+              }
+            }
+          ],
+          "elapsed_ms": 440.979
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-py.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.2,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.2,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.98,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-py",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.2,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "0a0eb681ce0a1a2b2624ddc0c2521f5b8ef52acc201386c09594dda6df3513db",
+          "state_sha256": "d9ca695b0d79234ff2f802ffb11459e4802f152986eb73f401b52df9e6c48f57",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.56
+          },
+          "structured_state": {
+            "current_code": "def set_quantity(n):\n    return store.set_quantity(n)",
+            "diff": " def set_quantity(n):\n-    if n < 1:\n-        raise ValueError('quantity must be positive')\n     return store.set_quantity(n)",
+            "file": "service/val-vague-task-py.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def set_quantity(n):\n    if n < 1:\n        raise ValueError('quantity must be positive')\n    return store.set_quantity(n)",
+            "task": "Simplify quantity handling."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970329-xUHIgZmKZTAZ7YT4cQrd",
+              "usage": {
+                "input_tokens": 560,
+                "output_tokens": 48,
+                "cost_usd": 2.352e-05
+              }
+            }
+          ],
+          "elapsed_ms": 322.543
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-py.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.56,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.56,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-py",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.56,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "2bc90d1ac4dd31dec819e9c4af2d64a3b5bfd5c994f754adbfc4eb8fb3214c3a",
+          "state_sha256": "18a238d432554a8bdc009c83176d5d5ed81cf5853dc6be2b39b5e79de6ad9a09",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.19
+          },
+          "structured_state": {
+            "current_code": "def set_quantity(n):\n    return store.set_quantity(n)",
+            "diff": " def set_quantity(n):\n-    if n < 1:\n-        raise ValueError('quantity must be positive')\n     return store.set_quantity(n)",
+            "file": "service/val-explicit-contract-py.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def set_quantity(n):\n    if n < 1:\n        raise ValueError('quantity must be positive')\n    return store.set_quantity(n)",
+            "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970329-snEl8UOl8AQAkwXvdI90",
+              "usage": {
+                "input_tokens": 580,
+                "output_tokens": 48,
+                "cost_usd": 2.436e-05
+              }
+            }
+          ],
+          "elapsed_ms": 324.33
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-py.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.19,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.19,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-py",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.19,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "5690d870087979a006c72d661f02235a16d8717e94dc22e18f78b03b689f1ae1",
+          "state_sha256": "4a6e12a80498bc520961b11c29b347378c75b95567fa9aa5b3568f13e15753ac",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.59,
+            "removed-authorization-check:removes-authorization": 0.97
+          },
+          "structured_state": {
+            "current_code": "function catalog(actor: User): Catalog {\n  return store.publicCatalog();\n}",
+            "diff": " function catalog(actor: User): Catalog {\n-  if (!actor.isCustomer) throw new Forbidden();\n   return store.publicCatalog();\n }",
+            "file": "service/auth-vague-task-ts.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function catalog(actor: User): Catalog {\n  if (!actor.isCustomer) throw new Forbidden();\n  return store.publicCatalog();\n}",
+            "task": "Simplify the catalog handler."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970330-WlpP3qSQ9IXDwflwRv4l",
+              "usage": {
+                "input_tokens": 579,
+                "output_tokens": 56,
+                "cost_usd": 2.4318e-05
+              }
+            }
+          ],
+          "elapsed_ms": 376.783
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-ts.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.59,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.59,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-ts",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.59,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "7c83f7420ac8adc78a07930640d736a03bee287cd121b46782c759e94bdec3db",
+          "state_sha256": "16bba7fc34a6f62b1806ba708494486687c1ce1dc7c0fc8ef81a5ff509631881",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.27,
+            "removed-authorization-check:removes-authorization": 0.98
+          },
+          "structured_state": {
+            "current_code": "function catalog(actor: User): Catalog {\n  return store.publicCatalog();\n}",
+            "diff": " function catalog(actor: User): Catalog {\n-  if (!actor.isCustomer) throw new Forbidden();\n   return store.publicCatalog();\n }",
+            "file": "service/auth-explicit-contract-ts.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function catalog(actor: User): Catalog {\n  if (!actor.isCustomer) throw new Forbidden();\n  return store.publicCatalog();\n}",
+            "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970330-hAbX7fNwqYVzxZ2309jX",
+              "usage": {
+                "input_tokens": 592,
+                "output_tokens": 56,
+                "cost_usd": 2.4864e-05
+              }
+            }
+          ],
+          "elapsed_ms": 295.425
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-ts.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.27,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.27,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.98,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-ts",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.27,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "02b05be644aa0f401b1ea9d1197f8a62c0e888b54b610ce5948e7a3b42428a3e",
+          "state_sha256": "b8b5fd98373c4eaace43e387f2fbaf2d6d5b1bf047df7828e06eb37f7af7694f",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.37
+          },
+          "structured_state": {
+            "current_code": "function setQuantity(n: number): void {\n  store.setQuantity(n);\n}",
+            "diff": " function setQuantity(n: number): void {\n-  if (n < 1) throw new RangeError('quantity must be positive');\n   store.setQuantity(n);\n }",
+            "file": "service/val-vague-task-ts.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function setQuantity(n: number): void {\n  if (n < 1) throw new RangeError('quantity must be positive');\n  store.setQuantity(n);\n}",
+            "task": "Simplify quantity handling."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970331-tuiLp93P9o6H8XWUmp53",
+              "usage": {
+                "input_tokens": 584,
+                "output_tokens": 48,
+                "cost_usd": 2.4528e-05
+              }
+            }
+          ],
+          "elapsed_ms": 308.797
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-ts.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.37,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.37,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-ts",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.37,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "b7d0e85169d7df789d70f804b8b50f7cf6eaf42b7a7d0937d7d56edf3ddabf06",
+          "state_sha256": "14932f74743b61b2d6d607a3f602c435f222ddf69c0fdd618e78237f1dd0fb6f",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.16
+          },
+          "structured_state": {
+            "current_code": "function setQuantity(n: number): void {\n  store.setQuantity(n);\n}",
+            "diff": " function setQuantity(n: number): void {\n-  if (n < 1) throw new RangeError('quantity must be positive');\n   store.setQuantity(n);\n }",
+            "file": "service/val-explicit-contract-ts.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function setQuantity(n: number): void {\n  if (n < 1) throw new RangeError('quantity must be positive');\n  store.setQuantity(n);\n}",
+            "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970332-O4VvUNqpNYf2X3OhVpE8",
+              "usage": {
+                "input_tokens": 604,
+                "output_tokens": 48,
+                "cost_usd": 2.5368e-05
+              }
+            }
+          ],
+          "elapsed_ms": 335.36
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-ts.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.16,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.16,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-ts",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.16,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "aebf17ea12995d9d0add2dcdd7b0147748ee4c65c7575b8225d2d7f3e41e25eb",
+          "state_sha256": "4cacc038f45e9e32ec0712810fb7762b5d602d7ec1377f1001bfb41a8e4f6991",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.66,
+            "removed-authorization-check:removes-authorization": 0.96
+          },
+          "structured_state": {
+            "current_code": "function catalog(actor) {\n  return store.publicCatalog();\n}",
+            "diff": " function catalog(actor) {\n-  if (!actor.isCustomer) throw new Forbidden();\n   return store.publicCatalog();\n }",
+            "file": "service/auth-vague-task-js.js",
+            "language": "javascript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function catalog(actor) {\n  if (!actor.isCustomer) throw new Forbidden();\n  return store.publicCatalog();\n}",
+            "task": "Simplify the catalog handler."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970332-ZysHtCtqgjfg3xE67J8w",
+              "usage": {
+                "input_tokens": 570,
+                "output_tokens": 56,
+                "cost_usd": 2.394e-05
+              }
+            }
+          ],
+          "elapsed_ms": 346.172
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-js.js",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.66,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.66,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.96,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-js",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.66,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "801e2b310d959ca3f5b64ad2e0945b4357900842a510ef6633c291b9e0f7ddce",
+          "state_sha256": "1911bede568f3a702c17e5a44d73af7b551cb8358acb6e62a3f7edee2090d60a",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.28,
+            "removed-authorization-check:removes-authorization": 0.97
+          },
+          "structured_state": {
+            "current_code": "function catalog(actor) {\n  return store.publicCatalog();\n}",
+            "diff": " function catalog(actor) {\n-  if (!actor.isCustomer) throw new Forbidden();\n   return store.publicCatalog();\n }",
+            "file": "service/auth-explicit-contract-js.js",
+            "language": "javascript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function catalog(actor) {\n  if (!actor.isCustomer) throw new Forbidden();\n  return store.publicCatalog();\n}",
+            "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970333-QKwooeC98t9vzNqbTGKS",
+              "usage": {
+                "input_tokens": 583,
+                "output_tokens": 56,
+                "cost_usd": 2.4486e-05
+              }
+            }
+          ],
+          "elapsed_ms": 326.035
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-js.js",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.28,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.28,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-js",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.28,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "a8cf8a0522924f4bc42dcff2d78a047f079000b7f456a0ff5d725b5d8fab3420",
+          "state_sha256": "6497ed19930eecbcf1eb474e1d5d542e43afa654b742541e7ca5a35550fa8446",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.4
+          },
+          "structured_state": {
+            "current_code": "function setQuantity(n) {\n  store.setQuantity(n);\n}",
+            "diff": " function setQuantity(n) {\n-  if (n < 1) throw new RangeError('quantity must be positive');\n   store.setQuantity(n);\n }",
+            "file": "service/val-vague-task-js.js",
+            "language": "javascript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function setQuantity(n) {\n  if (n < 1) throw new RangeError('quantity must be positive');\n  store.setQuantity(n);\n}",
+            "task": "Simplify quantity handling."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970334-rfhbTvaQIgmyzgddqWr8",
+              "usage": {
+                "input_tokens": 575,
+                "output_tokens": 48,
+                "cost_usd": 2.415e-05
+              }
+            }
+          ],
+          "elapsed_ms": 322.615
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-js.js",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.4,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.4,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-js",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.4,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "84cdf48157538fb7038b20ea1a1f6bebda496983b8d33bef72e7768ffb633b34",
+          "state_sha256": "a767af7e922aa43b7c2efbc1e15e05730cb383e63f973518d4b2743f2ff364ce",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.18
+          },
+          "structured_state": {
+            "current_code": "function setQuantity(n) {\n  store.setQuantity(n);\n}",
+            "diff": " function setQuantity(n) {\n-  if (n < 1) throw new RangeError('quantity must be positive');\n   store.setQuantity(n);\n }",
+            "file": "service/val-explicit-contract-js.js",
+            "language": "javascript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function setQuantity(n) {\n  if (n < 1) throw new RangeError('quantity must be positive');\n  store.setQuantity(n);\n}",
+            "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970334-D4GCyo78IQvbFXm3CGlH",
+              "usage": {
+                "input_tokens": 595,
+                "output_tokens": 48,
+                "cost_usd": 2.499e-05
+              }
+            }
+          ],
+          "elapsed_ms": 291.18
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-js.js",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.18,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.18,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-js",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.18,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "e53f80eb1a7c2d0a64ca340c5cd02638f19e6b1266b86f5a49f1487a30dae274",
+          "state_sha256": "d251ef537043c2b16d6633d9403f8cae1bd8e312804db6ad000445c4818d8c0b",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.68,
+            "removed-authorization-check:removes-authorization": 0.96
+          },
+          "structured_state": {
+            "current_code": "Catalog catalog(User actor) {\n    return store.publicCatalog();\n}",
+            "diff": " Catalog catalog(User actor) {\n-    if (!actor.isCustomer()) throw new ForbiddenException();\n     return store.publicCatalog();\n }",
+            "file": "service/auth-vague-task-java.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "Catalog catalog(User actor) {\n    if (!actor.isCustomer()) throw new ForbiddenException();\n    return store.publicCatalog();\n}",
+            "task": "Simplify the catalog handler."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970335-D9HDMLs4XqD0fza2j5U6",
+              "usage": {
+                "input_tokens": 583,
+                "output_tokens": 56,
+                "cost_usd": 2.4486e-05
+              }
+            }
+          ],
+          "elapsed_ms": 306.711
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-java.java",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.68,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.68,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.96,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-java",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.68,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "518a0213346519ae6a1014c96d8b1f63fb4545780096c0675682211a7ad05390",
+          "state_sha256": "82e2a75874a94bb98562d30ca9486347b100503a5d14712799775b0cc1fe0f7f",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.29,
+            "removed-authorization-check:removes-authorization": 0.97
+          },
+          "structured_state": {
+            "current_code": "Catalog catalog(User actor) {\n    return store.publicCatalog();\n}",
+            "diff": " Catalog catalog(User actor) {\n-    if (!actor.isCustomer()) throw new ForbiddenException();\n     return store.publicCatalog();\n }",
+            "file": "service/auth-explicit-contract-java.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "Catalog catalog(User actor) {\n    if (!actor.isCustomer()) throw new ForbiddenException();\n    return store.publicCatalog();\n}",
+            "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970336-8piN5J5IFv7X3CDjHQFy",
+              "usage": {
+                "input_tokens": 596,
+                "output_tokens": 56,
+                "cost_usd": 2.5032e-05
+              }
+            }
+          ],
+          "elapsed_ms": 356.261
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-java.java",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.29,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.29,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-java",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.29,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "26d960ef40ff4eb12904f357b2b86fc3ddb8c1243d32fcdee5b1ee12355d13e4",
+          "state_sha256": "2e105f62b5abc0ef8f6ecd57f58d0e63fa16813a651155d40138d46a18c0d486",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.4
+          },
+          "structured_state": {
+            "current_code": "void setQuantity(int n) {\n    store.setQuantity(n);\n}",
+            "diff": " void setQuantity(int n) {\n-    if (n < 1) throw new IllegalArgumentException(\"quantity must be positive\");\n     store.setQuantity(n);\n }",
+            "file": "service/val-vague-task-java.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "void setQuantity(int n) {\n    if (n < 1) throw new IllegalArgumentException(\"quantity must be positive\");\n    store.setQuantity(n);\n}",
+            "task": "Simplify quantity handling."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970336-fbUHtChuhLjpxxhZ7Smx",
+              "usage": {
+                "input_tokens": 584,
+                "output_tokens": 48,
+                "cost_usd": 2.4528e-05
+              }
+            }
+          ],
+          "elapsed_ms": 369.394
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-java.java",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.4,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.4,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-java",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.4,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "8a57351d4d24d6bc9b07701c282f66e73c4959011cb3489da8f651f7260e928d",
+          "state_sha256": "d8ef805d96abfd99a40e6e5e4e9566ebaa098ff2048434ced21c8c46672814b3",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.13
+          },
+          "structured_state": {
+            "current_code": "void setQuantity(int n) {\n    store.setQuantity(n);\n}",
+            "diff": " void setQuantity(int n) {\n-    if (n < 1) throw new IllegalArgumentException(\"quantity must be positive\");\n     store.setQuantity(n);\n }",
+            "file": "service/val-explicit-contract-java.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "void setQuantity(int n) {\n    if (n < 1) throw new IllegalArgumentException(\"quantity must be positive\");\n    store.setQuantity(n);\n}",
+            "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970337-itqAIZQIE7yQwpIYeGST",
+              "usage": {
+                "input_tokens": 604,
+                "output_tokens": 48,
+                "cost_usd": 2.5368e-05
+              }
+            }
+          ],
+          "elapsed_ms": 288.602
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-java.java",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.13,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.13,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-java",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.13,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "e2ea90627c10801f5d29a73a8b10085116f64c0bedd58f874b02b7d1e94b2e72",
+          "state_sha256": "cabdbb43ec7f06a38c57d80efbac6f07f423b4f1889d6be8526c470a3324ad20",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.68,
+            "removed-authorization-check:removes-authorization": 0.96
+          },
+          "structured_state": {
+            "current_code": "Catalog Catalog(User actor) {\n    return store.PublicCatalog();\n}",
+            "diff": " Catalog Catalog(User actor) {\n-    if (!actor.IsCustomer) throw new ForbiddenException();\n     return store.PublicCatalog();\n }",
+            "file": "service/auth-vague-task-cs.cs",
+            "language": "csharp",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "Catalog Catalog(User actor) {\n    if (!actor.IsCustomer) throw new ForbiddenException();\n    return store.PublicCatalog();\n}",
+            "task": "Simplify the catalog handler."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970338-uGx6YoPw41xurlGbWidR",
+              "usage": {
+                "input_tokens": 586,
+                "output_tokens": 56,
+                "cost_usd": 2.4612e-05
+              }
+            }
+          ],
+          "elapsed_ms": 296.337
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-vague-task-cs.cs",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.68,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.68,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.96,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-vague-task-cs",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.68,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "b7e063927df388dfd94907f7cc9d82bd1bbb27d779dd50d84bb35f2a930a8d88",
+          "state_sha256": "49ea279f02d05954e2af6419aa08d74a3bb3fb07bd2db3b92daa60a27fe1409b",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.27,
+            "removed-authorization-check:removes-authorization": 0.97
+          },
+          "structured_state": {
+            "current_code": "Catalog Catalog(User actor) {\n    return store.PublicCatalog();\n}",
+            "diff": " Catalog Catalog(User actor) {\n-    if (!actor.IsCustomer) throw new ForbiddenException();\n     return store.PublicCatalog();\n }",
+            "file": "service/auth-explicit-contract-cs.cs",
+            "language": "csharp",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "Catalog Catalog(User actor) {\n    if (!actor.IsCustomer) throw new ForbiddenException();\n    return store.PublicCatalog();\n}",
+            "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970338-yJb7miANQlSlSeGDDHVg",
+              "usage": {
+                "input_tokens": 599,
+                "output_tokens": 56,
+                "cost_usd": 2.5158e-05
+              }
+            }
+          ],
+          "elapsed_ms": 381.656
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service/auth-explicit-contract-cs.cs",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.27,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.27,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.97,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-explicit-contract-cs",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.27,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "33a5e9bd0b0ec445fd31afdd508055d44691e7d6b52950e850e5c7801be77d11",
+          "state_sha256": "67a17e1471076bb6b8a96c1f44fc72c93d7d5811561ff1f72fadf8adc5219fc9",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.97,
+            "removed-validation:retains-unsafe-operation": 0.43
+          },
+          "structured_state": {
+            "current_code": "void SetQuantity(int n) {\n    store.SetQuantity(n);\n}",
+            "diff": " void SetQuantity(int n) {\n-    if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));\n     store.SetQuantity(n);\n }",
+            "file": "service/val-vague-task-cs.cs",
+            "language": "csharp",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "void SetQuantity(int n) {\n    if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));\n    store.SetQuantity(n);\n}",
+            "task": "Simplify quantity handling."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970339-oFAMyjrzkLLYIqmcAEFd",
+              "usage": {
+                "input_tokens": 585,
+                "output_tokens": 48,
+                "cost_usd": 2.457e-05
+              }
+            }
+          ],
+          "elapsed_ms": 340.116
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-vague-task-cs.cs",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.43,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.97,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.43,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-vague-task-cs",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.43,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "5cebb9d85d346781517bd77bbf86dbed048a4c21502b558a95ebbdf24f302ed2",
+          "state_sha256": "9d5d03af342b7f389ffece334a8055e7f529127b16c73bb471737b2aa3b1a9b5",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.98,
+            "removed-validation:retains-unsafe-operation": 0.15
+          },
+          "structured_state": {
+            "current_code": "void SetQuantity(int n) {\n    store.SetQuantity(n);\n}",
+            "diff": " void SetQuantity(int n) {\n-    if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));\n     store.SetQuantity(n);\n }",
+            "file": "service/val-explicit-contract-cs.cs",
+            "language": "csharp",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "void SetQuantity(int n) {\n    if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));\n    store.SetQuantity(n);\n}",
+            "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970340-HJOvGVefXkGrYEdXQqgk",
+              "usage": {
+                "input_tokens": 605,
+                "output_tokens": 48,
+                "cost_usd": 2.541e-05
+              }
+            }
+          ],
+          "elapsed_ms": 329.164
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service/val-explicit-contract-cs.cs",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.15,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.98,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.15,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "val-explicit-contract-cs",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.15,
+      "split": "dev"
+    }
+  ],
+  "version": 1,
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13",
+  "rules": [
+    {
+      "rule": "removed-authorization-check",
+      "examples": 12,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 6,
+      "false_negative": 6,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.6533333333333334,
+      "average_negative_score": 0.27
+    },
+    {
+      "rule": "removed-validation",
+      "examples": 12,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 6,
+      "false_negative": 6,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.4266666666666667,
+      "average_negative_score": 0.16
+    }
+  ]
+}

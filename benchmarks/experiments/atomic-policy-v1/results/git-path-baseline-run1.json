@@ -1,0 +1,554 @@
+{
+  "provenance": {
+    "experiment_sha256": "05748fefba4efbb84d62383cd850207e7275ed9b8adcc2e7ec65e53d644a3802",
+    "protocol": "git-v2",
+    "corpus_sha256": "492f2bd287960eed61ee836b9ec435ca32333d7612988feb0c5f14cdf74e5a6c",
+    "rules_sha256": "f035b56f7c7fe113b44ffe9ba68b17014877111f36782a49a3c07d28aa490245",
+    "config_sha256": "87e2e0d3e5aa2c99d070aa58435c3e3a2a7301e24cd535c67b607c3cfbac81b6"
+  },
+  "mode": "git",
+  "grouping": "isolated",
+  "cases": [
+    {
+      "requests": [
+        {
+          "sha256": "8a2185442323da16885fdcf7a8e6d876c69d85773f6fb4826057b9238f212210",
+          "state_sha256": "16459f0ebbb3ec66fccf51bd31fa18c1de8afbbd7873107af45cfb01a8cd7d85",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.24,
+            "removed-authorization-check:removes-authorization": 0.53
+          },
+          "structured_state": {
+            "current_code": "package service\nfunc Read(fast bool) error {\n if fast { return read() }\n if !allowed() { return denied }\n return read()\n}",
+            "diff": " package service\n func Read(fast bool) error {\n+ if fast { return read() }\n  if !allowed() { return denied }\n  return read()\n }",
+            "file": "service.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 6,
+                  "kind": "changed-function",
+                  "code": "func Read(fast bool) error {\n if fast { return read() }\n if !allowed() { return denied }\n return read()\n}"
+                }
+              ],
+              "limitations": [
+                "before: unresolved direct calls (possibly builtins/conversions): [allowed read]",
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement",
+                "after: unresolved direct calls (possibly builtins/conversions): [allowed read]",
+                "after: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}",
+            "surrounding_context": "func Read(fast bool) error {\n if fast { return read() }\n if !allowed() { return denied }\n return read()\n}",
+            "task": "Optimize reads while preserving authorization."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970386-GfLedzIUG25zMCAJTOd8",
+              "usage": {
+                "input_tokens": 853,
+                "output_tokens": 56,
+                "cost_usd": 3.5826e-05
+              }
+            }
+          ],
+          "elapsed_ms": 347.364
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service.go",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.24,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.24,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.53,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-inserted-bypass",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.24,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "b195fa33bea39241cb70844e0fe97d7cc9d9357b1c42836706c6f0f169450574",
+          "state_sha256": "29ef3c5bfdf12a380a9d696189ffe41537cf4101c1cf845d18ebac6dee63645f",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:removes-validation",
+              "Instructions": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-validation:retains-unsafe-operation",
+              "Instructions": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ],
+          "scores": {
+            "removed-validation:removes-validation": 0.29,
+            "removed-validation:retains-unsafe-operation": 0.39
+          },
+          "structured_state": {
+            "current_code": "package service\nfunc Save(value int, fast bool) error {\n if fast { return store(value) }\n if value < 0 { return invalid }\n return store(value)\n}",
+            "diff": " package service\n func Save(value int, fast bool) error {\n+ if fast { return store(value) }\n  if value < 0 { return invalid }\n  return store(value)\n }",
+            "file": "service.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Save(value int, fast bool) error {\n if value < 0 { return invalid }\n return store(value)\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 6,
+                  "kind": "changed-function",
+                  "code": "func Save(value int, fast bool) error {\n if fast { return store(value) }\n if value < 0 { return invalid }\n return store(value)\n}"
+                }
+              ],
+              "limitations": [
+                "before: unresolved direct calls (possibly builtins/conversions): [store]",
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement",
+                "after: unresolved direct calls (possibly builtins/conversions): [store]",
+                "after: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package service\nfunc Save(value int, fast bool) error {\n if value < 0 { return invalid }\n return store(value)\n}",
+            "surrounding_context": "func Save(value int, fast bool) error {\n if fast { return store(value) }\n if value < 0 { return invalid }\n return store(value)\n}",
+            "task": "Add a fast storage path while retaining the nonnegative input contract."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970387-9lFx3vlYvdBmKTG7aRtk",
+              "usage": {
+                "input_tokens": 873,
+                "output_tokens": 48,
+                "cost_usd": 3.6666e-05
+              }
+            }
+          ],
+          "elapsed_ms": 311.823
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-validation",
+          "file": "service.go",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.29,
+          "signals": [
+            {
+              "id": "removes-validation",
+              "score": 0.29,
+              "evidence": "Score whether the change removes or bypasses a previously enforced input validity check such as bounds, required fields, allowed values, or a data invariant. Require before-and-after evidence."
+            },
+            {
+              "id": "retains-unsafe-operation",
+              "score": 0.39,
+              "evidence": "Score whether the guarded operation remains but no equivalent check or enforced type/contract is visible. Exclude equivalent validator refactors, removed operations, and explicit task requirements to accept previously rejected inputs."
+            }
+          ]
+        }
+      ],
+      "id": "validation-inserted-bypass",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.29,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "5262b2260db1546daa9684d8285c13cfcd0ad71c1333d9aea5af87ff7f011ea4",
+          "state_sha256": "60acf3d55517986a9ee94a122b4aaa8a3d2f2f16e813e7beaba51199a12ef78a",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:discards-cancellation",
+              "Instructions": "Score whether the change newly suppresses a cancellation exception, ignores a canceled context or abort signal, or replaces a cancelable context with a background context. Require before-and-after evidence."
+            },
+            {
+              "ID": "swallowed-cancellation:violates-cancellation-contract",
+              "Instructions": "Score whether cancellation now results in successful output or continued main operation. Exclude bounded cleanup that preserves the original cancellation, explicit independently owned background work required by the task, and equivalent cancellation propagation."
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:discards-cancellation": 0.87,
+            "swallowed-cancellation:violates-cancellation-contract": 0.71
+          },
+          "structured_state": {
+            "current_code": "import asyncio\nasync def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        return []",
+            "diff": "+import asyncio\n async def load():\n-    return await fetch()\n+    try:\n+        return await fetch()\n+    except asyncio.CancelledError:\n+        return []",
+            "file": "service.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "async def load():\n    return await fetch()",
+            "task": "Add retry bookkeeping while preserving cancellation propagation."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970388-pAgqzwgbQgTEuWZtmX85",
+              "usage": {
+                "input_tokens": 556,
+                "output_tokens": 65,
+                "cost_usd": 2.3352e-05
+              }
+            }
+          ],
+          "elapsed_ms": 314.23
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "swallowed-cancellation",
+          "file": "service.py",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.71,
+          "signals": [
+            {
+              "id": "discards-cancellation",
+              "score": 0.87,
+              "evidence": "Score whether the change newly suppresses a cancellation exception, ignores a canceled context or abort signal, or replaces a cancelable context with a background context. Require before-and-after evidence."
+            },
+            {
+              "id": "violates-cancellation-contract",
+              "score": 0.71,
+              "evidence": "Score whether cancellation now results in successful output or continued main operation. Exclude bounded cleanup that preserves the original cancellation, explicit independently owned background work required by the task, and equivalent cancellation propagation."
+            }
+          ]
+        }
+      ],
+      "id": "cancel-inserted-handler",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.71,
+      "split": "dev"
+    },
+    {
+      "evaluated": false,
+      "coverage_reason": "no evaluation of labeled rule after extraction, configuration and applicability checks",
+      "id": "auth-new-file-exclusion",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "5da932928af7165a3f90fa8b8807b6adaa2be040d6f19cb4d6253a6c5c1a521b",
+          "state_sha256": "fcbf5017116ffbcb05eef1c4430a457db6979633c0c30225ea8e8b2ffb7755da",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.21,
+            "removed-authorization-check:removes-authorization": 0.33
+          },
+          "structured_state": {
+            "current_code": "",
+            "diff": "-package service\n-func Read(fast bool) error {\n- if !allowed() { return denied }\n- return read()\n-}",
+            "file": "service.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}"
+                }
+              ],
+              "limitations": [
+                "before: unresolved direct calls (possibly builtins/conversions): [allowed read]",
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}",
+            "task": "Remove the read endpoint completely."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970389-07R5UdnwpOFkBM8QyiQl",
+              "usage": {
+                "input_tokens": 649,
+                "output_tokens": 56,
+                "cost_usd": 2.7258e-05
+              }
+            }
+          ],
+          "elapsed_ms": 313.781
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service.go",
+          "start_line": 0,
+          "end_line": 0,
+          "score": 0.21,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.21,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.33,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-operation-deleted",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.21,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "4b42829407531a178afad7e1a3238880fafd01e16d530328c62d3733ca60e750",
+          "state_sha256": "2640b2aa91370437f3f1e17219619716504d90b7e36e17c24f223dabfb128c79",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:removes-authorization",
+              "Instructions": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            },
+            {
+              "ID": "removed-authorization-check:loses-protection",
+              "Instructions": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:loses-protection": 0.08,
+            "removed-authorization-check:removes-authorization": 0.03
+          },
+          "structured_state": {
+            "current_code": "package service\nfunc Read(fast bool) error {\n if err := requireAccess(); err != nil { return err }\n return read()\n}\nfunc requireAccess() error {\n if !allowed() { return denied }\n return nil\n}",
+            "diff": " package service\n func Read(fast bool) error {\n- if !allowed() { return denied }\n+ if err := requireAccess(); err != nil { return err }\n  return read()\n }\n+func requireAccess() error {\n+ if !allowed() { return denied }\n+ return nil\n+}",
+            "file": "service.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Read(fast bool) error {\n if err := requireAccess(); err != nil { return err }\n return read()\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service.go",
+                  "start_line": 6,
+                  "end_line": 9,
+                  "kind": "changed-function",
+                  "code": "func requireAccess() error {\n if !allowed() { return denied }\n return nil\n}"
+                }
+              ],
+              "limitations": [
+                "before: unresolved direct calls (possibly builtins/conversions): [allowed read]",
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement",
+                "after: unresolved direct calls (possibly builtins/conversions): [allowed read]",
+                "after: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}",
+            "task": "Extract authorization into a helper, preserving enforcement before reads."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970390-jX21BVIHEQZV4FgQRd6L",
+              "usage": {
+                "input_tokens": 939,
+                "output_tokens": 56,
+                "cost_usd": 3.9438e-05
+              }
+            }
+          ],
+          "elapsed_ms": 327.6
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 1,
+          "rule": "removed-authorization-check",
+          "file": "service.go",
+          "start_line": 1,
+          "end_line": 9,
+          "score": 0.03,
+          "signals": [
+            {
+              "id": "loses-protection",
+              "score": 0.08,
+              "evidence": "Score whether the supplied current code lacks equivalent authorization protection for the operation. Return low confidence if the guard was moved to a visible equivalent helper or middleware, the protected operation was removed, or the explicit task requires making this operation public."
+            },
+            {
+              "id": "removes-authorization",
+              "score": 0.03,
+              "evidence": "Score whether the previous code visibly required permission, ownership, role, or tenant authorization for an operation and the change removes or bypasses that check. Authentication alone is not authorization. Require before-and-after evidence."
+            }
+          ]
+        }
+      ],
+      "id": "auth-equivalent-helper",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    }
+  ],
+  "version": 1,
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13",
+  "rules": [
+    {
+      "rule": "removed-authorization-check",
+      "examples": 4,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 3,
+      "false_negative": 1,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.24,
+      "average_negative_score": 0.08
+    },
+    {
+      "rule": "removed-validation",
+      "examples": 1,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 0,
+      "false_negative": 1,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.29,
+      "average_negative_score": 0
+    },
+    {
+      "rule": "swallowed-cancellation",
+      "examples": 1,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 0,
+      "false_negative": 1,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.71,
+      "average_negative_score": 0
+    }
+  ]
+}

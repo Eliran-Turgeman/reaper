@@ -96,7 +96,7 @@ Additional unresolved examples include dropped fetch cancellation (0.57 rule sco
 | Context limit is discovered through provider failure | A large patch can fail instead of yielding useful scope findings | Budget before dispatch; group scope evidence with explicit coverage tracking |
 | Cache/provenance reflects current string questions and state | New criteria/types must not reuse old semantic results | Include criteria, type, schema, composition, context mode, and versions in identity |
 
-Source references: [decision API](../internal/decision/decision.go), [HTTP adapter](../internal/jev/http.go), [rule questions](../internal/rules/questions.go), [rule composition](../internal/rules/rules.go), [runner](../internal/runner/runner.go), [repository context](../internal/runner/context.go), [diff extraction](../internal/diff/diff.go), [experimental helper evidence](../internal/eval/targeted_context.go).
+Source references: [decision API](../internal/decision/decision.go), [HTTP adapter](../internal/jev/http.go), [rule questions](../internal/rules/questions.go), [rule composition](../internal/rules/rules.go), [runner](../internal/runner/runner.go), [repository context](../internal/runner/context.go), [diff extraction](../internal/diff/diff.go), [shared helper evidence collector](../internal/evidence/context.go).
 
 ### Proposed evidence contract
 
@@ -343,6 +343,10 @@ Track classification quality *and coverage*: evaluated, ineligible, missing evid
 Task permission follows the user's agreed policy: a clear requirement for the **specific** change can permit it; vague “simplify,” “clean up,” or “optimize” requests do not. Evaluate that proposition once for the relevant candidate and feed the result into rule policy. Do not generalize this exception into permission to weaken unrelated checks.
 
 ## 6. Completion and remaining uncertainty
+
+This section records the research milestone. For the subsequent implementation,
+84 measured runs, and remaining rollout conditions, see the
+[implementation and measurement report](jev-implementation-results.md).
 
 Completed: official capability research, source audit, all 14 rules/28 signals reviewed, exact current-instruction snapshot, and three successful live API compatibility probes. Production behavior is unchanged.
 

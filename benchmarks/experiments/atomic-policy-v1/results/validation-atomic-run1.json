@@ -1,0 +1,2931 @@
+{
+  "provenance": {
+    "experiment_sha256": "6e53ba429ec5d9acc9fd7eb35e758660b16ac090f5d09f82618b7787ba8df87c",
+    "protocol": "git-v2",
+    "corpus_sha256": "958a96fbac7c57f8c7d884ca50b92c4181d8c71eac86015fd91247899748ce94",
+    "rules_sha256": "f035b56f7c7fe113b44ffe9ba68b17014877111f36782a49a3c07d28aa490245",
+    "config_sha256": "87e2e0d3e5aa2c99d070aa58435c3e3a2a7301e24cd535c67b607c3cfbac81b6"
+  },
+  "mode": "git",
+  "grouping": "isolated",
+  "cases": [
+    {
+      "requests": [
+        {
+          "sha256": "83a493ce09d0ffc1d24d9127d9a3878b96ae3aeeb051c63cb0deb0f1a4ca15cc",
+          "state_sha256": "bb3705e4d6095a63163fe043dcd7c5637899e4fd45118f0df92197db61a40b3a",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.65,
+            "removed-authorization-check:unguarded-operation": 0.84
+          },
+          "structured_state": {
+            "current_code": "func Load(ctx context.Context, tenant, id string) (Document, error) {\n    return db.Find(ctx, \"id = ?\", id)\n}",
+            "diff": " func Load(ctx context.Context, tenant, id string) (Document, error) {\n-    return db.Find(ctx, \"id = ? AND tenant_id = ?\", id, tenant)\n+    return db.Find(ctx, \"id = ?\", id)\n }",
+            "file": "service/tenant-query.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Load(ctx context.Context, tenant, id string) (Document, error) {\n    return db.Find(ctx, \"id = ? AND tenant_id = ?\", id, tenant)\n}",
+            "task": "Optimize document lookup without changing access rights."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970459-Rf0Qr3B14SmOJan7KeEQ",
+              "usage": {
+                "input_tokens": 670,
+                "output_tokens": 55,
+                "cost_usd": 2.814e-05
+              }
+            }
+          ],
+          "elapsed_ms": 435.475
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service/tenant-query.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.65,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.65,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.84,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "tenant-query",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.65,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "d5a89f5e51078d99a8f885ec2385c64e781dcf1b54ca86459488689a4223f5d1",
+          "state_sha256": "ab2fb45e20b09a34991494a5cff22d7435c99c4a6d5c5fd7e0bf40767636d872",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.98,
+            "removed-authorization-check:unguarded-operation": 0.97
+          },
+          "structured_state": {
+            "current_code": "def export(actor):\n    return database.export_all()",
+            "diff": " def export(actor):\n-    if \"administrator\" not in actor.roles:\n-        raise PermissionError(\"admin required\")\n     return database.export_all()",
+            "file": "service/export-role.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def export(actor):\n    if \"administrator\" not in actor.roles:\n        raise PermissionError(\"admin required\")\n    return database.export_all()",
+            "task": "Simplify the export handler while retaining administrator access."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970460-tB3rH5divf6HF65wrTEo",
+              "usage": {
+                "input_tokens": 616,
+                "output_tokens": 55,
+                "cost_usd": 2.5872e-05
+              }
+            }
+          ],
+          "elapsed_ms": 290.112
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service/export-role.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.97,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.98,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.97,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "export-role",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.97,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "dbe86cd490019d728e45c9aba48b777fe0a9ecefde7103effd1728d9c47e3d98",
+          "state_sha256": "c57ae68979fe74074480d45c680e785a8f5d11b6eda0cd896780fbc58b29623b",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.97,
+            "removed-authorization-check:unguarded-operation": 0.95
+          },
+          "structured_state": {
+            "current_code": "async function archive(actor: Actor, record: Record) {\n  await store.archive(record.id);\n  if (!actor.canArchive(record)) throw new Forbidden();\n}",
+            "diff": " async function archive(actor: Actor, record: Record) {\n-  if (!actor.canArchive(record)) throw new Forbidden();\n   await store.archive(record.id);\n+  if (!actor.canArchive(record)) throw new Forbidden();\n }",
+            "file": "service/late-permission.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "async function archive(actor: Actor, record: Record) {\n  if (!actor.canArchive(record)) throw new Forbidden();\n  await store.archive(record.id);\n}",
+            "task": "Refactor archive handling without changing who may archive a record."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970461-s9EKzpwF6rhbMoKYVlkI",
+              "usage": {
+                "input_tokens": 660,
+                "output_tokens": 55,
+                "cost_usd": 2.772e-05
+              }
+            }
+          ],
+          "elapsed_ms": 388.666
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service/late-permission.ts",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.95,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.97,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.95,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "late-permission",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.95,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "0850301a8e0c3e271b3dbd34e715ef3017c27a3abf4b3390ecd9878b5a22c385",
+          "state_sha256": "f0a921ad073ec468ac8a0ce4eb5a328e4149dbf436902386a7964375d89b4430",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.98,
+            "removed-authorization-check:unguarded-operation": 0.07
+          },
+          "structured_state": {
+            "current_code": "void requireEditor(User user) {\n    if (!user.hasRole(\"editor\")) throw new Forbidden();\n}\nvoid publish(User user, Article article) {\n    requireEditor(user);\n    store.publish(article);\n}",
+            "diff": "-void publish(User user, Article article) {\n+void requireEditor(User user) {\n     if (!user.hasRole(\"editor\")) throw new Forbidden();\n+}\n+void publish(User user, Article article) {\n+    requireEditor(user);\n     store.publish(article);\n }",
+            "file": "service/extracted-permission.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "void publish(User user, Article article) {\n    if (!user.hasRole(\"editor\")) throw new Forbidden();\n    store.publish(article);\n}",
+            "task": "Extract the existing role check into a helper."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970462-7eSWTdgV67qEcYy8x241",
+              "usage": {
+                "input_tokens": 683,
+                "output_tokens": 55,
+                "cost_usd": 2.8686e-05
+              }
+            }
+          ],
+          "elapsed_ms": 313.544
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service/extracted-permission.java",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.07,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.98,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.07,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "extracted-permission",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.07,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "c32acbbd6fd8d69043339a9c4ccfe58db4cc602fd21b6e56627d58b15337b048",
+          "state_sha256": "dac71a3656cfa1737f22c1400b85ca5a442d6530ebf3ae6a5e48ffd7f243570c",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.95,
+            "removed-authorization-check:unguarded-operation": 0.05
+          },
+          "structured_state": {
+            "current_code": "function update(actor, doc) {\n  if (actor.id !== doc.ownerId) throw new Forbidden();\n  return store.update(doc);\n}",
+            "diff": " function update(actor, doc) {\n-  if (actor.id === doc.ownerId) return store.update(doc);\n-  throw new Forbidden();\n+  if (actor.id !== doc.ownerId) throw new Forbidden();\n+  return store.update(doc);\n }",
+            "file": "service/owner-early-return.js",
+            "language": "javascript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function update(actor, doc) {\n  if (actor.id === doc.ownerId) return store.update(doc);\n  throw new Forbidden();\n}",
+            "task": "Use an early return while preserving the owner-only update."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970462-QTS0YxtulfFU53dna6nR",
+              "usage": {
+                "input_tokens": 663,
+                "output_tokens": 55,
+                "cost_usd": 2.7846e-05
+              }
+            }
+          ],
+          "elapsed_ms": 310.428
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service/owner-early-return.js",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.05,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.95,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.05,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "owner-early-return",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.05,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "bde69b55eae9191c92d92dfe75333171706e94e2064a7eb02d3cea33ff3d25f4",
+          "state_sha256": "8d616db98f75238c8df51328709ff650523589d6f3e0ef806502aee051426732",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.97,
+            "removed-authorization-check:unguarded-operation": 0.97
+          },
+          "structured_state": {
+            "current_code": "Catalog List(User user) {\n    return store.PublicCatalog();\n}",
+            "diff": " Catalog List(User user) {\n-    if (!user.IsCustomer) throw new ForbiddenException();\n     return store.PublicCatalog();\n }",
+            "file": "service/public-catalog.cs",
+            "language": "csharp",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "Catalog List(User user) {\n    if (!user.IsCustomer) throw new ForbiddenException();\n    return store.PublicCatalog();\n}",
+            "task": "Make the read-only product catalog publicly accessible; this endpoint no longer requires a customer role."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970463-rj6VdLZYgia2DVIqkrVt",
+              "usage": {
+                "input_tokens": 641,
+                "output_tokens": 55,
+                "cost_usd": 2.6922e-05
+              }
+            }
+          ],
+          "elapsed_ms": 447.663
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service/public-catalog.cs",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.97,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.97,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.97,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "public-catalog",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.97,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "6dd6883c4e14a3be1ddda68d0e07b45e3ea07f3f61cc2a77e8f8768ca53633d3",
+          "state_sha256": "28251e400cf9400c6da7ec918f501032e634c72c44075e3bdbdee7547aeffeb1",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.98,
+            "removed-authorization-check:unguarded-operation": 0.19
+          },
+          "structured_state": {
+            "current_code": "def purge(actor, account):\n    raise Gone()",
+            "diff": " def purge(actor, account):\n-    if not actor.is_admin:\n-        raise PermissionError()\n-    database.purge(account)\n+    raise Gone()",
+            "file": "service/retired-admin-operation.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def purge(actor, account):\n    if not actor.is_admin:\n        raise PermissionError()\n    database.purge(account)",
+            "task": "Retire the account-purge endpoint; it must always return Gone and perform no work."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970464-H6zyiS8OHOPJBPIEgY5a",
+              "usage": {
+                "input_tokens": 624,
+                "output_tokens": 55,
+                "cost_usd": 2.6208e-05
+              }
+            }
+          ],
+          "elapsed_ms": 403.27
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service/retired-admin-operation.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.19,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.98,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.19,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "retired-admin-operation",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.19,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "ad2aea4b34142362e5cb4e6cf2d181fcc8eedf7c311124187ed722985817ed7e",
+          "state_sha256": "e3eebd0b598bfdacc37cfb4acba7dc9f0f983434007096538a33d03bc5eb177a",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.97,
+            "removed-authorization-check:unguarded-operation": 0.05
+          },
+          "structured_state": {
+            "current_code": "func Rotate(ctx context.Context, actor User) error {\n    if err := acl.RequireAdmin(actor); err != nil { return fmt.Errorf(\"rotate key: %w\", err) }\n    return keys.Rotate(ctx)\n}",
+            "diff": " func Rotate(ctx context.Context, actor User) error {\n-    if err := acl.RequireAdmin(actor); err != nil { return err }\n+    if err := acl.RequireAdmin(actor); err != nil { return fmt.Errorf(\"rotate key: %w\", err) }\n     return keys.Rotate(ctx)\n }",
+            "file": "service/authorization-error-wrap.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Rotate(ctx context.Context, actor User) error {\n    if err := acl.RequireAdmin(actor); err != nil { return err }\n    return keys.Rotate(ctx)\n}",
+            "task": "Add context to authorization errors without changing enforcement."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970465-7JYRV9E3kC4Efr2PvSTC",
+              "usage": {
+                "input_tokens": 701,
+                "output_tokens": 55,
+                "cost_usd": 2.9442e-05
+              }
+            }
+          ],
+          "elapsed_ms": 362.827
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service/authorization-error-wrap.go",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.05,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.97,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.05,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "authorization-error-wrap",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.05,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "9d9fd2ceb60b1a5f8aca6014183236cec620ae1de98a3f79d063f62ec2d0cd48",
+          "state_sha256": "52c4599bbc4ae4bf08af159c1104f3ce704aa0f5184c418f2cded86de1dbb202",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:previous-validation",
+              "Instructions": "Did the before code reject invalid input before an operation?",
+              "Criteria": {
+                "true": "The before code enforced a bound, required field, allowed value, or data invariant before an operation.",
+                "false": "The before code imposed no input validity requirement."
+              }
+            },
+            {
+              "ID": "removed-validation:unguarded-operation",
+              "Instructions": "Can input rejected by the before code reach the same operation in the after code?",
+              "Criteria": {
+                "true": "Previously rejected input reaches the operation without equivalent enforcement, including through a new bypass path or an ineffective helper.",
+                "false": "An equivalent check or enforced type still rejects the input before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-validation:previous-validation": 0.97,
+            "removed-validation:unguarded-operation": 0.93
+          },
+          "structured_state": {
+            "current_code": "func Transfer(amount int) error {\n    return ledger.Debit(amount)\n}",
+            "diff": " func Transfer(amount int) error {\n-    if amount <= 0 { return ErrAmount }\n     return ledger.Debit(amount)\n }",
+            "file": "service/positive-transfer.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Transfer(amount int) error {\n    if amount <= 0 { return ErrAmount }\n    return ledger.Debit(amount)\n}",
+            "task": "Simplify transfer preparation without accepting invalid amounts."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970465-HTgcwqs9OS5WmcSPNsSZ",
+              "usage": {
+                "input_tokens": 621,
+                "output_tokens": 47,
+                "cost_usd": 2.6082e-05
+              }
+            }
+          ],
+          "elapsed_ms": 282.576
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-validation",
+          "file": "service/positive-transfer.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.93,
+          "signals": [
+            {
+              "id": "previous-validation",
+              "score": 0.97,
+              "evidence": "Did the before code reject invalid input before an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.93,
+              "evidence": "Can input rejected by the before code reach the same operation in the after code?"
+            }
+          ]
+        }
+      ],
+      "id": "positive-transfer",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.93,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "b63b73caa58659f8f1f9c986384780e965895778c42230d8cb2b13fd50c6a98e",
+          "state_sha256": "22b5cdd8be97e7504bd5ac0cb8e517adf7b4fdf0c7c900943e6a92ceda4b0f4f",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:previous-validation",
+              "Instructions": "Did the before code reject invalid input before an operation?",
+              "Criteria": {
+                "true": "The before code enforced a bound, required field, allowed value, or data invariant before an operation.",
+                "false": "The before code imposed no input validity requirement."
+              }
+            },
+            {
+              "ID": "removed-validation:unguarded-operation",
+              "Instructions": "Can input rejected by the before code reach the same operation in the after code?",
+              "Criteria": {
+                "true": "Previously rejected input reaches the operation without equivalent enforcement, including through a new bypass path or an ineffective helper.",
+                "false": "An equivalent check or enforced type still rejects the input before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-validation:previous-validation": 0.97,
+            "removed-validation:unguarded-operation": 0.95
+          },
+          "structured_state": {
+            "current_code": "def extract(root, name, data):\n    target = (root / name).resolve()\n    target.write_bytes(data)",
+            "diff": " def extract(root, name, data):\n     target = (root / name).resolve()\n-    if not target.is_relative_to(root.resolve()):\n-        raise ValueError(\"outside root\")\n     target.write_bytes(data)",
+            "file": "service/archive-traversal.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def extract(root, name, data):\n    target = (root / name).resolve()\n    if not target.is_relative_to(root.resolve()):\n        raise ValueError(\"outside root\")\n    target.write_bytes(data)",
+            "task": "Simplify archive extraction and preserve path containment checks."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970466-ffXBgcFRO2LV6YJT1W2G",
+              "usage": {
+                "input_tokens": 654,
+                "output_tokens": 47,
+                "cost_usd": 2.7468e-05
+              }
+            }
+          ],
+          "elapsed_ms": 343.358
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-validation",
+          "file": "service/archive-traversal.py",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.95,
+          "signals": [
+            {
+              "id": "previous-validation",
+              "score": 0.97,
+              "evidence": "Did the before code reject invalid input before an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.95,
+              "evidence": "Can input rejected by the before code reach the same operation in the after code?"
+            }
+          ]
+        }
+      ],
+      "id": "archive-traversal",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.95,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "78a0d33c99829dd7058f3dbb0e43a9cf2bd4d4635288f5f8ed746e48a934bfdc",
+          "state_sha256": "ed9f0fb621df3e3239dd0e3d5e4b035f6a5815387faadebdc42d907741f6b96a",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:previous-validation",
+              "Instructions": "Did the before code reject invalid input before an operation?",
+              "Criteria": {
+                "true": "The before code enforced a bound, required field, allowed value, or data invariant before an operation.",
+                "false": "The before code imposed no input validity requirement."
+              }
+            },
+            {
+              "ID": "removed-validation:unguarded-operation",
+              "Instructions": "Can input rejected by the before code reach the same operation in the after code?",
+              "Criteria": {
+                "true": "Previously rejected input reaches the operation without equivalent enforcement, including through a new bypass path or an ineffective helper.",
+                "false": "An equivalent check or enforced type still rejects the input before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-validation:previous-validation": 0.98,
+            "removed-validation:unguarded-operation": 0.96
+          },
+          "structured_state": {
+            "current_code": "function connect(port: number) {\n  if (port < 1 && port > 65535) throw new RangeError(\"port\");\n  return socket.connect(port);\n}",
+            "diff": " function connect(port: number) {\n-  if (port < 1 || port > 65535) throw new RangeError(\"port\");\n+  if (port < 1 && port > 65535) throw new RangeError(\"port\");\n   return socket.connect(port);\n }",
+            "file": "service/invalid-port-condition.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function connect(port: number) {\n  if (port < 1 || port > 65535) throw new RangeError(\"port\");\n  return socket.connect(port);\n}",
+            "task": "Refactor port validation without relaxing the valid range."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970466-TIsG8H1zqkxXRw7KyVdD",
+              "usage": {
+                "input_tokens": 688,
+                "output_tokens": 47,
+                "cost_usd": 2.8896e-05
+              }
+            }
+          ],
+          "elapsed_ms": 303.892
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-validation",
+          "file": "service/invalid-port-condition.ts",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.96,
+          "signals": [
+            {
+              "id": "previous-validation",
+              "score": 0.98,
+              "evidence": "Did the before code reject invalid input before an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.96,
+              "evidence": "Can input rejected by the before code reach the same operation in the after code?"
+            }
+          ]
+        }
+      ],
+      "id": "invalid-port-condition",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.96,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "ef87e66a438c77aad6c22ac82ae6171ed1bc44087997f25b5c72cc92e27d8fb9",
+          "state_sha256": "cf2300287b5ba876991c6b4cbd3661a9df7f4b0682875bb284c46387f0fb01f1",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:previous-validation",
+              "Instructions": "Did the before code reject invalid input before an operation?",
+              "Criteria": {
+                "true": "The before code enforced a bound, required field, allowed value, or data invariant before an operation.",
+                "false": "The before code imposed no input validity requirement."
+              }
+            },
+            {
+              "ID": "removed-validation:unguarded-operation",
+              "Instructions": "Can input rejected by the before code reach the same operation in the after code?",
+              "Criteria": {
+                "true": "Previously rejected input reaches the operation without equivalent enforcement, including through a new bypass path or an ineffective helper.",
+                "false": "An equivalent check or enforced type still rejects the input before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-validation:previous-validation": 0.98,
+            "removed-validation:unguarded-operation": 0.11
+          },
+          "structured_state": {
+            "current_code": "void validateName(String name) {\n    if (name == null || name.isBlank()) throw new IllegalArgumentException();\n}\nvoid register(String name) {\n    validateName(name);\n    users.insert(name);\n}",
+            "diff": "-void register(String name) {\n+void validateName(String name) {\n     if (name == null || name.isBlank()) throw new IllegalArgumentException();\n+}\n+void register(String name) {\n+    validateName(name);\n     users.insert(name);\n }",
+            "file": "service/validator-helper.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "void register(String name) {\n    if (name == null || name.isBlank()) throw new IllegalArgumentException();\n    users.insert(name);\n}",
+            "task": "Extract validation and keep rejecting empty names."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970467-vvoVhHRoTylRaNiHSCYG",
+              "usage": {
+                "input_tokens": 685,
+                "output_tokens": 47,
+                "cost_usd": 2.877e-05
+              }
+            }
+          ],
+          "elapsed_ms": 323.045
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-validation",
+          "file": "service/validator-helper.java",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.11,
+          "signals": [
+            {
+              "id": "previous-validation",
+              "score": 0.98,
+              "evidence": "Did the before code reject invalid input before an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.11,
+              "evidence": "Can input rejected by the before code reach the same operation in the after code?"
+            }
+          ]
+        }
+      ],
+      "id": "validator-helper",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.11,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "b347c504a0e84aaa911b530127fb8d6d745a9cbccf75340fc2bcf2b9ab3c2dc9",
+          "state_sha256": "e88af05fdfa637ffd8ee79c3f1992b4d27a1b5887d2f886aa29e9c2fe6430fbd",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:previous-validation",
+              "Instructions": "Did the before code reject invalid input before an operation?",
+              "Criteria": {
+                "true": "The before code enforced a bound, required field, allowed value, or data invariant before an operation.",
+                "false": "The before code imposed no input validity requirement."
+              }
+            },
+            {
+              "ID": "removed-validation:unguarded-operation",
+              "Instructions": "Can input rejected by the before code reach the same operation in the after code?",
+              "Criteria": {
+                "true": "Previously rejected input reaches the operation without equivalent enforcement, including through a new bypass path or an ineffective helper.",
+                "false": "An equivalent check or enforced type still rejects the input before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-validation:previous-validation": 0.97,
+            "removed-validation:unguarded-operation": 0.95
+          },
+          "structured_state": {
+            "current_code": "void Resize(int capacity) {\n    if (capacity < 0) throw new ArgumentOutOfRangeException();\n    queue.SetCapacity(capacity);\n}",
+            "diff": " void Resize(int capacity) {\n-    if (capacity <= 0) throw new ArgumentOutOfRangeException();\n+    if (capacity < 0) throw new ArgumentOutOfRangeException();\n     queue.SetCapacity(capacity);\n }",
+            "file": "service/explicit-zero-capacity.cs",
+            "language": "csharp",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "void Resize(int capacity) {\n    if (capacity <= 0) throw new ArgumentOutOfRangeException();\n    queue.SetCapacity(capacity);\n}",
+            "task": "Allow zero capacity to mean a paused queue; continue rejecting negative capacity."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970468-PAL5mxrAIS0uYuxnMgyZ",
+              "usage": {
+                "input_tokens": 681,
+                "output_tokens": 47,
+                "cost_usd": 2.8602e-05
+              }
+            }
+          ],
+          "elapsed_ms": 292.372
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-validation",
+          "file": "service/explicit-zero-capacity.cs",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.95,
+          "signals": [
+            {
+              "id": "previous-validation",
+              "score": 0.97,
+              "evidence": "Did the before code reject invalid input before an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.95,
+              "evidence": "Can input rejected by the before code reach the same operation in the after code?"
+            }
+          ]
+        }
+      ],
+      "id": "explicit-zero-capacity",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.95,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "05a3d5d72d84aeff85e08e745e9cd959ed89eaf65700deeabee5e5805f5e787e",
+          "state_sha256": "b2cb038a81d9259f165df5f0e85ac1bf863117edb18d643a5c5385576f87eb10",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:previous-validation",
+              "Instructions": "Did the before code reject invalid input before an operation?",
+              "Criteria": {
+                "true": "The before code enforced a bound, required field, allowed value, or data invariant before an operation.",
+                "false": "The before code imposed no input validity requirement."
+              }
+            },
+            {
+              "ID": "removed-validation:unguarded-operation",
+              "Instructions": "Can input rejected by the before code reach the same operation in the after code?",
+              "Criteria": {
+                "true": "Previously rejected input reaches the operation without equivalent enforcement, including through a new bypass path or an ineffective helper.",
+                "false": "An equivalent check or enforced type still rejects the input before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-validation:previous-validation": 0.99,
+            "removed-validation:unguarded-operation": 0.05
+          },
+          "structured_state": {
+            "current_code": "function allocate(size) {\n  if (size < 1 || size > 4096) throw new RangeError();\n  return new Uint8Array(size);\n}",
+            "diff": " function allocate(size) {\n-  if (size < 1) throw new RangeError();\n-  if (size > 4096) throw new RangeError();\n+  if (size < 1 || size > 4096) throw new RangeError();\n   return new Uint8Array(size);\n }",
+            "file": "service/bounds-equivalence.js",
+            "language": "javascript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function allocate(size) {\n  if (size < 1) throw new RangeError();\n  if (size > 4096) throw new RangeError();\n  return new Uint8Array(size);\n}",
+            "task": "Combine the bounds checks while preserving the accepted range."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970468-739h99VxpRfLIM78axHW",
+              "usage": {
+                "input_tokens": 698,
+                "output_tokens": 47,
+                "cost_usd": 2.9316e-05
+              }
+            }
+          ],
+          "elapsed_ms": 315.428
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-validation",
+          "file": "service/bounds-equivalence.js",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.05,
+          "signals": [
+            {
+              "id": "previous-validation",
+              "score": 0.99,
+              "evidence": "Did the before code reject invalid input before an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.05,
+              "evidence": "Can input rejected by the before code reach the same operation in the after code?"
+            }
+          ]
+        }
+      ],
+      "id": "bounds-equivalence",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.05,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "25c3fea2682e0e8ff7d3b31dcf9cb6e5ffc2cd9808f16370a791a90f3bf75180",
+          "state_sha256": "b8f92f722fe5e6f175cd7d4098797f5204aa33b92e6053f8531fbda9707b99d4",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:previous-validation",
+              "Instructions": "Did the before code reject invalid input before an operation?",
+              "Criteria": {
+                "true": "The before code enforced a bound, required field, allowed value, or data invariant before an operation.",
+                "false": "The before code imposed no input validity requirement."
+              }
+            },
+            {
+              "ID": "removed-validation:unguarded-operation",
+              "Instructions": "Can input rejected by the before code reach the same operation in the after code?",
+              "Criteria": {
+                "true": "Previously rejected input reaches the operation without equivalent enforcement, including through a new bypass path or an ineffective helper.",
+                "false": "An equivalent check or enforced type still rejects the input before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-validation:previous-validation": 0.97,
+            "removed-validation:unguarded-operation": 0.08
+          },
+          "structured_state": {
+            "current_code": "def run(command):\n    raise DisabledEndpoint()",
+            "diff": " def run(command):\n-    if command not in ALLOWED_COMMANDS:\n-        raise ValueError()\n-    return subprocess.run(command, shell=True)\n+    raise DisabledEndpoint()",
+            "file": "service/removed-shell-operation.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def run(command):\n    if command not in ALLOWED_COMMANDS:\n        raise ValueError()\n    return subprocess.run(command, shell=True)",
+            "task": "Disable command execution and always reject this endpoint."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970469-HWJdnpORndveHWGdIVIP",
+              "usage": {
+                "input_tokens": 626,
+                "output_tokens": 47,
+                "cost_usd": 2.6292e-05
+              }
+            }
+          ],
+          "elapsed_ms": 336.232
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-validation",
+          "file": "service/removed-shell-operation.py",
+          "start_line": 1,
+          "end_line": 2,
+          "score": 0.08,
+          "signals": [
+            {
+              "id": "previous-validation",
+              "score": 0.97,
+              "evidence": "Did the before code reject invalid input before an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.08,
+              "evidence": "Can input rejected by the before code reach the same operation in the after code?"
+            }
+          ]
+        }
+      ],
+      "id": "removed-shell-operation",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.08,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "a06037c35671ca1747ca044b3aca92ffa457ac121f6af1e02dea0a3db30ed34e",
+          "state_sha256": "3fa6686c1882ac078e2e999c8dd8b0d2eaa475b0d48e946d98f469946535bacb",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:previous-validation",
+              "Instructions": "Did the before code reject invalid input before an operation?",
+              "Criteria": {
+                "true": "The before code enforced a bound, required field, allowed value, or data invariant before an operation.",
+                "false": "The before code imposed no input validity requirement."
+              }
+            },
+            {
+              "ID": "removed-validation:unguarded-operation",
+              "Instructions": "Can input rejected by the before code reach the same operation in the after code?",
+              "Criteria": {
+                "true": "Previously rejected input reaches the operation without equivalent enforcement, including through a new bypass path or an ineffective helper.",
+                "false": "An equivalent check or enforced type still rejects the input before the operation, or the operation has been removed."
+              }
+            }
+          ],
+          "scores": {
+            "removed-validation:previous-validation": 0.98,
+            "removed-validation:unguarded-operation": 0.1
+          },
+          "structured_state": {
+            "current_code": "type Seats int\nfunc NewSeats(n int) (Seats, error) {\n    if n < 1 || n > 100 { return 0, ErrSeats }\n    return Seats(n), nil\n}\nfunc Reserve(n int) error {\n    seats, err := NewSeats(n)\n    if err != nil { return err }\n    return store.Reserve(int(seats))\n}",
+            "diff": "+type Seats int\n+func NewSeats(n int) (Seats, error) {\n+    if n < 1 || n > 100 { return 0, ErrSeats }\n+    return Seats(n), nil\n+}\n func Reserve(n int) error {\n-    if n < 1 || n > 100 { return ErrSeats }\n-    return store.Reserve(n)\n+    seats, err := NewSeats(n)\n+    if err != nil { return err }\n+    return store.Reserve(int(seats))\n }",
+            "file": "service/validated-constructor.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Reserve(n int) error {\n    if n < 1 || n > 100 { return ErrSeats }\n    return store.Reserve(n)\n}",
+            "task": "Move the range invariant into the constructor used by the operation."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970469-a1yQxVlCRnuSQFWO19i1",
+              "usage": {
+                "input_tokens": 782,
+                "output_tokens": 47,
+                "cost_usd": 3.2844e-05
+              }
+            }
+          ],
+          "elapsed_ms": 310.381
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-validation",
+          "file": "service/validated-constructor.go",
+          "start_line": 1,
+          "end_line": 10,
+          "score": 0.1,
+          "signals": [
+            {
+              "id": "previous-validation",
+              "score": 0.98,
+              "evidence": "Did the before code reject invalid input before an operation?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.1,
+              "evidence": "Can input rejected by the before code reach the same operation in the after code?"
+            }
+          ]
+        }
+      ],
+      "id": "validated-constructor",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.1,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "49aa870ea85981a81cc222b9a7ea0ace743dcbf0f02206bfb8a9ae38d80980b9",
+          "state_sha256": "f8131e80f5042c82fd58742484aaf76c0659b7ab6b7dda1ff518ad841895e965",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.96,
+            "silent-failure-fallback:handles-failure": 0.53
+          },
+          "structured_state": {
+            "current_code": "func Balance(id string) (int, error) {\n    n, err := store.Balance(id)\n    if err != nil { return 0, nil }\n    return n, nil\n}",
+            "diff": " func Balance(id string) (int, error) {\n     n, err := store.Balance(id)\n-    if err != nil { return 0, err }\n+    if err != nil { return 0, nil }\n     return n, nil\n }",
+            "file": "service/lost-read-error.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Balance(id string) (int, error) {\n    n, err := store.Balance(id)\n    if err != nil { return 0, err }\n    return n, nil\n}",
+            "task": "Simplify loading balances while preserving storage failures."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970470-VHzys5PzLJMYdtddjuTR",
+              "usage": {
+                "input_tokens": 679,
+                "output_tokens": 58,
+                "cost_usd": 2.8518e-05
+              }
+            }
+          ],
+          "elapsed_ms": 310.06
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/lost-read-error.go",
+          "start_line": 1,
+          "end_line": 5,
+          "score": 0.53,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.96,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.53,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "lost-read-error",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.53,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "c00cac7d61aead1b3294a1bc4750ca414697092beb332ec1a86123c153944aa4",
+          "state_sha256": "34b7b2731911b2255e0f937042260e8cceaa5a0a536b7c1c04535ee949bce49c",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.94,
+            "silent-failure-fallback:handles-failure": 0.96
+          },
+          "structured_state": {
+            "current_code": "def search(query):\n    try:\n        return index.search(query)\n    except ConnectionError:\n        return []",
+            "diff": " def search(query):\n-    return index.search(query)\n+    try:\n+        return index.search(query)\n+    except ConnectionError:\n+        return []",
+            "file": "service/empty-search-on-outage.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def search(query):\n    return index.search(query)",
+            "task": "Refactor search response handling without hiding backend outages."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970471-EuxM6INFqq6FtkZ3zvNY",
+              "usage": {
+                "input_tokens": 606,
+                "output_tokens": 58,
+                "cost_usd": 2.5452e-05
+              }
+            }
+          ],
+          "elapsed_ms": 299.295
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/empty-search-on-outage.py",
+          "start_line": 1,
+          "end_line": 5,
+          "score": 0.94,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.94,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.96,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "empty-search-on-outage",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.94,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "9ab3de2ae2176c14d0fb2b82a2dd7cfb0c2d0a7ba1e9d241d50856416bbf124c",
+          "state_sha256": "66206399af310da7e4d33a468d7572fbeaa64afbd22e7dcf6875c86068f14143",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.94,
+            "silent-failure-fallback:handles-failure": 0.91
+          },
+          "structured_state": {
+            "current_code": "async function save(record: Record): Promise<void> {\n  await store.write(record).catch(() => undefined);\n}",
+            "diff": " async function save(record: Record): Promise<void> {\n-  await store.write(record);\n+  await store.write(record).catch(() => undefined);\n }",
+            "file": "service/ignored-write-rejection.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "async function save(record: Record): Promise<void> {\n  await store.write(record);\n}",
+            "task": "Simplify persistence while retaining promise rejection on failure."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970471-WKyc5RJV9k2DJjp73TGo",
+              "usage": {
+                "input_tokens": 609,
+                "output_tokens": 58,
+                "cost_usd": 2.5578e-05
+              }
+            }
+          ],
+          "elapsed_ms": 281.931
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/ignored-write-rejection.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.91,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.94,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.91,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "ignored-write-rejection",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.91,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "38593d295b60e966f84013034a319f4bcf2044cb5c402d27e0ebca5da7b68c36",
+          "state_sha256": "59cf5df24073af7d024125bd1d50211622bc0d1d4194f74f9dc62aadae0e7f25",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.04,
+            "silent-failure-fallback:handles-failure": 0.96
+          },
+          "structured_state": {
+            "current_code": "func Save(data []byte) error {\n    if err := store.Write(data); err != nil { return fmt.Errorf(\"save: %w\", err) }\n    return nil\n}",
+            "diff": " func Save(data []byte) error {\n-    return store.Write(data)\n+    if err := store.Write(data); err != nil { return fmt.Errorf(\"save: %w\", err) }\n+    return nil\n }",
+            "file": "service/wrapped-storage-error.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Save(data []byte) error {\n    return store.Write(data)\n}",
+            "task": "Include operation context while preserving storage error identity."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970472-AYpfn7WhjhcFy8MdNcZV",
+              "usage": {
+                "input_tokens": 640,
+                "output_tokens": 58,
+                "cost_usd": 2.688e-05
+              }
+            }
+          ],
+          "elapsed_ms": 328.644
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/wrapped-storage-error.go",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.04,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.04,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.96,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "wrapped-storage-error",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.04,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "ecdc5c337deea3c6c2fd71fca60df284ed994e8ecc0cace9d7528829d04098eb",
+          "state_sha256": "dedae03e1ec4eb0d91cb27ed21776d1a5c60c6aeb4e75e7d9b7d3fbeafb9c3b1",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.9,
+            "silent-failure-fallback:handles-failure": 0.97
+          },
+          "structured_state": {
+            "current_code": "def weather(city):\n    try:\n        return remote.weather(city)\n    except ConnectionError:\n        return cache.weather(city)",
+            "diff": " def weather(city):\n-    return remote.weather(city)\n+    try:\n+        return remote.weather(city)\n+    except ConnectionError:\n+        return cache.weather(city)",
+            "file": "service/explicit-offline-cache.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def weather(city):\n    return remote.weather(city)",
+            "task": "When the network is offline, serve cached weather as the explicit resilience contract; other errors must propagate."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970472-ZaKfUruBtwlX98aaxKFA",
+              "usage": {
+                "input_tokens": 620,
+                "output_tokens": 58,
+                "cost_usd": 2.604e-05
+              }
+            }
+          ],
+          "elapsed_ms": 293.153
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/explicit-offline-cache.py",
+          "start_line": 1,
+          "end_line": 5,
+          "score": 0.9,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.9,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.97,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "explicit-offline-cache",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.9,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "8cfa0cbb792c28b51411b4bc085d5f3d1c984e7b4cfa3c6da589ceb7adbdc7a9",
+          "state_sha256": "be50f24070fa6f47c892e5d4a12ac56b0b2cfc5a26375f57aeac1efb08a6a97b",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.05,
+            "silent-failure-fallback:handles-failure": 0.97
+          },
+          "structured_state": {
+            "current_code": "Result<Order> Load(int id) {\n    try { return Result<Order>.Success(store.Load(id)); }\n    catch (StorageException e) { return Result<Order>.Failure(e); }\n}",
+            "diff": "-Order Load(int id) {\n-    return store.Load(id);\n+Result<Order> Load(int id) {\n+    try { return Result<Order>.Success(store.Load(id)); }\n+    catch (StorageException e) { return Result<Order>.Failure(e); }\n }",
+            "file": "service/typed-result-failure.cs",
+            "language": "csharp",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "Order Load(int id) {\n    return store.Load(id);\n}",
+            "task": "Replace exceptions with an explicit Result failure that callers must inspect."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970473-hdmTXemx18pW1gu6YmgG",
+              "usage": {
+                "input_tokens": 654,
+                "output_tokens": 58,
+                "cost_usd": 2.7468e-05
+              }
+            }
+          ],
+          "elapsed_ms": 311.771
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/typed-result-failure.cs",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.05,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.05,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.97,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "typed-result-failure",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.05,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "5430244a3cbf9825425c9a205a636906adffc83206620cc44e291b51aee22553",
+          "state_sha256": "a7a2215a454189c35fe51a23631f47e9ab736334e2387cdae65b7f2d941de482",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.1,
+            "silent-failure-fallback:handles-failure": 0.74
+          },
+          "structured_state": {
+            "current_code": "Document read(InputStream input) throws IOException {\n    try { return parser.read(input); }\n    finally { input.close(); }\n}",
+            "diff": " Document read(InputStream input) throws IOException {\n-    return parser.read(input);\n+    try { return parser.read(input); }\n+    finally { input.close(); }\n }",
+            "file": "service/finally-closes-resource.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "Document read(InputStream input) throws IOException {\n    return parser.read(input);\n}",
+            "task": "Close the input stream on both success and failure; preserve parse exceptions."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970474-eV0DmNyKJjz6sb94eVSN",
+              "usage": {
+                "input_tokens": 622,
+                "output_tokens": 58,
+                "cost_usd": 2.6124e-05
+              }
+            }
+          ],
+          "elapsed_ms": 324.18
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/finally-closes-resource.java",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.1,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.1,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.74,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "finally-closes-resource",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.1,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "a1c7cb57d6c63fa866f804e2c7562023a5900067a8bd71d3f13d769155bf56be",
+          "state_sha256": "1d6ab5964d50c173b8eea29374e1b731b551d5592b612f2fc1eda4229b73e7ec",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:failure-hidden": 0.04,
+            "silent-failure-fallback:handles-failure": 0.97
+          },
+          "structured_state": {
+            "current_code": "async function charge(invoice) {\n  try { return await gateway.charge(invoice); }\n  catch (error) { audit.failure(error); throw error; }\n}",
+            "diff": " async function charge(invoice) {\n-  return await gateway.charge(invoice);\n+  try { return await gateway.charge(invoice); }\n+  catch (error) { audit.failure(error); throw error; }\n }",
+            "file": "service/rethrow-after-audit.js",
+            "language": "javascript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "async function charge(invoice) {\n  return await gateway.charge(invoice);\n}",
+            "task": "Audit failed payments and preserve the original rejection."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970474-c6L5zwH11tTl7lpe7PDM",
+              "usage": {
+                "input_tokens": 642,
+                "output_tokens": 58,
+                "cost_usd": 2.6964e-05
+              }
+            }
+          ],
+          "elapsed_ms": 302.449
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/rethrow-after-audit.js",
+          "start_line": 1,
+          "end_line": 4,
+          "score": 0.04,
+          "signals": [
+            {
+              "id": "failure-hidden",
+              "score": 0.04,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.97,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "rethrow-after-audit",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.04,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "93a813f22d4a3946afb87d98789f56349626332475e97f679e66ebb8e628028c",
+          "state_sha256": "85686d9cf03babc104efaa419904f9a63ffd4208d407b1c37bbdaef0792db16b",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.96,
+            "swallowed-cancellation:main-work-continues": 0.9
+          },
+          "structured_state": {
+            "current_code": "func Query(ctx context.Context) (Rows, error) {\n    return db.Query(context.Background(), statement)\n}",
+            "diff": " func Query(ctx context.Context) (Rows, error) {\n-    return db.Query(ctx, statement)\n+    return db.Query(context.Background(), statement)\n }",
+            "file": "service/detached-query.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Query(ctx context.Context) (Rows, error) {\n    return db.Query(ctx, statement)\n}",
+            "task": "Refactor database lookup while keeping request cancellation effective."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970475-mwomLXLiUftxBsqLgZEN",
+              "usage": {
+                "input_tokens": 618,
+                "output_tokens": 60,
+                "cost_usd": 2.5956e-05
+              }
+            }
+          ],
+          "elapsed_ms": 322.713
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/detached-query.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.9,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.96,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.9,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "detached-query",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.9,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "9da3a2a953e0316666bcc1565493ddaf6ba50d9d453a87ce52af2cc86ec678fe",
+          "state_sha256": "a5c76d4cb66e448459fc10c6f025ca9821611d337e8ac63e7e629d55deb851d6",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.92,
+            "swallowed-cancellation:main-work-continues": 0.94
+          },
+          "structured_state": {
+            "current_code": "async def upload(blob):\n    try:\n        return await storage.upload(blob)\n    except asyncio.CancelledError:\n        return \"uploaded\"",
+            "diff": " async def upload(blob):\n-    return await storage.upload(blob)\n+    try:\n+        return await storage.upload(blob)\n+    except asyncio.CancelledError:\n+        return \"uploaded\"",
+            "file": "service/cancelled-upload-success.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "async def upload(blob):\n    return await storage.upload(blob)",
+            "task": "Handle upload completion without converting cancellation to success."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970475-6Oy3ncNkwfRWZqMqBI2K",
+              "usage": {
+                "input_tokens": 616,
+                "output_tokens": 60,
+                "cost_usd": 2.5872e-05
+              }
+            }
+          ],
+          "elapsed_ms": 351.755
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/cancelled-upload-success.py",
+          "start_line": 1,
+          "end_line": 5,
+          "score": 0.92,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.92,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.94,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "cancelled-upload-success",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.92,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "279e9a3b2dbfd5a2123240a695e2ac036f81af09b1ed04e3731f8bcb0755e023",
+          "state_sha256": "11ffcf0bf2363a648134eb8515a933ebbc0f80edcd4741ed8fcdf18da0934fdd",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.96,
+            "swallowed-cancellation:main-work-continues": 0.89
+          },
+          "structured_state": {
+            "current_code": "async function fetchPage(url: string, signal: AbortSignal) {\n  return fetch(url);\n}",
+            "diff": " async function fetchPage(url: string, signal: AbortSignal) {\n-  return fetch(url, { signal });\n+  return fetch(url);\n }",
+            "file": "service/dropped-fetch-signal.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "async function fetchPage(url: string, signal: AbortSignal) {\n  return fetch(url, { signal });\n}",
+            "task": "Simplify request options while preserving caller abort behavior."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970476-pDrPk4Brm2SwJHBc7AsL",
+              "usage": {
+                "input_tokens": 620,
+                "output_tokens": 60,
+                "cost_usd": 2.604e-05
+              }
+            }
+          ],
+          "elapsed_ms": 292.309
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/dropped-fetch-signal.ts",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.89,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.96,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.89,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "dropped-fetch-signal",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.89,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "0ff6f8652b64151036c90f966d6706d5558bb67c2c6e605e7e3a5dbd1f2fe658",
+          "state_sha256": "8f5a466cfdc23f4965b2ff7a1a6181bb11a70d8e197ba8ab71d17fa3acbf25c0",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.11,
+            "swallowed-cancellation:main-work-continues": 0.48
+          },
+          "structured_state": {
+            "current_code": "func Run(ctx context.Context) error {\n    err := worker.Run(ctx)\n    if errors.Is(err, context.Canceled) {\n        cleanup, cancel := context.WithTimeout(context.Background(), time.Second)\n        defer cancel()\n        _ = worker.Cleanup(cleanup)\n    }\n    return err\n}",
+            "diff": " func Run(ctx context.Context) error {\n-    return worker.Run(ctx)\n+    err := worker.Run(ctx)\n+    if errors.Is(err, context.Canceled) {\n+        cleanup, cancel := context.WithTimeout(context.Background(), time.Second)\n+        defer cancel()\n+        _ = worker.Cleanup(cleanup)\n+    }\n+    return err\n }",
+            "file": "service/cancelled-cleanup.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Run(ctx context.Context) error {\n    return worker.Run(ctx)\n}",
+            "task": "Perform bounded cleanup after a cancelled operation and return the original error."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970476-LLeDQOTGx2yRtTVdek47",
+              "usage": {
+                "input_tokens": 707,
+                "output_tokens": 60,
+                "cost_usd": 2.9694e-05
+              }
+            }
+          ],
+          "elapsed_ms": 348.36
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/cancelled-cleanup.go",
+          "start_line": 1,
+          "end_line": 9,
+          "score": 0.11,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.11,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.48,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "cancelled-cleanup",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.11,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "487300a86a561a3ba46e810a34086f18a61ec653f2470d8dcc77b809739c3b0b",
+          "state_sha256": "da81d0b176404f71c9eff55cfbd8fc84357a13aeeaadef4c45b766df60a02de5",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.07,
+            "swallowed-cancellation:main-work-continues": 0.14
+          },
+          "structured_state": {
+            "current_code": "async def upload(blob):\n    try:\n        return await storage.upload(blob)\n    except asyncio.CancelledError:\n        logger.info(\"upload cancelled\")\n        raise",
+            "diff": " async def upload(blob):\n-    return await storage.upload(blob)\n+    try:\n+        return await storage.upload(blob)\n+    except asyncio.CancelledError:\n+        logger.info(\"upload cancelled\")\n+        raise",
+            "file": "service/reraise-cancellation.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "async def upload(blob):\n    return await storage.upload(blob)",
+            "task": "Log upload cancellation and preserve cancellation propagation."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970477-4DLEyOHlYvPWt1OnAGss",
+              "usage": {
+                "input_tokens": 626,
+                "output_tokens": 60,
+                "cost_usd": 2.6292e-05
+              }
+            }
+          ],
+          "elapsed_ms": 294.279
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/reraise-cancellation.py",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.07,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.07,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.14,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "reraise-cancellation",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.07,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "95e2ef23a4f151edfaa0120a93edb328657ac36e964a7e53265370ed308ef33e",
+          "state_sha256": "57b6b169f222a4eea8798a1372edb12d2fad2bf4f3f90c76c3441d75a898d8be",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.05,
+            "swallowed-cancellation:main-work-continues": 0.17
+          },
+          "structured_state": {
+            "current_code": "Task<Response> Fetch(CancellationToken token) {\n    return client.GetAsync(url, token);\n}\nTask<Response> Load(CancellationToken token) {\n    return Fetch(token);\n}",
+            "diff": "-Task<Response> Load(CancellationToken token) {\n+Task<Response> Fetch(CancellationToken token) {\n     return client.GetAsync(url, token);\n }\n+Task<Response> Load(CancellationToken token) {\n+    return Fetch(token);\n+}",
+            "file": "service/forward-cancel-token.cs",
+            "language": "csharp",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "Task<Response> Load(CancellationToken token) {\n    return client.GetAsync(url, token);\n}",
+            "task": "Extract the request helper and forward the cancellation token."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970478-onzRJS9zZANIdQCfaRBs",
+              "usage": {
+                "input_tokens": 668,
+                "output_tokens": 60,
+                "cost_usd": 2.8056e-05
+              }
+            }
+          ],
+          "elapsed_ms": 289.391
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/forward-cancel-token.cs",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.05,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.05,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.17,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "forward-cancel-token",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.05,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "df5c7fd874f9bcdaccb081cb5792700dd5b58451ef74d443cd9cba666c695442",
+          "state_sha256": "deb08a4e1f3bb9e102a263ffb97bd61ce359362f3f66a536cdb37d944e9fa52a",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.94,
+            "swallowed-cancellation:main-work-continues": 0.84
+          },
+          "structured_state": {
+            "current_code": "func Audit(ctx context.Context, entry Entry) error {\n    job, cancel := context.WithTimeout(context.Background(), 2*time.Second)\n    defer cancel()\n    return sink.Send(job, entry)\n}",
+            "diff": " func Audit(ctx context.Context, entry Entry) error {\n-    return sink.Send(ctx, entry)\n+    job, cancel := context.WithTimeout(context.Background(), 2*time.Second)\n+    defer cancel()\n+    return sink.Send(job, entry)\n }",
+            "file": "service/independent-audit-job.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Audit(ctx context.Context, entry Entry) error {\n    return sink.Send(ctx, entry)\n}",
+            "task": "Make audit delivery independently owned background work with a two-second timeout; accepting the audit job must not depend on request cancellation."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970478-CzuK1Kzy8MFYpc6dtHrf",
+              "usage": {
+                "input_tokens": 676,
+                "output_tokens": 60,
+                "cost_usd": 2.8392e-05
+              }
+            }
+          ],
+          "elapsed_ms": 297.277
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/independent-audit-job.go",
+          "start_line": 1,
+          "end_line": 5,
+          "score": 0.84,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.94,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.84,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "independent-audit-job",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.84,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "1a8a4d5d29c4bf5ad8ec3453fe80349655e1d38bc45376fdacb0ab9ed2db639d",
+          "state_sha256": "7dd347c7be772a4dc700c18ea9ee43b6a4fc8a3d5d7cc2c9d661bbbd5cf15c1a",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.11,
+            "swallowed-cancellation:main-work-continues": 0.14
+          },
+          "structured_state": {
+            "current_code": "async function load(url, signal) {\n  try { return await fetch(url, { signal }); }\n  catch (error) {\n    if (error.name === \"AbortError\") log.debug(\"aborted\");\n    throw error;\n  }\n}",
+            "diff": " async function load(url, signal) {\n-  return fetch(url, { signal });\n+  try { return await fetch(url, { signal }); }\n+  catch (error) {\n+    if (error.name === \"AbortError\") log.debug(\"aborted\");\n+    throw error;\n+  }\n }",
+            "file": "service/preserve-abort-rejection.js",
+            "language": "javascript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "async function load(url, signal) {\n  return fetch(url, { signal });\n}",
+            "task": "Add diagnostics for aborts and preserve fetch rejection."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970479-FjnnL6cTQ1t19QL937hH",
+              "usage": {
+                "input_tokens": 671,
+                "output_tokens": 60,
+                "cost_usd": 2.8182e-05
+              }
+            }
+          ],
+          "elapsed_ms": 301.295
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/preserve-abort-rejection.js",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.11,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.11,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.14,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            }
+          ]
+        }
+      ],
+      "id": "preserve-abort-rejection",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.11,
+      "split": "dev"
+    }
+  ],
+  "version": 1,
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13",
+  "rules": [
+    {
+      "rule": "removed-authorization-check",
+      "examples": 8,
+      "true_positive": 2,
+      "false_positive": 1,
+      "true_negative": 4,
+      "false_negative": 1,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "false_positive_rate": 0.2,
+      "threshold": 0.95,
+      "average_positive_score": 0.8566666666666668,
+      "average_negative_score": 0.266
+    },
+    {
+      "rule": "removed-validation",
+      "examples": 8,
+      "true_positive": 2,
+      "false_positive": 1,
+      "true_negative": 4,
+      "false_negative": 1,
+      "precision": 0.6666666666666666,
+      "recall": 0.6666666666666666,
+      "false_positive_rate": 0.2,
+      "threshold": 0.95,
+      "average_positive_score": 0.9466666666666667,
+      "average_negative_score": 0.25800000000000006
+    },
+    {
+      "rule": "silent-failure-fallback",
+      "examples": 8,
+      "true_positive": 1,
+      "false_positive": 0,
+      "true_negative": 5,
+      "false_negative": 2,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "false_positive_rate": 0,
+      "threshold": 0.92,
+      "average_positive_score": 0.7933333333333333,
+      "average_negative_score": 0.22600000000000003
+    },
+    {
+      "rule": "swallowed-cancellation",
+      "examples": 8,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 5,
+      "false_negative": 3,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.9033333333333333,
+      "average_negative_score": 0.236
+    }
+  ]
+}

@@ -1,0 +1,1258 @@
+{
+  "provenance": {
+    "experiment_sha256": "2be87a81ef3b0d1446d5659ea768d4973db2914fb661079c73edf631f88017a0",
+    "protocol": "git-v2",
+    "corpus_sha256": "5bcda6d4e2e9f1ddaff7005776a1c65a637f0494b59bf10339bc750844458a1e",
+    "rules_sha256": "f035b56f7c7fe113b44ffe9ba68b17014877111f36782a49a3c07d28aa490245",
+    "config_sha256": "87e2e0d3e5aa2c99d070aa58435c3e3a2a7301e24cd535c67b607c3cfbac81b6"
+  },
+  "mode": "git",
+  "grouping": "isolated",
+  "cases": [
+    {
+      "requests": [
+        {
+          "sha256": "5f47841e134e2ac7b409d7ce843b94e39f31d4cdba98c58c4453af1cb46626f1",
+          "state_sha256": "624e8f3447e9e448b954f03a2a7352a4cf69360cd2f7265f49d910d0b9fb0918",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:task-permits-change",
+              "Instructions": "Does the task explicitly require the changed work to continue independently of caller cancellation?",
+              "Criteria": {
+                "true": "The task specifically assigns independent background ownership to the work that this change disconnects from cancellation.",
+                "false": "The task does not require independent background work; vague resilience or cleanup requests are insufficient."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.94,
+            "swallowed-cancellation:main-work-continues": 0.88,
+            "swallowed-cancellation:task-permits-change": 0.16
+          },
+          "structured_state": {
+            "current_code": "func Load(ctx context.Context) (Rows, error) {\n return db.Query(context.Background())\n}",
+            "diff": " func Load(ctx context.Context) (Rows, error) {\n- return db.Query(ctx)\n+ return db.Query(context.Background())\n }",
+            "file": "service/query.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Load(ctx context.Context) (Rows, error) {\n return db.Query(ctx)\n}",
+            "task": "Make the request handler more reliable."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970108-aoFBEm22E2ANRyLuQCJe",
+              "usage": {
+                "input_tokens": 674,
+                "output_tokens": 87,
+                "cost_usd": 2.8308e-05
+              }
+            }
+          ],
+          "elapsed_ms": 347.432
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/query.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.84,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.94,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.88,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.16,
+              "evidence": "Does the task explicitly require the changed work to continue independently of caller cancellation?"
+            }
+          ]
+        }
+      ],
+      "id": "cancel-main-query",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.84,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "e269c23079489e5b8f1287b396057404142254adb5861ae616c6ec622bc91e5c",
+          "state_sha256": "f3f1347e37e6796aec48cb6ed411cfcc71e96280231eee30a09bebc347416957",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:task-permits-change",
+              "Instructions": "Does the task explicitly require the changed work to continue independently of caller cancellation?",
+              "Criteria": {
+                "true": "The task specifically assigns independent background ownership to the work that this change disconnects from cancellation.",
+                "false": "The task does not require independent background work; vague resilience or cleanup requests are insufficient."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.94,
+            "swallowed-cancellation:main-work-continues": 0.87,
+            "swallowed-cancellation:task-permits-change": 0.97
+          },
+          "structured_state": {
+            "current_code": "func Audit(ctx context.Context, event Event) error {\n return audit.Write(context.Background(), event)\n}",
+            "diff": " func Audit(ctx context.Context, event Event) error {\n- return audit.Write(ctx, event)\n+ return audit.Write(context.Background(), event)\n }",
+            "file": "service/audit.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func Audit(ctx context.Context, event Event) error {\n return audit.Write(ctx, event)\n}",
+            "task": "Audit writes are independently owned: complete this write even if the request is canceled. The caller may wait for completion."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970108-T50vs739pJK7Ty9XpDWr",
+              "usage": {
+                "input_tokens": 696,
+                "output_tokens": 87,
+                "cost_usd": 2.9232e-05
+              }
+            }
+          ],
+          "elapsed_ms": 320.656
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/audit.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.030000000000000027,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.94,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.87,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.97,
+              "evidence": "Does the task explicitly require the changed work to continue independently of caller cancellation?"
+            }
+          ]
+        }
+      ],
+      "id": "cancel-independent-audit",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.030000000000000027,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "93faa668592d13ab56a26d85b30bfd962c33a21c7d16619943a4239a00f8e047",
+          "state_sha256": "cc0f27e01c96ca21733ed6276e2f466bf675adddc5809c318be658c07b9ccd70",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:task-permits-change",
+              "Instructions": "Does the task explicitly require the changed work to continue independently of caller cancellation?",
+              "Criteria": {
+                "true": "The task specifically assigns independent background ownership to the work that this change disconnects from cancellation.",
+                "false": "The task does not require independent background work; vague resilience or cleanup requests are insufficient."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.84,
+            "swallowed-cancellation:main-work-continues": 0.68,
+            "swallowed-cancellation:task-permits-change": 0.11
+          },
+          "structured_state": {
+            "current_code": "import asyncio\nasync def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        return []",
+            "diff": " import asyncio\n async def load():\n-    return await fetch()\n+    try:\n+        return await fetch()\n+    except asyncio.CancelledError:\n+        return []",
+            "file": "service/load.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "import asyncio\nasync def load():\n    return await fetch()",
+            "surrounding_context": "async def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        return []",
+            "task": "Improve cancellation handling while preserving request cancellation."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970109-IitappiTSvawkZZDNLAe",
+              "usage": {
+                "input_tokens": 715,
+                "output_tokens": 87,
+                "cost_usd": 3.003e-05
+              }
+            }
+          ],
+          "elapsed_ms": 340.372
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/load.py",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.68,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.84,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.68,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.11,
+              "evidence": "Does the task explicitly require the changed work to continue independently of caller cancellation?"
+            }
+          ]
+        }
+      ],
+      "id": "cancel-success-result",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.68,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "d1464771269550392532b2077ff8ad72b6556be2a4c4ccccb5d12212b0e1a30b",
+          "state_sha256": "4859b6dfecb4c865f371ec5b5c3f8582312d838995b1a5d6bedefb9d9cbea70c",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:task-permits-change",
+              "Instructions": "Does the task explicitly require the changed work to continue independently of caller cancellation?",
+              "Criteria": {
+                "true": "The task specifically assigns independent background ownership to the work that this change disconnects from cancellation.",
+                "false": "The task does not require independent background work; vague resilience or cleanup requests are insufficient."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.06,
+            "swallowed-cancellation:main-work-continues": 0.34,
+            "swallowed-cancellation:task-permits-change": 0.06
+          },
+          "structured_state": {
+            "current_code": "import asyncio\nasync def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        handle.close()\n        raise",
+            "diff": " import asyncio\n async def load():\n-    return await fetch()\n+    try:\n+        return await fetch()\n+    except asyncio.CancelledError:\n+        handle.close()\n+        raise",
+            "file": "service/load.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "import asyncio\nasync def load():\n    return await fetch()",
+            "surrounding_context": "async def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        handle.close()\n        raise",
+            "task": "Close the local handle on cancellation and propagate the original cancellation."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970110-0K55qdAtf2oCcmyo9jjP",
+              "usage": {
+                "input_tokens": 728,
+                "output_tokens": 87,
+                "cost_usd": 3.0576e-05
+              }
+            }
+          ],
+          "elapsed_ms": 387.929
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service/load.py",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.06,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.06,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.34,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.06,
+              "evidence": "Does the task explicitly require the changed work to continue independently of caller cancellation?"
+            }
+          ]
+        }
+      ],
+      "id": "cancel-cleanup-rethrow",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.06,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "d18653b934acdaa499b89fe5b5204ccabd82eae61eba4e0de6d8f018e58d64b7",
+          "state_sha256": "deff777686e5f99c9d09eac2a6aa9c9342dd450eb289736159a7a166e1e5ca61",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:contract-permits-fallback",
+              "Instructions": "Does the task or supplied contract explicitly require the fallback used for the failure in this change?",
+              "Criteria": {
+                "true": "The particular resilience or fallback behavior is explicitly required by the task or an established supplied contract.",
+                "false": "No supplied task or contract specifically permits this fallback for this failure."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:contract-permits-fallback": 0.06,
+            "silent-failure-fallback:failure-hidden": 0.95,
+            "silent-failure-fallback:handles-failure": 0.96
+          },
+          "structured_state": {
+            "current_code": "ZoneId parseZone(String raw) {\n    try {\n        return ZoneId.of(raw);\n    } catch (DateTimeException invalid) {\n        return ZoneOffset.UTC;\n    }\n}",
+            "diff": " ZoneId parseZone(String raw) {\n-    return ZoneId.of(raw);\n+    try {\n+        return ZoneId.of(raw);\n+    } catch (DateTimeException invalid) {\n+        return ZoneOffset.UTC;\n+    }\n }",
+            "file": "service/zone.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "ZoneId parseZone(String raw) {\n    return ZoneId.of(raw);\n}",
+            "task": "Parse the required internal billing timezone. Invalid stored configuration must be reported; silently changing it can change billing dates."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970111-dAFPQIna0dfa3ScR7KuG",
+              "usage": {
+                "input_tokens": 736,
+                "output_tokens": 88,
+                "cost_usd": 3.0912e-05
+              }
+            }
+          ],
+          "elapsed_ms": 292.851
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/zone.java",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.94,
+          "signals": [
+            {
+              "negated": true,
+              "id": "contract-permits-fallback",
+              "score": 0.06,
+              "evidence": "Does the task or supplied contract explicitly require the fallback used for the failure in this change?"
+            },
+            {
+              "id": "failure-hidden",
+              "score": 0.95,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.96,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "fallback-required-zone",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.94,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "7af02c6473740c1a5b7526829409b9456acc4642d5bbaea189b2a1966dbd45f2",
+          "state_sha256": "112e30b803d4b6504a144e4a5f291fee008485398e0b3c5b4fde86b280c02f8b",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:contract-permits-fallback",
+              "Instructions": "Does the task or supplied contract explicitly require the fallback used for the failure in this change?",
+              "Criteria": {
+                "true": "The particular resilience or fallback behavior is explicitly required by the task or an established supplied contract.",
+                "false": "No supplied task or contract specifically permits this fallback for this failure."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:contract-permits-fallback": 0.87,
+            "silent-failure-fallback:failure-hidden": 0.94,
+            "silent-failure-fallback:handles-failure": 0.98
+          },
+          "structured_state": {
+            "current_code": "ZoneId parseZone(String raw) {\n    try {\n        return ZoneId.of(raw);\n    } catch (DateTimeException invalid) {\n        return ZoneOffset.UTC;\n    }\n}",
+            "diff": " ZoneId parseZone(String raw) {\n-    return ZoneId.of(raw);\n+    try {\n+        return ZoneId.of(raw);\n+    } catch (DateTimeException invalid) {\n+        return ZoneOffset.UTC;\n+    }\n }",
+            "file": "service/zone.java",
+            "language": "java",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "ZoneId parseZone(String raw) {\n    return ZoneId.of(raw);\n}",
+            "task": "Parse an optional client display preference. The specified display policy is to use UTC if the preference is invalid."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970112-TtkLmdtyc23Fgk7cZDv4",
+              "usage": {
+                "input_tokens": 735,
+                "output_tokens": 88,
+                "cost_usd": 3.087e-05
+              }
+            }
+          ],
+          "elapsed_ms": 302.284
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/zone.java",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.13,
+          "signals": [
+            {
+              "negated": true,
+              "id": "contract-permits-fallback",
+              "score": 0.87,
+              "evidence": "Does the task or supplied contract explicitly require the fallback used for the failure in this change?"
+            },
+            {
+              "id": "failure-hidden",
+              "score": 0.94,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.98,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "fallback-optional-zone",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.13,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "12ffa51db3f692a9224eba6d316abd5397bfdaeb69325ee0c772f9dc83cc0d95",
+          "state_sha256": "b924c2ea626908eeb90d77c57c98fa8cab3290fbac864b59dba596732d7f1e09",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:contract-permits-fallback",
+              "Instructions": "Does the task or supplied contract explicitly require the fallback used for the failure in this change?",
+              "Criteria": {
+                "true": "The particular resilience or fallback behavior is explicitly required by the task or an established supplied contract.",
+                "false": "No supplied task or contract specifically permits this fallback for this failure."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:contract-permits-fallback": 0.09,
+            "silent-failure-fallback:failure-hidden": 0.94,
+            "silent-failure-fallback:handles-failure": 0.94
+          },
+          "structured_state": {
+            "current_code": "function readDraft(raw: string): Draft {\n  try {\n    return schema.parse(JSON.parse(raw));\n  } catch {\n    return createEmptyDraft();\n  }\n}",
+            "diff": " function readDraft(raw: string): Draft {\n-  return schema.parse(JSON.parse(raw));\n+  try {\n+    return schema.parse(JSON.parse(raw));\n+  } catch {\n+    return createEmptyDraft();\n+  }\n }",
+            "file": "service/draft.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function readDraft(raw: string): Draft {\n  return schema.parse(JSON.parse(raw));\n}",
+            "task": "Read the authoritative persisted draft. Preserve and report corrupt data instead of replacing the user's saved work."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970113-VAkujP1P16lm7uFCJcVl",
+              "usage": {
+                "input_tokens": 720,
+                "output_tokens": 88,
+                "cost_usd": 3.024e-05
+              }
+            }
+          ],
+          "elapsed_ms": 324.382
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/draft.ts",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.91,
+          "signals": [
+            {
+              "negated": true,
+              "id": "contract-permits-fallback",
+              "score": 0.09,
+              "evidence": "Does the task or supplied contract explicitly require the fallback used for the failure in this change?"
+            },
+            {
+              "id": "failure-hidden",
+              "score": 0.94,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.94,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "fallback-required-draft",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.91,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "d0c41ca33464543b1964303ba48e80a3bf00e66b377c49ac9bc86e0ebaac53c2",
+          "state_sha256": "8a6e475b31a7efa87b6ed4425299c1742a6f9d46c2a316547837a44547da3724",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "silent-failure-fallback:handles-failure",
+              "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+              "Criteria": {
+                "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+                "false": "No failure or invalid condition is handled."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:failure-hidden",
+              "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+              "Criteria": {
+                "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+                "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+              }
+            },
+            {
+              "ID": "silent-failure-fallback:contract-permits-fallback",
+              "Instructions": "Does the task or supplied contract explicitly require the fallback used for the failure in this change?",
+              "Criteria": {
+                "true": "The particular resilience or fallback behavior is explicitly required by the task or an established supplied contract.",
+                "false": "No supplied task or contract specifically permits this fallback for this failure."
+              }
+            }
+          ],
+          "scores": {
+            "silent-failure-fallback:contract-permits-fallback": 0.95,
+            "silent-failure-fallback:failure-hidden": 0.95,
+            "silent-failure-fallback:handles-failure": 0.98
+          },
+          "structured_state": {
+            "current_code": "function readDraft(raw: string): Draft {\n  try {\n    return schema.parse(JSON.parse(raw));\n  } catch {\n    return createEmptyDraft();\n  }\n}",
+            "diff": " function readDraft(raw: string): Draft {\n-  return schema.parse(JSON.parse(raw));\n+  try {\n+    return schema.parse(JSON.parse(raw));\n+  } catch {\n+    return createEmptyDraft();\n+  }\n }",
+            "file": "service/draft.ts",
+            "language": "typescript",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "function readDraft(raw: string): Draft {\n  return schema.parse(JSON.parse(raw));\n}",
+            "task": "Read a disposable local preview draft. If decoding or schema validation fails, the specified recovery policy is to return a new empty draft; authoritative saved work is stored separately."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970113-OsWQJlUZPxszwj0Ll0PE",
+              "usage": {
+                "input_tokens": 733,
+                "output_tokens": 88,
+                "cost_usd": 3.0786e-05
+              }
+            }
+          ],
+          "elapsed_ms": 308.181
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "silent-failure-fallback",
+          "file": "service/draft.ts",
+          "start_line": 1,
+          "end_line": 7,
+          "score": 0.050000000000000044,
+          "signals": [
+            {
+              "negated": true,
+              "id": "contract-permits-fallback",
+              "score": 0.95,
+              "evidence": "Does the task or supplied contract explicitly require the fallback used for the failure in this change?"
+            },
+            {
+              "id": "failure-hidden",
+              "score": 0.95,
+              "evidence": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?"
+            },
+            {
+              "id": "handles-failure",
+              "score": 0.98,
+              "evidence": "Does the changed code handle a failed operation or invalid condition?"
+            }
+          ]
+        }
+      ],
+      "id": "fallback-disposable-draft",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.050000000000000044,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "6f5d4eb3c82ced8877e146666c17aab0fbc314a95b08623294036db01704a095",
+          "state_sha256": "7fa134a740ddc6e93658f2fb59a05b8552072f81eb5aa0146db7abdc6def9b4f",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "weakened-test-assertion:protection-lost",
+              "Instructions": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?",
+              "Criteria": {
+                "true": "A previously checked requirement is no longer enforced by the test, including weaker comparisons, wider tolerance, or skipped behavior.",
+                "false": "Equivalent visible assertions, including supplied assertion helpers, still enforce the same requirement."
+              }
+            },
+            {
+              "ID": "weakened-test-assertion:task-permits-change",
+              "Instructions": "Does the task explicitly require the specific assertion change shown between the before and after tests?",
+              "Criteria": {
+                "true": "The task specifically retires or changes the requirement whose test protection is weakened.",
+                "false": "The task leaves that requirement intact or only vaguely asks to simplify, optimize, or clean up tests."
+              }
+            }
+          ],
+          "scores": {
+            "weakened-test-assertion:protection-lost": 0.83,
+            "weakened-test-assertion:task-permits-change": 0.23
+          },
+          "structured_state": {
+            "current_code": "func TestKeys(t *testing.T) {\n require.ElementsMatch(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}",
+            "diff": " func TestKeys(t *testing.T) {\n- require.Equal(t, []string{\"blue\", \"green\", \"red\"}, keys())\n+ require.ElementsMatch(t, []string{\"blue\", \"green\", \"red\"}, keys())\n }",
+            "file": "service/keys_test.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func TestKeys(t *testing.T) {\n require.Equal(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}",
+            "task": "Simplify the test for ranked search keys without changing its order guarantee."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970114-8Jf0zETRJQYJD3TcfaWM",
+              "usage": {
+                "input_tokens": 669,
+                "output_tokens": 59,
+                "cost_usd": 2.8098e-05
+              }
+            }
+          ],
+          "elapsed_ms": 322.812
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "weakened-test-assertion",
+          "file": "service/keys_test.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.77,
+          "signals": [
+            {
+              "id": "protection-lost",
+              "score": 0.83,
+              "evidence": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.23,
+              "evidence": "Does the task explicitly require the specific assertion change shown between the before and after tests?"
+            }
+          ]
+        }
+      ],
+      "id": "assert-order-required",
+      "rule": "weakened-test-assertion",
+      "expected": "positive",
+      "score": 0.77,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "51c540754bcb52e97c5773d00356fdca238c9224bfb6131b42c0fd367ef3f869",
+          "state_sha256": "b5cfa1630e3342e11122807c20388dfa9f3d720af3fdc9d735ecf68b8c7d81de",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "weakened-test-assertion:protection-lost",
+              "Instructions": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?",
+              "Criteria": {
+                "true": "A previously checked requirement is no longer enforced by the test, including weaker comparisons, wider tolerance, or skipped behavior.",
+                "false": "Equivalent visible assertions, including supplied assertion helpers, still enforce the same requirement."
+              }
+            },
+            {
+              "ID": "weakened-test-assertion:task-permits-change",
+              "Instructions": "Does the task explicitly require the specific assertion change shown between the before and after tests?",
+              "Criteria": {
+                "true": "The task specifically retires or changes the requirement whose test protection is weakened.",
+                "false": "The task leaves that requirement intact or only vaguely asks to simplify, optimize, or clean up tests."
+              }
+            }
+          ],
+          "scores": {
+            "weakened-test-assertion:protection-lost": 0.93,
+            "weakened-test-assertion:task-permits-change": 0.86
+          },
+          "structured_state": {
+            "current_code": "func TestKeys(t *testing.T) {\n require.ElementsMatch(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}",
+            "diff": " func TestKeys(t *testing.T) {\n- require.Equal(t, []string{\"blue\", \"green\", \"red\"}, keys())\n+ require.ElementsMatch(t, []string{\"blue\", \"green\", \"red\"}, keys())\n }",
+            "file": "service/keys_test.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "before: changed file did not parse",
+                "after: changed file did not parse"
+              ]
+            },
+            "previous_code": "func TestKeys(t *testing.T) {\n require.Equal(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}",
+            "task": "Map key order is intentionally unspecified. Remove the accidental order requirement while retaining every expected key and count."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970115-j5MxkOVxVrg3tTSX5Yuh",
+              "usage": {
+                "input_tokens": 674,
+                "output_tokens": 59,
+                "cost_usd": 2.8308e-05
+              }
+            }
+          ],
+          "elapsed_ms": 283.223
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "weakened-test-assertion",
+          "file": "service/keys_test.go",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.14,
+          "signals": [
+            {
+              "id": "protection-lost",
+              "score": 0.93,
+              "evidence": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.86,
+              "evidence": "Does the task explicitly require the specific assertion change shown between the before and after tests?"
+            }
+          ]
+        }
+      ],
+      "id": "assert-order-unspecified",
+      "rule": "weakened-test-assertion",
+      "expected": "negative",
+      "score": 0.14,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "6dbffd11bfd0a13528bef45d26c3ba50e60d1997f66a1da7cc3165a7895f9690",
+          "state_sha256": "30e5f460292519d2953f19f94b786bfa87c7b58730d3aa775aa25ea6f8579188",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "weakened-test-assertion:protection-lost",
+              "Instructions": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?",
+              "Criteria": {
+                "true": "A previously checked requirement is no longer enforced by the test, including weaker comparisons, wider tolerance, or skipped behavior.",
+                "false": "Equivalent visible assertions, including supplied assertion helpers, still enforce the same requirement."
+              }
+            },
+            {
+              "ID": "weakened-test-assertion:task-permits-change",
+              "Instructions": "Does the task explicitly require the specific assertion change shown between the before and after tests?",
+              "Criteria": {
+                "true": "The task specifically retires or changes the requirement whose test protection is weakened.",
+                "false": "The task leaves that requirement intact or only vaguely asks to simplify, optimize, or clean up tests."
+              }
+            }
+          ],
+          "scores": {
+            "weakened-test-assertion:protection-lost": 0.94,
+            "weakened-test-assertion:task-permits-change": 0.11
+          },
+          "structured_state": {
+            "current_code": "def test_parse():\n    with pytest.raises(ValueError):\n        parse(value)",
+            "diff": " def test_parse():\n-    with pytest.raises(ValueError, match=\"legacy parser failed\"):\n+    with pytest.raises(ValueError):\n         parse(value)",
+            "file": "tests/test_parse.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def test_parse():\n    with pytest.raises(ValueError, match=\"legacy parser failed\"):\n        parse(value)",
+            "task": "Refactor this test while retaining the externally documented error message and exception type."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970115-qy4wZmeVRjpxltqgNfhn",
+              "usage": {
+                "input_tokens": 627,
+                "output_tokens": 59,
+                "cost_usd": 2.6334e-05
+              }
+            }
+          ],
+          "elapsed_ms": 279.303
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "weakened-test-assertion",
+          "file": "tests/test_parse.py",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.89,
+          "signals": [
+            {
+              "id": "protection-lost",
+              "score": 0.94,
+              "evidence": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.11,
+              "evidence": "Does the task explicitly require the specific assertion change shown between the before and after tests?"
+            }
+          ]
+        }
+      ],
+      "id": "assert-message-required",
+      "rule": "weakened-test-assertion",
+      "expected": "positive",
+      "score": 0.89,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "86cac964574153330d3f5c8d1500bbb2091a382fa0147d02f45e4f80321c9ed5",
+          "state_sha256": "4eeed1d609c98c838720489f9322b4e67080257c6822caccbbc035dba22f9703",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "weakened-test-assertion:protection-lost",
+              "Instructions": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?",
+              "Criteria": {
+                "true": "A previously checked requirement is no longer enforced by the test, including weaker comparisons, wider tolerance, or skipped behavior.",
+                "false": "Equivalent visible assertions, including supplied assertion helpers, still enforce the same requirement."
+              }
+            },
+            {
+              "ID": "weakened-test-assertion:task-permits-change",
+              "Instructions": "Does the task explicitly require the specific assertion change shown between the before and after tests?",
+              "Criteria": {
+                "true": "The task specifically retires or changes the requirement whose test protection is weakened.",
+                "false": "The task leaves that requirement intact or only vaguely asks to simplify, optimize, or clean up tests."
+              }
+            }
+          ],
+          "scores": {
+            "weakened-test-assertion:protection-lost": 0.96,
+            "weakened-test-assertion:task-permits-change": 0.96
+          },
+          "structured_state": {
+            "current_code": "def test_parse():\n    with pytest.raises(ValueError):\n        parse(value)",
+            "diff": " def test_parse():\n-    with pytest.raises(ValueError, match=\"legacy parser failed\"):\n+    with pytest.raises(ValueError):\n         parse(value)",
+            "file": "tests/test_parse.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "def test_parse():\n    with pytest.raises(ValueError, match=\"legacy parser failed\"):\n        parse(value)",
+            "task": "The legacy parser message is no longer part of the contract. Remove its assertion while retaining the required ValueError exception type."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970116-C36xDUoEqpvcMFaQ6FdF",
+              "usage": {
+                "input_tokens": 638,
+                "output_tokens": 59,
+                "cost_usd": 2.6796e-05
+              }
+            }
+          ],
+          "elapsed_ms": 301.828
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "weakened-test-assertion",
+          "file": "tests/test_parse.py",
+          "start_line": 1,
+          "end_line": 3,
+          "score": 0.040000000000000036,
+          "signals": [
+            {
+              "id": "protection-lost",
+              "score": 0.96,
+              "evidence": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.96,
+              "evidence": "Does the task explicitly require the specific assertion change shown between the before and after tests?"
+            }
+          ]
+        }
+      ],
+      "id": "assert-message-retired",
+      "rule": "weakened-test-assertion",
+      "expected": "negative",
+      "score": 0.040000000000000036,
+      "split": "dev"
+    }
+  ],
+  "version": 1,
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13",
+  "rules": [
+    {
+      "rule": "silent-failure-fallback",
+      "examples": 4,
+      "true_positive": 1,
+      "false_positive": 0,
+      "true_negative": 2,
+      "false_negative": 1,
+      "precision": 1,
+      "recall": 0.5,
+      "false_positive_rate": 0,
+      "threshold": 0.92,
+      "average_positive_score": 0.925,
+      "average_negative_score": 0.09000000000000002
+    },
+    {
+      "rule": "swallowed-cancellation",
+      "examples": 4,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 2,
+      "false_negative": 2,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.76,
+      "average_negative_score": 0.04500000000000001
+    },
+    {
+      "rule": "weakened-test-assertion",
+      "examples": 4,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 2,
+      "false_negative": 2,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.93,
+      "average_positive_score": 0.8300000000000001,
+      "average_negative_score": 0.09000000000000002
+    }
+  ]
+}

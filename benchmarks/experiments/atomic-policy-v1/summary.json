@@ -1,0 +1,811 @@
+{
+  "corpora": {
+    "seed": {
+      "positive_cases": 140,
+      "negative_cases": 140,
+      "conditions": {
+        "baseline": {
+          "true_positive": [
+            13,
+            14,
+            16
+          ],
+          "false_positive": [
+            3,
+            3,
+            3
+          ],
+          "true_negative": [
+            137,
+            137,
+            137
+          ],
+          "false_negative": [
+            127,
+            126,
+            124
+          ]
+        },
+        "atomic": {
+          "true_positive": [
+            14,
+            16,
+            15
+          ],
+          "false_positive": [
+            9,
+            10,
+            12
+          ],
+          "true_negative": [
+            131,
+            130,
+            128
+          ],
+          "false_negative": [
+            126,
+            124,
+            125
+          ]
+        },
+        "policy": {
+          "true_positive": [
+            5,
+            6,
+            6
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            140,
+            140,
+            140
+          ],
+          "false_negative": [
+            135,
+            134,
+            134
+          ]
+        }
+      },
+      "permission_only_misses": [
+        [
+          {
+            "rule": "silent-failure-fallback",
+            "id": "silent-failure-fallback-obvious-python"
+          },
+          {
+            "rule": "silent-failure-fallback",
+            "id": "silent-failure-fallback-subtle-java"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-go"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-python"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-typescript"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-csharp"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-java"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-subtle-python"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-subtle-java"
+          }
+        ],
+        [
+          {
+            "rule": "silent-failure-fallback",
+            "id": "silent-failure-fallback-obvious-python"
+          },
+          {
+            "rule": "silent-failure-fallback",
+            "id": "silent-failure-fallback-obvious-java"
+          },
+          {
+            "rule": "silent-failure-fallback",
+            "id": "silent-failure-fallback-subtle-java"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-go"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-python"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-typescript"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-csharp"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-java"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-subtle-python"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-subtle-java"
+          }
+        ],
+        [
+          {
+            "rule": "silent-failure-fallback",
+            "id": "silent-failure-fallback-obvious-python"
+          },
+          {
+            "rule": "silent-failure-fallback",
+            "id": "silent-failure-fallback-obvious-java"
+          },
+          {
+            "rule": "silent-failure-fallback",
+            "id": "silent-failure-fallback-subtle-java"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-go"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-python"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-typescript"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-csharp"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-obvious-java"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-subtle-python"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "weakened-test-assertion-subtle-java"
+          }
+        ]
+      ],
+      "coverage": {
+        "languages": {
+          "go": 56,
+          "python": 56,
+          "typescript": 56,
+          "csharp": 56,
+          "java": 56
+        },
+        "limitations": {}
+      }
+    },
+    "validation": {
+      "positive_cases": 12,
+      "negative_cases": 20,
+      "conditions": {
+        "baseline": {
+          "true_positive": [
+            1,
+            1,
+            1
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            20,
+            20,
+            20
+          ],
+          "false_negative": [
+            11,
+            11,
+            11
+          ]
+        },
+        "atomic": {
+          "true_positive": [
+            5,
+            5,
+            5
+          ],
+          "false_positive": [
+            2,
+            1,
+            1
+          ],
+          "true_negative": [
+            18,
+            19,
+            19
+          ],
+          "false_negative": [
+            7,
+            7,
+            7
+          ]
+        },
+        "policy": {
+          "true_positive": [
+            0,
+            0,
+            0
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            20,
+            20,
+            20
+          ],
+          "false_negative": [
+            12,
+            12,
+            12
+          ]
+        }
+      },
+      "permission_only_misses": [
+        [
+          {
+            "rule": "removed-authorization-check",
+            "id": "export-role"
+          },
+          {
+            "rule": "removed-authorization-check",
+            "id": "late-permission"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "archive-traversal"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "invalid-port-condition"
+          },
+          {
+            "rule": "silent-failure-fallback",
+            "id": "empty-search-on-outage"
+          }
+        ],
+        [
+          {
+            "rule": "removed-authorization-check",
+            "id": "export-role"
+          },
+          {
+            "rule": "removed-authorization-check",
+            "id": "late-permission"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "archive-traversal"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "invalid-port-condition"
+          },
+          {
+            "rule": "silent-failure-fallback",
+            "id": "empty-search-on-outage"
+          }
+        ],
+        [
+          {
+            "rule": "removed-authorization-check",
+            "id": "export-role"
+          },
+          {
+            "rule": "removed-authorization-check",
+            "id": "late-permission"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "archive-traversal"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "invalid-port-condition"
+          },
+          {
+            "rule": "silent-failure-fallback",
+            "id": "empty-search-on-outage"
+          }
+        ]
+      ],
+      "coverage": {
+        "languages": {
+          "go": 9,
+          "python": 8,
+          "typescript": 4,
+          "java": 3,
+          "javascript": 4,
+          "csharp": 4
+        },
+        "limitations": {
+          "any": 32,
+          "parse": 9,
+          "unsupported": 23
+        }
+      }
+    },
+    "quality-dev": {
+      "positive_cases": 12,
+      "negative_cases": 12,
+      "conditions": {
+        "baseline": {
+          "true_positive": [
+            0,
+            0,
+            0
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            12,
+            12,
+            12
+          ],
+          "false_negative": [
+            12,
+            12,
+            12
+          ]
+        },
+        "atomic": {
+          "true_positive": [
+            4,
+            6,
+            4
+          ],
+          "false_positive": [
+            12,
+            12,
+            12
+          ],
+          "true_negative": [
+            0,
+            0,
+            0
+          ],
+          "false_negative": [
+            8,
+            6,
+            8
+          ]
+        },
+        "policy": {
+          "true_positive": [
+            0,
+            0,
+            0
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            12,
+            12,
+            12
+          ],
+          "false_negative": [
+            12,
+            12,
+            12
+          ]
+        }
+      },
+      "permission_only_misses": [
+        [
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-go"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-ts"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-js"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-java"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-cs"
+          }
+        ],
+        [
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-ts"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-js"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-java"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-cs"
+          }
+        ],
+        [
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-ts"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-js"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-java"
+          },
+          {
+            "rule": "removed-validation",
+            "id": "val-vague-task-cs"
+          }
+        ]
+      ],
+      "coverage": {
+        "languages": {
+          "go": 4,
+          "python": 4,
+          "typescript": 4,
+          "javascript": 4,
+          "java": 4,
+          "csharp": 4
+        },
+        "limitations": {
+          "any": 24,
+          "unsupported": 20
+        }
+      }
+    },
+    "git-path": {
+      "positive_cases": 3,
+      "negative_cases": 3,
+      "conditions": {
+        "baseline": {
+          "true_positive": [
+            0,
+            0,
+            0
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            3,
+            3,
+            3
+          ],
+          "false_negative": [
+            3,
+            3,
+            3
+          ]
+        },
+        "atomic": {
+          "true_positive": [
+            0,
+            0,
+            0
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            3,
+            3,
+            3
+          ],
+          "false_negative": [
+            3,
+            3,
+            3
+          ]
+        },
+        "policy": {
+          "true_positive": [
+            0,
+            0,
+            0
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            3,
+            3,
+            3
+          ],
+          "false_negative": [
+            3,
+            3,
+            3
+          ]
+        }
+      },
+      "permission_only_misses": [
+        [],
+        [],
+        []
+      ],
+      "coverage": {
+        "languages": {
+          "go": 4,
+          "python": 1
+        },
+        "limitations": {
+          "any": 5,
+          "unsupported": 1
+        }
+      }
+    },
+    "helpers": {
+      "positive_cases": 6,
+      "negative_cases": 6,
+      "conditions": {
+        "baseline": {
+          "true_positive": [
+            0,
+            0,
+            0
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            6,
+            6,
+            6
+          ],
+          "false_negative": [
+            6,
+            6,
+            6
+          ]
+        },
+        "atomic": {
+          "true_positive": [
+            0,
+            0,
+            0
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            6,
+            6,
+            6
+          ],
+          "false_negative": [
+            6,
+            6,
+            6
+          ]
+        },
+        "policy": {
+          "true_positive": [
+            0,
+            0,
+            0
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            6,
+            6,
+            6
+          ],
+          "false_negative": [
+            6,
+            6,
+            6
+          ]
+        }
+      },
+      "permission_only_misses": [
+        [],
+        [],
+        []
+      ],
+      "coverage": {
+        "languages": {
+          "go": 12
+        },
+        "limitations": {
+          "any": 12
+        }
+      }
+    },
+    "contracts": {
+      "positive_cases": 6,
+      "negative_cases": 6,
+      "conditions": {
+        "baseline": {
+          "true_positive": [
+            1,
+            1,
+            1
+          ],
+          "false_positive": [
+            2,
+            2,
+            2
+          ],
+          "true_negative": [
+            4,
+            4,
+            4
+          ],
+          "false_negative": [
+            5,
+            5,
+            5
+          ]
+        },
+        "atomic": {
+          "true_positive": [
+            3,
+            3,
+            3
+          ],
+          "false_positive": [
+            3,
+            4,
+            4
+          ],
+          "true_negative": [
+            3,
+            2,
+            2
+          ],
+          "false_negative": [
+            3,
+            3,
+            3
+          ]
+        },
+        "policy": {
+          "true_positive": [
+            1,
+            1,
+            1
+          ],
+          "false_positive": [
+            0,
+            0,
+            0
+          ],
+          "true_negative": [
+            6,
+            6,
+            6
+          ],
+          "false_negative": [
+            5,
+            5,
+            5
+          ]
+        }
+      },
+      "permission_only_misses": [
+        [
+          {
+            "rule": "silent-failure-fallback",
+            "id": "fallback-required-draft"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "assert-message-required"
+          }
+        ],
+        [
+          {
+            "rule": "silent-failure-fallback",
+            "id": "fallback-required-draft"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "assert-message-required"
+          }
+        ],
+        [
+          {
+            "rule": "silent-failure-fallback",
+            "id": "fallback-required-draft"
+          },
+          {
+            "rule": "weakened-test-assertion",
+            "id": "assert-message-required"
+          }
+        ]
+      ],
+      "coverage": {
+        "languages": {
+          "go": 4,
+          "python": 4,
+          "java": 2,
+          "typescript": 2
+        },
+        "limitations": {
+          "any": 12,
+          "parse": 4,
+          "unsupported": 8
+        }
+      }
+    }
+  },
+  "integrity_checks": {
+    "identical_repeat_requests": 1098,
+    "identical_state_and_factual_questions": 1098
+  },
+  "resolved_models": [
+    "typesafe/jev-1.13-20260917"
+  ],
+  "provider_calls": 3321,
+  "input_tokens": 1730511,
+  "output_tokens": 207699,
+  "reported_cost_usd": 0.07268146200000017
+}

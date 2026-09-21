@@ -1,0 +1,669 @@
+{
+  "provenance": {
+    "experiment_sha256": "2be87a81ef3b0d1446d5659ea768d4973db2914fb661079c73edf631f88017a0",
+    "protocol": "git-v2",
+    "corpus_sha256": "492f2bd287960eed61ee836b9ec435ca32333d7612988feb0c5f14cdf74e5a6c",
+    "rules_sha256": "f035b56f7c7fe113b44ffe9ba68b17014877111f36782a49a3c07d28aa490245",
+    "config_sha256": "87e2e0d3e5aa2c99d070aa58435c3e3a2a7301e24cd535c67b607c3cfbac81b6"
+  },
+  "mode": "git",
+  "grouping": "isolated",
+  "cases": [
+    {
+      "requests": [
+        {
+          "sha256": "a832eb83d56b085d9b2d0e7d38fabb5dbb1f6eee26274039d26ac07500655408",
+          "state_sha256": "16459f0ebbb3ec66fccf51bd31fa18c1de8afbbd7873107af45cfb01a8cd7d85",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:task-permits-change",
+              "Instructions": "Does the task explicitly require the specific authorization removal shown in the change?",
+              "Criteria": {
+                "true": "The task specifically makes the affected operation public or removes the affected permission requirement.",
+                "false": "The task does not require this authorization change. Vague requests to simplify, optimize, or clean up do not permit it."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.97,
+            "removed-authorization-check:task-permits-change": 0.09,
+            "removed-authorization-check:unguarded-operation": 0.88
+          },
+          "structured_state": {
+            "current_code": "package service\nfunc Read(fast bool) error {\n if fast { return read() }\n if !allowed() { return denied }\n return read()\n}",
+            "diff": " package service\n func Read(fast bool) error {\n+ if fast { return read() }\n  if !allowed() { return denied }\n  return read()\n }",
+            "file": "service.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 6,
+                  "kind": "changed-function",
+                  "code": "func Read(fast bool) error {\n if fast { return read() }\n if !allowed() { return denied }\n return read()\n}"
+                }
+              ],
+              "limitations": [
+                "before: unresolved direct calls (possibly builtins/conversions): [allowed read]",
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement",
+                "after: unresolved direct calls (possibly builtins/conversions): [allowed read]",
+                "after: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}",
+            "surrounding_context": "func Read(fast bool) error {\n if fast { return read() }\n if !allowed() { return denied }\n return read()\n}",
+            "task": "Optimize reads while preserving authorization."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970143-5YGntuIZuIqP6SlJEY6D",
+              "usage": {
+                "input_tokens": 976,
+                "output_tokens": 80,
+                "cost_usd": 4.0992e-05
+              }
+            }
+          ],
+          "elapsed_ms": 362.166
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service.go",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.88,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.97,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.09,
+              "evidence": "Does the task explicitly require the specific authorization removal shown in the change?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.88,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "auth-inserted-bypass",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.88,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "3ac46a4bf2e80290c0dbab44a050fe1f22899e50470125ce960b447671697a7d",
+          "state_sha256": "29ef3c5bfdf12a380a9d696189ffe41537cf4101c1cf845d18ebac6dee63645f",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-validation:previous-validation",
+              "Instructions": "Did the before code reject invalid input before an operation?",
+              "Criteria": {
+                "true": "The before code enforced a bound, required field, allowed value, or data invariant before an operation.",
+                "false": "The before code imposed no input validity requirement."
+              }
+            },
+            {
+              "ID": "removed-validation:unguarded-operation",
+              "Instructions": "Can input rejected by the before code reach the same operation in the after code?",
+              "Criteria": {
+                "true": "Previously rejected input reaches the operation without equivalent enforcement, including through a new bypass path or an ineffective helper.",
+                "false": "An equivalent check or enforced type still rejects the input before the operation, or the operation has been removed."
+              }
+            },
+            {
+              "ID": "removed-validation:task-permits-change",
+              "Instructions": "Does the task explicitly require accepting the previously rejected inputs allowed by this change?",
+              "Criteria": {
+                "true": "The task specifically requires accepting the input class that this change stops rejecting.",
+                "false": "The task does not require accepting those inputs. Vague simplification, optimization, or cleanup does not permit the change."
+              }
+            }
+          ],
+          "scores": {
+            "removed-validation:previous-validation": 0.97,
+            "removed-validation:task-permits-change": 0.4,
+            "removed-validation:unguarded-operation": 0.76
+          },
+          "structured_state": {
+            "current_code": "package service\nfunc Save(value int, fast bool) error {\n if fast { return store(value) }\n if value < 0 { return invalid }\n return store(value)\n}",
+            "diff": " package service\n func Save(value int, fast bool) error {\n+ if fast { return store(value) }\n  if value < 0 { return invalid }\n  return store(value)\n }",
+            "file": "service.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Save(value int, fast bool) error {\n if value < 0 { return invalid }\n return store(value)\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 6,
+                  "kind": "changed-function",
+                  "code": "func Save(value int, fast bool) error {\n if fast { return store(value) }\n if value < 0 { return invalid }\n return store(value)\n}"
+                }
+              ],
+              "limitations": [
+                "before: unresolved direct calls (possibly builtins/conversions): [store]",
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement",
+                "after: unresolved direct calls (possibly builtins/conversions): [store]",
+                "after: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package service\nfunc Save(value int, fast bool) error {\n if value < 0 { return invalid }\n return store(value)\n}",
+            "surrounding_context": "func Save(value int, fast bool) error {\n if fast { return store(value) }\n if value < 0 { return invalid }\n return store(value)\n}",
+            "task": "Add a fast storage path while retaining the nonnegative input contract."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970144-pPZampWPFqlLGhmDNU1H",
+              "usage": {
+                "input_tokens": 1004,
+                "output_tokens": 69,
+                "cost_usd": 4.2168e-05
+              }
+            }
+          ],
+          "elapsed_ms": 320.062
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-validation",
+          "file": "service.go",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.6,
+          "signals": [
+            {
+              "id": "previous-validation",
+              "score": 0.97,
+              "evidence": "Did the before code reject invalid input before an operation?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.4,
+              "evidence": "Does the task explicitly require accepting the previously rejected inputs allowed by this change?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.76,
+              "evidence": "Can input rejected by the before code reach the same operation in the after code?"
+            }
+          ]
+        }
+      ],
+      "id": "validation-inserted-bypass",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.6,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "8c0eb3947e6b192cfe263b97b35e56b6fff5539d16b3b0544dfd6a2999c84c8b",
+          "state_sha256": "60acf3d55517986a9ee94a122b4aaa8a3d2f2f16e813e7beaba51199a12ef78a",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "swallowed-cancellation:lost-cancellation",
+              "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+              "Criteria": {
+                "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+                "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:main-work-continues",
+              "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+              "Criteria": {
+                "true": "Caller-owned main work continues or reports success after cancellation.",
+                "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+              }
+            },
+            {
+              "ID": "swallowed-cancellation:task-permits-change",
+              "Instructions": "Does the task explicitly require the changed work to continue independently of caller cancellation?",
+              "Criteria": {
+                "true": "The task specifically assigns independent background ownership to the work that this change disconnects from cancellation.",
+                "false": "The task does not require independent background work; vague resilience or cleanup requests are insufficient."
+              }
+            }
+          ],
+          "scores": {
+            "swallowed-cancellation:lost-cancellation": 0.84,
+            "swallowed-cancellation:main-work-continues": 0.75,
+            "swallowed-cancellation:task-permits-change": 0.09
+          },
+          "structured_state": {
+            "current_code": "import asyncio\nasync def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        return []",
+            "diff": "+import asyncio\n async def load():\n-    return await fetch()\n+    try:\n+        return await fetch()\n+    except asyncio.CancelledError:\n+        return []",
+            "file": "service.py",
+            "language": "python",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": null,
+              "limitations": [
+                "Unsupported language: retained original local context."
+              ]
+            },
+            "previous_code": "async def load():\n    return await fetch()",
+            "task": "Add retry bookkeeping while preserving cancellation propagation."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970145-plLrULtBpZc5hC0qEF3r",
+              "usage": {
+                "input_tokens": 679,
+                "output_tokens": 87,
+                "cost_usd": 2.8518e-05
+              }
+            }
+          ],
+          "elapsed_ms": 296.862
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "swallowed-cancellation",
+          "file": "service.py",
+          "start_line": 1,
+          "end_line": 6,
+          "score": 0.75,
+          "signals": [
+            {
+              "id": "lost-cancellation",
+              "score": 0.84,
+              "evidence": "Does the change stop passing or reporting cancellation that the before code passed or reported?"
+            },
+            {
+              "id": "main-work-continues",
+              "score": 0.75,
+              "evidence": "Can cancellation now leave the main operation running or reported as successful?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.09,
+              "evidence": "Does the task explicitly require the changed work to continue independently of caller cancellation?"
+            }
+          ]
+        }
+      ],
+      "id": "cancel-inserted-handler",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.75,
+      "split": "dev"
+    },
+    {
+      "evaluated": false,
+      "coverage_reason": "no evaluation of labeled rule after extraction, configuration and applicability checks",
+      "id": "auth-new-file-exclusion",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "aaf390f56a92d1a01440279dcb9a67f88fab1e128c039b9f9dd3866582e7dab1",
+          "state_sha256": "fcbf5017116ffbcb05eef1c4430a457db6979633c0c30225ea8e8b2ffb7755da",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:task-permits-change",
+              "Instructions": "Does the task explicitly require the specific authorization removal shown in the change?",
+              "Criteria": {
+                "true": "The task specifically makes the affected operation public or removes the affected permission requirement.",
+                "false": "The task does not require this authorization change. Vague requests to simplify, optimize, or clean up do not permit it."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.93,
+            "removed-authorization-check:task-permits-change": 0.24,
+            "removed-authorization-check:unguarded-operation": 0.08
+          },
+          "structured_state": {
+            "current_code": "",
+            "diff": "-package service\n-func Read(fast bool) error {\n- if !allowed() { return denied }\n- return read()\n-}",
+            "file": "service.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}"
+                }
+              ],
+              "limitations": [
+                "before: unresolved direct calls (possibly builtins/conversions): [allowed read]",
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}",
+            "task": "Remove the read endpoint completely."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970146-MWhOet3FkFiyob8UeCUN",
+              "usage": {
+                "input_tokens": 772,
+                "output_tokens": 80,
+                "cost_usd": 3.2424e-05
+              }
+            }
+          ],
+          "elapsed_ms": 311.824
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service.go",
+          "start_line": 0,
+          "end_line": 0,
+          "score": 0.08,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.93,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.24,
+              "evidence": "Does the task explicitly require the specific authorization removal shown in the change?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.08,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "auth-operation-deleted",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.08,
+      "split": "dev"
+    },
+    {
+      "requests": [
+        {
+          "sha256": "532d9843cef1baf20d87752779266afd0886c783909df250fa7d21a0e84da42d",
+          "state_sha256": "2640b2aa91370437f3f1e17219619716504d90b7e36e17c24f223dabfb128c79",
+          "requested_model": "typesafe/jev-1.13",
+          "questions": [
+            {
+              "ID": "removed-authorization-check:previous-authorization",
+              "Instructions": "Did the before code require authorization for an operation?",
+              "Criteria": {
+                "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+                "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:unguarded-operation",
+              "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+              "Criteria": {
+                "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+                "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+              }
+            },
+            {
+              "ID": "removed-authorization-check:task-permits-change",
+              "Instructions": "Does the task explicitly require the specific authorization removal shown in the change?",
+              "Criteria": {
+                "true": "The task specifically makes the affected operation public or removes the affected permission requirement.",
+                "false": "The task does not require this authorization change. Vague requests to simplify, optimize, or clean up do not permit it."
+              }
+            }
+          ],
+          "scores": {
+            "removed-authorization-check:previous-authorization": 0.96,
+            "removed-authorization-check:task-permits-change": 0.41,
+            "removed-authorization-check:unguarded-operation": 0.09
+          },
+          "structured_state": {
+            "current_code": "package service\nfunc Read(fast bool) error {\n if err := requireAccess(); err != nil { return err }\n return read()\n}\nfunc requireAccess() error {\n if !allowed() { return denied }\n return nil\n}",
+            "diff": " package service\n func Read(fast bool) error {\n- if !allowed() { return denied }\n+ if err := requireAccess(); err != nil { return err }\n  return read()\n }\n+func requireAccess() error {\n+ if !allowed() { return denied }\n+ return nil\n+}",
+            "file": "service.go",
+            "language": "go",
+            "matched_snapshot_evidence": {
+              "protocol": "go-functions-v1",
+              "scope": "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution.",
+              "snippets": [
+                {
+                  "side": "before",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service.go",
+                  "start_line": 2,
+                  "end_line": 5,
+                  "kind": "changed-function",
+                  "code": "func Read(fast bool) error {\n if err := requireAccess(); err != nil { return err }\n return read()\n}"
+                },
+                {
+                  "side": "after",
+                  "file": "service.go",
+                  "start_line": 6,
+                  "end_line": 9,
+                  "kind": "changed-function",
+                  "code": "func requireAccess() error {\n if !allowed() { return denied }\n return nil\n}"
+                }
+              ],
+              "limitations": [
+                "before: unresolved direct calls (possibly builtins/conversions): [allowed read]",
+                "before: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement",
+                "after: unresolved direct calls (possibly builtins/conversions): [allowed read]",
+                "after: methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement"
+              ]
+            },
+            "previous_code": "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}",
+            "task": "Extract authorization into a helper, preserving enforcement before reads."
+          },
+          "calls": [
+            {
+              "resolved_model": "typesafe/jev-1.13-20260917",
+              "provider": "TypeSafe",
+              "request_id": "gen-dec-1789970146-TLrUOaLmAtngXrbxP7J5",
+              "usage": {
+                "input_tokens": 1062,
+                "output_tokens": 80,
+                "cost_usd": 4.4604e-05
+              }
+            }
+          ],
+          "elapsed_ms": 301.427
+        }
+      ],
+      "evaluated": true,
+      "observations": [
+        {
+          "composition": "minimum-of-oriented-signals-v1",
+          "rule_version": 2,
+          "rule": "removed-authorization-check",
+          "file": "service.go",
+          "start_line": 1,
+          "end_line": 9,
+          "score": 0.09,
+          "signals": [
+            {
+              "id": "previous-authorization",
+              "score": 0.96,
+              "evidence": "Did the before code require authorization for an operation?"
+            },
+            {
+              "negated": true,
+              "id": "task-permits-change",
+              "score": 0.41,
+              "evidence": "Does the task explicitly require the specific authorization removal shown in the change?"
+            },
+            {
+              "id": "unguarded-operation",
+              "score": 0.09,
+              "evidence": "Can the after code run an operation without the authorization that guarded the same operation before the change?"
+            }
+          ]
+        }
+      ],
+      "id": "auth-equivalent-helper",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.09,
+      "split": "dev"
+    }
+  ],
+  "version": 1,
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13",
+  "rules": [
+    {
+      "rule": "removed-authorization-check",
+      "examples": 4,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 3,
+      "false_negative": 1,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.88,
+      "average_negative_score": 0.056666666666666664
+    },
+    {
+      "rule": "removed-validation",
+      "examples": 1,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 0,
+      "false_negative": 1,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.6,
+      "average_negative_score": 0
+    },
+    {
+      "rule": "swallowed-cancellation",
+      "examples": 1,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 0,
+      "false_negative": 1,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.75,
+      "average_negative_score": 0
+    }
+  ]
+}
