@@ -26,6 +26,7 @@ type Diagnostic struct {
 }
 
 type SignalScore struct {
+	Negated  bool    `json:"negated,omitempty"`
 	ID       string  `json:"id"`
 	Score    float64 `json:"score"`
 	Evidence string  `json:"evidence"`

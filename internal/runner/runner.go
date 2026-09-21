@@ -25,7 +25,9 @@ import (
 type VerboseFunc func(format string, args ...any)
 
 type Runner struct {
-	IndexSnapshot *repogit.IndexSnapshot
+	// SignalOverrides is used by frozen benchmark experiments only.
+	SignalOverrides map[string][]rules.Signal
+	IndexSnapshot   *repogit.IndexSnapshot
 	// StateFormat is an experimental representation override; empty preserves legacy text.
 	StateFormat string
 	Observe     func(Observation)
@@ -195,7 +197,7 @@ func (r *Runner) jobs(units []semantic.Unit, task string, logSkips bool) []job {
 	var out []job
 	for _, unit := range units {
 		var applicable []rules.Rule
-		for _, rule := range rules.All() {
+		for _, rule := range r.ruleSet() {
 			if rule.Scope == rules.ScopePatch || !r.enabled(rule) || !r.matches(rule, unit.FilePath) {
 				continue
 			}
@@ -229,7 +231,7 @@ func (r *Runner) jobs(units []semantic.Unit, task string, logSkips bool) []job {
 		}
 	}
 	if len(units) > 0 {
-		for _, rule := range rules.All() {
+		for _, rule := range r.ruleSet() {
 			if rule.Scope != rules.ScopePatch || !r.enabled(rule) {
 				continue
 			}
@@ -374,11 +376,11 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		violation := probability >= rc.Threshold
 		signals := make([]diagnostics.SignalScore, 0, len(rule.Signals))
 		for _, signal := range rule.Signals {
-			signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: signalProbabilities[rule.QuestionID(signal)], Evidence: signal.Instructions})
+			signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: signalProbabilities[rule.QuestionID(signal)], Evidence: signal.Instructions, Negated: signal.Negate})
 		}
 		sort.Slice(signals, func(i, j int) bool { return signals[i].ID < signals[j].ID })
 		out.evaluations = append(out.evaluations, evaluation{
-			observation:     Observation{Rule: rule.ID, File: unit.FilePath, StartLine: unit.StartLine, EndLine: unit.EndLine, Score: probability, Signals: signals},
+			observation:     Observation{Rule: rule.ID, File: unit.FilePath, StartLine: unit.StartLine, EndLine: unit.EndLine, Score: probability, Signals: signals, Composition: rule.Composition(), RuleVersion: rule.Version},
 			contextEvidence: retrieved,
 			rule:            rule.ID, file: unit.FilePath, startLine: unit.StartLine,
 			confidence: probability, threshold: rc.Threshold,
@@ -397,6 +399,17 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		})
 	}
 	return out
+}
+
+func (r *Runner) ruleSet() []rules.Rule {
+	selected := rules.All()
+	for i := range selected {
+		if signals, ok := r.SignalOverrides[selected[i].ID]; ok {
+			selected[i].Signals = signals
+			selected[i].Version++
+		}
+	}
+	return selected
 }
 
 func findingFingerprint(rule string, unit semantic.Unit) string {

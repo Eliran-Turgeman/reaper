@@ -3,6 +3,7 @@ package eval
 import (
 	"context"
 	"encoding/json"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/Eliran-Turgeman/reaper/internal/config"
 	"github.com/Eliran-Turgeman/reaper/internal/decision"
+	"github.com/Eliran-Turgeman/reaper/internal/rules"
 )
 
 func TestExperimentsChangeOnlyChosenInputAndRecordActualRequest(t *testing.T) {
@@ -49,6 +51,36 @@ func TestExperimentsChangeOnlyChosenInputAndRecordActualRequest(t *testing.T) {
 					t.Fatal("signal describes the wrong question")
 				}
 			}
+		}
+	}
+}
+
+func TestSignalExperimentRecordsRawPermissionAndPreservesProductionRules(t *testing.T) {
+	c := GitCase{PatchCase: PatchCase{ID: "permission", Rule: "removed-validation", Task: "Accept all integers", Expected: "negative"}, BeforeFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { if n < 0 { panic(n) }; store(n) }\n"}, AfterFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { store(n) }\n"}}
+	e := &Experiment{Version: 1, Name: "policy", Context: "current", Signals: map[string][]rules.Signal{c.Rule: {{ID: "loss", Instructions: "Is input enforcement lost?"}, {ID: "permission", Instructions: "Does the task explicitly require accepting the previously rejected inputs?", Negate: true}}}}
+	if err := e.validate(); err != nil {
+		t.Fatal(err)
+	}
+	measured, err := runGitCaseExperiment(context.Background(), &benchmarkEvaluator{score: .9}, c, config.Defaults(), "isolated", e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if math.Abs(measured.Score-.1) > 1e-9 || measured.Requests[0].Scores[c.Rule+":permission"] != .9 || measured.Observations[0].Composition != "minimum-of-oriented-signals-v1" {
+		t.Fatal(measured)
+	}
+	if !measured.Observations[0].Signals[1].Negated {
+		t.Fatal("raw permission score polarity not recorded")
+	}
+	unchanged, err := runGitCaseExperiment(context.Background(), &benchmarkEvaluator{score: .9}, c, config.Defaults(), "isolated", nil)
+	if err != nil || unchanged.Score != .9 || unchanged.Observations[0].RuleVersion != 1 {
+		t.Fatal("experiment mutated production rules", unchanged, err)
+	}
+	for _, signals := range [][]rules.Signal{
+		{}, {{ID: "x", Instructions: "Q?", Negate: true}}, {{ID: "x", Instructions: "Q?"}, {ID: "x", Instructions: "Duplicate?"}}, {{ID: "x:y", Instructions: "Q?"}},
+	} {
+		e.Signals[c.Rule] = signals
+		if e.validate() == nil {
+			t.Fatal("invalid signal experiment accepted", signals)
 		}
 	}
 }

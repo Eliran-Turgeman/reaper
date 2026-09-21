@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
+	"strings"
 
 	"github.com/Eliran-Turgeman/reaper/internal/decision"
 	"github.com/Eliran-Turgeman/reaper/internal/rules"
@@ -20,6 +22,7 @@ type Experiment struct {
 	Questions   map[string]string                `json:"questions,omitempty"`
 	Criteria    map[string]decision.NoulCriteria `json:"criteria,omitempty"`
 	StateFormat string                           `json:"state_format,omitempty"`
+	Signals     map[string][]rules.Signal        `json:"signals,omitempty"`
 }
 
 func LoadExperiment(file string) (*Experiment, error) {
@@ -47,10 +50,32 @@ func (e Experiment) validate() error {
 		return fmt.Errorf("experiment requires version 1, a name, and context current, snapshots, matched or targeted")
 	}
 	known := map[string]bool{}
+	for id, signals := range e.Signals {
+		if _, ok := rules.Get(id); !ok || len(signals) == 0 {
+			return fmt.Errorf("invalid experiment signal rule %q", id)
+		}
+		seen := map[string]bool{}
+		supports := 0
+		for _, signal := range signals {
+			if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(signal.ID) || seen[signal.ID] || strings.TrimSpace(signal.Instructions) == "" {
+				return fmt.Errorf("invalid experiment signal %s:%s", id, signal.ID)
+			}
+			seen[signal.ID] = true
+			if !signal.Negate {
+				supports++
+			}
+			if err := signal.Criteria.Validate(); err != nil {
+				return err
+			}
+		}
+		if supports == 0 {
+			return fmt.Errorf("experiment rule %s requires a supporting factual signal", id)
+		}
+	}
 	if e.StateFormat != "" && e.StateFormat != "json-text" && e.StateFormat != "json-object" {
 		return fmt.Errorf("unsupported experiment state_format %q", e.StateFormat)
 	}
-	for _, q := range rules.Questions(rules.All(), false, false) {
+	for _, q := range rules.Questions(e.ruleSet(rules.All()), false, false) {
 		known[q.ID] = true
 	}
 	for id, text := range e.Questions {
@@ -67,6 +92,16 @@ func (e Experiment) validate() error {
 		}
 	}
 	return nil
+}
+
+func (e Experiment) ruleSet(selected []rules.Rule) []rules.Rule {
+	for i := range selected {
+		if signals, ok := e.Signals[selected[i].ID]; ok {
+			selected[i].Signals = signals
+			selected[i].Version++
+		}
+	}
+	return selected
 }
 
 type experimentEvaluator struct {

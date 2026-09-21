@@ -268,6 +268,7 @@ func runGitCaseExperiment(ctx context.Context, client decision.Evaluator, c GitC
 	}}
 	if experiment != nil {
 		engine.StateFormat = experiment.StateFormat
+		engine.SignalOverrides = experiment.Signals
 	}
 	result, err := engine.Run(ctx, units, c.Task)
 	if err != nil {

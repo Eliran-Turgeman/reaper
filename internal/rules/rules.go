@@ -27,6 +27,7 @@ type Signal struct {
 	ID           string
 	Instructions string
 	Criteria     *decision.NoulCriteria `json:",omitempty"`
+	Negate       bool                   `json:",omitempty"`
 }
 
 type Rule struct {
@@ -59,11 +60,23 @@ func (r Rule) Compose(probabilities map[string]float64) (float64, bool) {
 		if !ok || math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || value > 1 {
 			return 0, false
 		}
+		if signal.Negate {
+			value = 1 - value
+		}
 		if value < score {
 			score = value
 		}
 	}
 	return score, true
+}
+
+func (r Rule) Composition() string {
+	for _, signal := range r.Signals {
+		if signal.Negate {
+			return "minimum-of-oriented-signals-v1"
+		}
+	}
+	return "minimum-of-signals-v1"
 }
 
 var registry = map[string]Rule{

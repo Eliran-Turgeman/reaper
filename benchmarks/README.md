@@ -24,6 +24,15 @@ fixtures. Existing example inputs and provenance remain identical when no
 experiment is selected. This enables matched wording/state/criteria comparisons
 without inventing task descriptions or converting snippet labels to Git labels.
 
+For separately frozen decomposition experiments, `signals` may replace a rule's
+signal list with `ID`, `Instructions`, optional `Criteria`, and optional `Negate`.
+At least one factual supporting signal is required. A negated signal contributes
+`1 - P(yes)` to the minimum; raw provider values remain in request records and
+observations mark `negated: true`. Observations name the composition and effective
+rule version. This is an experimental decision score, not a joint probability or
+a validated permission cutoff. Overrides never alter the production registry,
+severity, applicability, or thresholds, and cannot be used by the release gate.
+
 Latest: [correctness and targeted-context follow-up](experiments/targeted-context-v3/report.md),
 including the three extraction fixes, repeated helper-context experiments,
 enforcement-focused question candidate, and remaining calibration overlap.

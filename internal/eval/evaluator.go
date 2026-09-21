@@ -96,6 +96,9 @@ func RunExamplesExperiment(ctx context.Context, client decision.Evaluator, dir, 
 		}
 		selected = []rules.Rule{rule}
 	}
+	if experiment != nil {
+		selected = experiment.ruleSet(selected)
+	}
 	report := Report{Version: 1, Provider: provider, Model: model}
 	corpus := map[string][]Example{}
 	cfg := config.Config{Rules: map[string]config.RuleConfig{}}
@@ -156,9 +159,9 @@ func RunExamplesExperiment(ctx context.Context, client decision.Evaluator, dir, 
 						instructions = text
 					}
 				}
-				signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: response.Scores[rule.QuestionID(signal)], Evidence: instructions})
+				signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: response.Scores[rule.QuestionID(signal)], Evidence: instructions, Negated: signal.Negate})
 			}
-			report.Cases = append(report.Cases, ScoredCase{ID: example.ID, Rule: rule.ID, Expected: example.Expected, Score: score, Split: "dev", Requests: recorder.Records(), Observations: []runner.Observation{{Rule: rule.ID, Score: score, Signals: signals}}})
+			report.Cases = append(report.Cases, ScoredCase{ID: example.ID, Rule: rule.ID, Expected: example.Expected, Score: score, Split: "dev", Requests: recorder.Records(), Observations: []runner.Observation{{Rule: rule.ID, Score: score, Signals: signals, Composition: rule.Composition(), RuleVersion: rule.Version}}})
 			predicted := score >= threshold
 			if example.Expected == "positive" {
 				positives++
