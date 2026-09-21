@@ -48,15 +48,17 @@ func TestGitBenchmarkAndCheckSendIdenticalRequests(t *testing.T) {
 			t.Fatalf("git: %v %s", err, out)
 		}
 	}
-	before := "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}\n"
-	after := "package service\nfunc Read(fast bool) error {\n if fast { return read() }\n if !allowed() { return denied }\n return read()\n}\n"
+	before := "package service\ntype Reader interface { Read() error }\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}\n"
+	after := "package service\ntype Reader interface { Read() error }\nfunc Read(fast bool) error {\n if fast { return read() }\n if !allowed() { return denied }\n return read()\n}\n"
+	implementation := "package service\nvar implementation Reader\n"
 	task := "Preserve authorization while optimizing reads"
 	git("init", "--quiet")
 	write(filepath.Join(root, "service.go"), before)
-	git("add", "--", "service.go")
+	write(filepath.Join(root, "implementation.go"), implementation)
+	git("add", "--", "service.go", "implementation.go")
 	write(filepath.Join(root, "service.go"), after)
 	write(filepath.Join(root, ".reaper.yaml"), fmt.Sprintf("provider: typesafe\nbase_url: %s\ncache:\n  enabled: false\n", server.URL))
-	cases := []map[string]any{{"id": "parity", "task": task, "rule": "removed-authorization-check", "expected": "positive", "rationale": "LABEL MUST NOT LEAK", "provenance": "unit test", "split": "dev", "before_files": map[string]string{"service.go": before}, "after_files": map[string]string{"service.go": after}}}
+	cases := []map[string]any{{"id": "parity", "task": task, "rule": "removed-authorization-check", "expected": "positive", "rationale": "LABEL MUST NOT LEAK", "provenance": "unit test", "split": "dev", "before_files": map[string]string{"service.go": before, "implementation.go": implementation}, "after_files": map[string]string{"service.go": after, "implementation.go": implementation}}}
 	data, _ := json.Marshal(cases)
 	write(filepath.Join(corpus, "cases.json"), string(data))
 	t.Chdir(root)
@@ -85,11 +87,15 @@ func TestGitBenchmarkAndCheckSendIdenticalRequests(t *testing.T) {
 	git("-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "--quiet", "-m", "before")
 	git("add", "--", "service.go")
 	write(filepath.Join(root, "service.go"), before)
+	write(filepath.Join(root, "implementation.go"), "package service\nvar unstagedReplacement Reader\n")
 	staged := run("check", "--staged", "--task", task, "--no-cache", "--format", "json")
 	if !reflect.DeepEqual(check, staged) {
 		t.Fatalf("unstaged content leaked into staged requests:\nwant=%v\ngot=%v", check, staged)
 	}
 	if err := os.Remove(filepath.Join(root, "service.go")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(root, "implementation.go")); err != nil {
 		t.Fatal(err)
 	}
 	staged = run("check", "--staged", "--task", task, "--no-cache", "--format", "json")

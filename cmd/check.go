@@ -97,6 +97,13 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		return err
 	}
 	collector := gitpkg.CommandCollector{Dir: cwd}
+	var indexSnapshot *gitpkg.IndexSnapshot
+	if options.staged {
+		indexSnapshot, err = collector.SnapshotIndex(ctx)
+		if err != nil {
+			return err
+		}
+	}
 	rawDiff, root, err := collector.Diff(ctx, gitpkg.Options{
 		All: options.all, Staged: options.staged, Ref: options.ref, Paths: paths,
 	})
@@ -105,9 +112,15 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 	}
 	var units []semantic.Unit
 	if options.staged {
-		index := gitpkg.CommandCollector{Dir: root}
+		afterDiff, captureErr := collector.SnapshotIndex(ctx)
+		if captureErr != nil {
+			return captureErr
+		}
+		if afterDiff.Fingerprint != indexSnapshot.Fingerprint {
+			return fmt.Errorf("index changed while collecting the staged diff; retry the check")
+		}
 		units, err = diffpkg.UnitsWithSource(rawDiff, 6, func(path string) ([]byte, error) {
-			return index.IndexSource(ctx, path)
+			return indexSnapshot.Read(ctx, path, 0)
 		})
 	} else {
 		units, err = diffpkg.Units(root, rawDiff, 6)
@@ -140,8 +153,9 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		cacheStore = &cache.FileStore{Dir: dir}
 	}
 	engine := &runner.Runner{
-		Root:   root,
-		Config: cfg, Cache: cacheStore, Version: Version, Verbose: log,
+		IndexSnapshot: indexSnapshot,
+		Root:          root,
+		Config:        cfg, Cache: cacheStore, Version: Version, Verbose: log,
 		Debug: options.debug, Audit: options.all,
 		Notice: func(format string, args ...any) {
 			fmt.Fprintf(command.ErrOrStderr(), "reaper: "+format+"\n", args...)

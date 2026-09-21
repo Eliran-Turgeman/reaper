@@ -17,6 +17,7 @@ import (
 	"github.com/Eliran-Turgeman/reaper/internal/config"
 	"github.com/Eliran-Turgeman/reaper/internal/decision"
 	"github.com/Eliran-Turgeman/reaper/internal/diagnostics"
+	repogit "github.com/Eliran-Turgeman/reaper/internal/git"
 	"github.com/Eliran-Turgeman/reaper/internal/rules"
 	"github.com/Eliran-Turgeman/reaper/internal/semantic"
 )
@@ -24,6 +25,7 @@ import (
 type VerboseFunc func(format string, args ...any)
 
 type Runner struct {
+	IndexSnapshot *repogit.IndexSnapshot
 	// StateFormat is an experimental representation override; empty preserves legacy text.
 	StateFormat string
 	Observe     func(Observation)

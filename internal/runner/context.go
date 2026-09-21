@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,6 +11,7 @@ import (
 	"sort"
 	"strings"
 
+	repogit "github.com/Eliran-Turgeman/reaper/internal/git"
 	"github.com/Eliran-Turgeman/reaper/internal/rules"
 	"github.com/Eliran-Turgeman/reaper/internal/semantic"
 )
@@ -30,13 +32,18 @@ func (r *Runner) repositoryContext(ctx context.Context, unit semantic.Unit, rule
 	}
 	sort.Strings(names)
 	pattern := regexp.MustCompile(`\b(?:` + strings.Join(names, "|") + `)\b`)
-	cmd := exec.CommandContext(ctx, "git", "-C", r.Root, "ls-files", "-z")
-	cmd.Env = r.GitEnv
-	output, err := cmd.Output()
-	if err != nil {
-		return "", fmt.Errorf("list repository context files: %w", err)
+	var files []string
+	if r.IndexSnapshot != nil {
+		files = r.IndexSnapshot.Files()
+	} else {
+		cmd := exec.CommandContext(ctx, "git", "-C", r.Root, "ls-files", "-z")
+		cmd.Env = r.GitEnv
+		output, err := cmd.Output()
+		if err != nil {
+			return "", fmt.Errorf("list repository context files: %w", err)
+		}
+		files = strings.Split(string(output), "\x00")
 	}
-	files := strings.Split(string(output), "\x00")
 	sort.Strings(files)
 	var b strings.Builder
 	hits := 0
@@ -44,18 +51,7 @@ func (r *Runner) repositoryContext(ctx context.Context, unit semantic.Unit, rule
 		if !semantic.IsSupportedSource(file) || semantic.IsMinifiedSource(file) || !r.matches(rule, file) {
 			continue
 		}
-		full := filepath.Join(r.Root, filepath.FromSlash(file))
-		info, err := os.Lstat(full)
-		if err != nil {
-			if os.IsNotExist(err) {
-				continue
-			}
-			return "", err
-		}
-		if !info.Mode().IsRegular() || info.Size() > 1<<20 {
-			continue
-		}
-		data, err := os.ReadFile(full)
+		data, err := r.contextSource(ctx, file)
 		if err != nil {
 			return "", err
 		}
@@ -73,4 +69,26 @@ func (r *Runner) repositoryContext(ctx context.Context, unit semantic.Unit, rule
 	}
 	fmt.Fprintf(&b, "Search used tracked, supported, nonexcluded regular files <=1 MiB and named type references; it is lexical evidence, not proof of exhaustive symbol resolution.\n")
 	return b.String(), nil
+}
+
+func (r *Runner) contextSource(ctx context.Context, file string) ([]byte, error) {
+	if r.IndexSnapshot != nil {
+		data, err := r.IndexSnapshot.Read(ctx, file, 1<<20)
+		if errors.Is(err, repogit.ErrSourceTooLarge) {
+			return nil, nil
+		}
+		return data, err
+	}
+	full := filepath.Join(r.Root, filepath.FromSlash(file))
+	info, err := os.Lstat(full)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !info.Mode().IsRegular() || info.Size() > 1<<20 {
+		return nil, nil
+	}
+	return os.ReadFile(full)
 }
