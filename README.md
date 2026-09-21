@@ -402,7 +402,8 @@ Pre-1.0 releases use the existing development corpora as regression gates rather
 than requiring a larger independently reviewed corpus. Release CI compares the
 pinned-model results against the checked-in metrics.
 It also runs all labeled rule examples against `evals/expected-metrics.json`,
-printing precision/recall deltas and blocking drops larger than 0.02.
+printing precision/recall deltas and blocking drops larger than 0.10. This
+allows one changed classification in rule slices with ten positive examples.
 The release workflow requires `OPENROUTER_API_KEY`; unavailable inference fails
 the release. Review baseline updates and model changes as rule-quality changes.
 Maintainers can manually run the **Release** workflow on a branch to validate

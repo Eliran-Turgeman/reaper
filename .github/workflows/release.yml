@@ -34,7 +34,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
       - name: Rule corpus quality gate
-        run: go run ./cmd/reaper eval --provider openrouter --model typesafe/jev-1.13 --metrics-baseline evals/expected-metrics.json --tolerance 0.02
+        run: go run ./cmd/reaper eval --provider openrouter --model typesafe/jev-1.13 --metrics-baseline evals/expected-metrics.json --tolerance 0.10
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 

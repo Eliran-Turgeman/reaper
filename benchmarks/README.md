@@ -117,9 +117,11 @@ directory when evaluating a held-out set. Do not calibrate against hidden tests.
 per-case scores, and per-rule precision, recall, false-positive rate, and default
 threshold. Small sample sizes and generated patches limit generalization.
 Release CI uses the pinned model ID `typesafe/jev-1.13` and compares these metrics
-with a 0.02 maximum precision/recall drop. Missing credentials, provider failures,
-or missing baseline rules fail the gate; model changes require a reviewed new
-baseline. Provider-side behavior can change even for an unchanged model ID.
+with a 0.10 maximum precision/recall drop, equivalent to one changed
+classification in rule slices with ten positive examples. Missing credentials,
+provider failures, or missing baseline rules fail the gate; model changes
+require a reviewed new baseline. Provider-side behavior can change even for an
+unchanged model ID.
 
 The [validation corpus](validation/README.md) contains 32 separately authored
 patches, including hard negatives. Its frozen protocol and recorded baseline
