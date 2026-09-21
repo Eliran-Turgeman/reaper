@@ -86,10 +86,15 @@ func (b CandidateBundle) validate(base string) error {
 		if err != nil {
 			return fmt.Errorf("read candidate artifact %s: %w", name, err)
 		}
-		got := sha256.Sum256(data)
+		got := sha256.Sum256(canonicalCandidateArtifact(data))
 		if !bytes.Equal(got[:], expected) {
 			return fmt.Errorf("candidate artifact %s SHA-256 mismatch", name)
 		}
 	}
 	return nil
+}
+
+func canonicalCandidateArtifact(data []byte) []byte {
+	lf := bytes.ReplaceAll(data, []byte("\r\n"), []byte("\n"))
+	return bytes.ReplaceAll(lf, []byte("\n"), []byte("\r\n"))
 }
