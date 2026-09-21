@@ -32,7 +32,14 @@ func (j *Jev) Evaluate(ctx context.Context, request decision.Request) (decision.
 	if jev.IsTokenLimitError(err) {
 		return decision.Response{}, &decision.ContextLimitError{Cause: err}
 	}
-	return decision.Response{Scores: response.Probabilities}, err
+	if err != nil {
+		return decision.Response{}, err
+	}
+	metadata := decision.CallMetadata{ResolvedModel: response.Model, Provider: response.Provider, RequestID: response.RequestID}
+	if response.Usage != nil {
+		metadata.Usage = &decision.Usage{InputTokens: response.Usage.InputTokens, OutputTokens: response.Usage.OutputTokens, CostUSD: response.Usage.CostUSD}
+	}
+	return decision.Response{Scores: response.Probabilities, Calls: []decision.CallMetadata{metadata}}, nil
 }
 func (j *Jev) Stats() decision.Stats {
 	s := j.Client.Stats()

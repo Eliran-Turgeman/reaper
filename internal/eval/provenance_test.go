@@ -4,12 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/Eliran-Turgeman/reaper/internal/config"
 	"github.com/Eliran-Turgeman/reaper/internal/decision"
+	"github.com/Eliran-Turgeman/reaper/internal/provider"
 )
 
 func TestGateRejectsChangedInputsEvenWhenMetricsMatch(t *testing.T) {
@@ -46,6 +49,46 @@ func TestGateRejectsChangedInputsEvenWhenMetricsMatch(t *testing.T) {
 				t.Fatal("changed input passed")
 			}
 		})
+	}
+}
+
+func TestRecordingRetainsProviderMetadataAndUnknownUsage(t *testing.T) {
+	for _, withUsage := range []bool{false, true} {
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			w.Header().Set("x-request-id", "header-request")
+			body := map[string]any{"model": "resolved-version", "provider": "TypeSafe", "answers": map[string]any{"a": map[string]any{"type": "noul", "noul": .8}}}
+			if withUsage {
+				body["id"] = "body-request"
+				body["usage"] = map[string]any{"input_tokens": 12, "output_tokens": 2, "cost": 0}
+			}
+			_ = json.NewEncoder(w).Encode(body)
+		}))
+		client, err := provider.New("openrouter", provider.Options{BaseURL: server.URL, APIKey: "test"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		recorder := &recordingEvaluator{Evaluator: client}
+		request := decision.Request{Model: "requested-alias", State: "fixture evidence", Questions: []decision.Question{{ID: "a", Instructions: "A?"}}}
+		_, err = decision.Evaluate(context.Background(), recorder, request)
+		server.Close()
+		if err != nil {
+			t.Fatal(err)
+		}
+		record := recorder.Records()[0]
+		if record.Model != "requested-alias" || record.State != request.State || record.SHA256 != fingerprint(request) || record.ElapsedMS < 0 || len(record.Calls) != 1 {
+			t.Fatal(record)
+		}
+		call := record.Calls[0]
+		if call.ResolvedModel != "resolved-version" || call.Provider != "TypeSafe" {
+			t.Fatal(call)
+		}
+		if withUsage {
+			if call.RequestID != "body-request" || call.Usage == nil || call.Usage.InputTokens != 12 || call.Usage.OutputTokens != 2 || call.Usage.CostUSD == nil || *call.Usage.CostUSD != 0 {
+				t.Fatal(call)
+			}
+		} else if call.RequestID != "header-request" || call.Usage != nil {
+			t.Fatal("invented missing usage", call)
+		}
 	}
 }
 

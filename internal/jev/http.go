@@ -194,7 +194,10 @@ func (c *HTTPClient) do(ctx context.Context, body []byte, questions []Question) 
 	if err := json.Unmarshal(data, &wireResp); err != nil {
 		return EvaluationResponse{}, 0, fmt.Errorf("decode Jev response: %w", err)
 	}
-	result := EvaluationResponse{Probabilities: make(map[string]float64, len(questions))}
+	result := EvaluationResponse{Probabilities: make(map[string]float64, len(questions)), Model: wireResp.Model, Provider: wireResp.Provider, RequestID: wireResp.ID, Usage: wireResp.Usage}
+	if result.RequestID == "" {
+		result.RequestID = requestID(resp.Header)
+	}
 	for _, question := range questions {
 		answer, ok := wireResp.Answers[question.ID]
 		if !ok {
@@ -246,19 +249,16 @@ type wireQuestion struct {
 }
 
 type wireResponse struct {
-	Model   string                `json:"model"`
-	Answers map[string]wireAnswer `json:"answers"`
-	Usage   *wireUsage            `json:"usage"`
+	ID       string                `json:"id"`
+	Provider string                `json:"provider"`
+	Model    string                `json:"model"`
+	Answers  map[string]wireAnswer `json:"answers"`
+	Usage    *Usage                `json:"usage"`
 }
 
 type wireAnswer struct {
 	Type string   `json:"type"`
 	Noul *float64 `json:"noul,omitempty"`
-}
-
-type wireUsage struct {
-	InputTokens  int `json:"input_tokens"`
-	OutputTokens int `json:"output_tokens"`
 }
 
 func retryable(status int) bool {

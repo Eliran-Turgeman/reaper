@@ -15,6 +15,16 @@ type EvaluationRequest struct {
 
 type EvaluationResponse struct {
 	Probabilities map[string]float64
+	Model         string
+	Provider      string
+	RequestID     string
+	Usage         *Usage
+}
+
+type Usage struct {
+	InputTokens  int      `json:"input_tokens"`
+	OutputTokens int      `json:"output_tokens"`
+	CostUSD      *float64 `json:"cost,omitempty"`
 }
 
 type Client interface {

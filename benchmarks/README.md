@@ -1,5 +1,13 @@
 # Patch benchmark
 
+New request records retain the supplied fixture state separately from scores,
+the requested model and provider-reported resolved model, request/provider ID,
+per-call token usage and reported cost when available, and elapsed milliseconds
+(including retries). Missing usage or cost remains absent, not zero. Historical
+artifacts are unchanged. State contains source evidence; a signal's `evidence`
+field still contains its question, not a model-generated explanation. The minimum
+of signal values is a rule score, not a calibrated violation probability.
+
 Latest: [correctness and targeted-context follow-up](experiments/targeted-context-v3/report.md),
 including the three extraction fixes, repeated helper-context experiments,
 enforcement-focused question candidate, and remaining calibration overlap.

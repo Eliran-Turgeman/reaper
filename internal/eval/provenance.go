@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/Eliran-Turgeman/reaper/internal/config"
 	"github.com/Eliran-Turgeman/reaper/internal/decision"
@@ -23,14 +24,17 @@ type Provenance struct {
 }
 
 // RequestRecord describes an actual evaluator call (after capability splitting).
-// State is hashed, not copied: it can be reproduced from the fixture and protocol.
-// Returned model identity is unavailable in the normalized evaluator interface.
+// Fixture state is retained separately from scores so evidence is inspectable.
+// These records are benchmark artifacts, not production request logs.
 type RequestRecord struct {
-	SHA256      string              `json:"sha256"`
-	StateSHA256 string              `json:"state_sha256"`
-	Model       string              `json:"requested_model"`
-	Questions   []decision.Question `json:"questions"`
-	Scores      map[string]float64  `json:"scores"`
+	SHA256      string                  `json:"sha256"`
+	StateSHA256 string                  `json:"state_sha256"`
+	Model       string                  `json:"requested_model"`
+	Questions   []decision.Question     `json:"questions"`
+	Scores      map[string]float64      `json:"scores"`
+	State       string                  `json:"state,omitempty"`
+	Calls       []decision.CallMetadata `json:"calls,omitempty"`
+	ElapsedMS   float64                 `json:"elapsed_ms"`
 }
 
 func fingerprint(v any) string {
@@ -68,6 +72,7 @@ type recordingEvaluator struct {
 }
 
 func (r *recordingEvaluator) Evaluate(ctx context.Context, request decision.Request) (decision.Response, error) {
+	started := time.Now()
 	response, err := r.Evaluator.Evaluate(ctx, request)
 	if err != nil {
 		return response, err
@@ -76,7 +81,7 @@ func (r *recordingEvaluator) Evaluate(ctx context.Context, request decision.Requ
 	for id, score := range response.Scores {
 		scores[id] = score
 	}
-	record := RequestRecord{SHA256: fingerprint(request), StateSHA256: fingerprint(request.State), Model: request.Model, Questions: append([]decision.Question(nil), request.Questions...), Scores: scores}
+	record := RequestRecord{SHA256: fingerprint(request), StateSHA256: fingerprint(request.State), Model: request.Model, Questions: append([]decision.Question(nil), request.Questions...), Scores: scores, State: request.State, Calls: response.Calls, ElapsedMS: float64(time.Since(started).Microseconds()) / 1000}
 	r.mu.Lock()
 	r.records = append(r.records, record)
 	r.mu.Unlock()

@@ -17,7 +17,25 @@ type Request struct {
 	State     string
 	Questions []Question
 }
-type Response struct{ Scores map[string]float64 }
+type Usage struct {
+	InputTokens  int      `json:"input_tokens"`
+	OutputTokens int      `json:"output_tokens"`
+	CostUSD      *float64 `json:"cost_usd,omitempty"`
+}
+
+// CallMetadata preserves provider-reported identity and usage. Missing values
+// remain missing; requested model aliases are not resolved model identities.
+type CallMetadata struct {
+	ResolvedModel string `json:"resolved_model,omitempty"`
+	Provider      string `json:"provider,omitempty"`
+	RequestID     string `json:"request_id,omitempty"`
+	Usage         *Usage `json:"usage,omitempty"`
+}
+
+type Response struct {
+	Scores map[string]float64
+	Calls  []CallMetadata
+}
 type Stats struct {
 	UsageResponses int
 	Requests       int
@@ -54,6 +72,7 @@ func Evaluate(ctx context.Context, evaluator Evaluator, request Request) (Respon
 		if err != nil {
 			return Response{}, err
 		}
+		out.Calls = append(out.Calls, response.Calls...)
 		for _, question := range batch.Questions {
 			score, ok := response.Scores[question.ID]
 			if !ok || math.IsNaN(score) || math.IsInf(score, 0) || score < 0 || score > 1 {
