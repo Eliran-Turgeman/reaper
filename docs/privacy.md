@@ -13,9 +13,14 @@ supported, nonexcluded repository files, including their paths and line numbers.
 These retrieved lines are also included in finding `context_evidence`.
 For `--staged`, both changed-file context and repository-search evidence use
 captured index blobs; unstaged source text is excluded from those reads.
+With `--experimental-context targeted-go`, authorization and validation checks
+also send bounded before/after function and helper bodies from eligible Go files.
+The before source comes from the selected comparison base, so this opt-in mode
+can send relevant historical code. Other rules do not receive these helper bodies.
 `--all` can send entire tracked source files. `reaper eval` sends each example's language,
 task, before code, after code, and rule predicates. Git history, PR comments,
-environment variables, and unrelated files are not intentionally included.
+environment variables, and unrelated files are not intentionally included;
+the historical-source exception for targeted context is described above.
 Secrets present in source code, diffs, or task text are part of that content;
 Reaper does not provide a secret-redaction guarantee.
 

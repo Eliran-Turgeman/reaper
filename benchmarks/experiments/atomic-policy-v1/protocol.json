@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "status": "frozen before measurement",
+  "repeats": 3,
+  "conditions": [
+    "baseline",
+    "atomic",
+    "policy"
+  ],
+  "corpora": {
+    "seed": "evals; all 280 seed examples, current context",
+    "validation": "benchmarks/validation; targeted context",
+    "quality-dev": "benchmarks/quality-dev; targeted context",
+    "git-path": "benchmarks/git-path; targeted context",
+    "helpers": "benchmarks/experiments/targeted-context-v3/cases; targeted context",
+    "contracts": "benchmarks/contract-dev; targeted context"
+  },
+  "contrasts": {
+    "baseline vs atomic": "Production predicates versus decomposed factual predicates with explicit criteria. Deliberately removes task exceptions to measure factual sensitivity; atomic alone is not a deployable rule policy.",
+    "atomic vs policy": "Identical state and factual questions; adds a separately scored, negated explicit-permission predicate."
+  },
+  "composition": "min(factual probabilities, 1 - permission probability); this is a heuristic decision score, not calibrated joint probability",
+  "thresholds": "unchanged production thresholds; no post-hoc selection or default promotion",
+  "independence": "Existing synthetic development corpora, not held-out or independently reviewed release evidence",
+  "analysis": [
+    "verify factual question/state identities between atomic and policy",
+    "record raw permission scores and orientation",
+    "report every rule including regressions, coverage and source-resolution limitations",
+    "compare explicit-task and vague-task examples without relabeling"
+  ]
+}

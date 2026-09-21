@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "name": "atomic-policy-v1-baseline-current",
+  "context": "current",
+  "state_format": "json-object"
+}

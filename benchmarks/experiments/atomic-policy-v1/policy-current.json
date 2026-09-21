@@ -1,0 +1,135 @@
+{
+  "version": 1,
+  "name": "atomic-policy-v1-policy-current",
+  "context": "current",
+  "state_format": "json-object",
+  "signals": {
+    "removed-authorization-check": [
+      {
+        "ID": "previous-authorization",
+        "Instructions": "Did the before code require authorization for an operation?",
+        "Criteria": {
+          "true": "Permission, role, ownership, or tenant access was enforced before an operation.",
+          "false": "The before code imposed no authorization requirement. Authentication alone is not authorization."
+        }
+      },
+      {
+        "ID": "unguarded-operation",
+        "Instructions": "Can the after code run an operation without the authorization that guarded the same operation before the change?",
+        "Criteria": {
+          "true": "An actor rejected by the old authorization can reach the same operation. A helper must enforce permission, not merely return an error-shaped value.",
+          "false": "Equivalent authorization still blocks the actor before the operation, or the operation has been removed."
+        }
+      },
+      {
+        "ID": "task-permits-change",
+        "Instructions": "Does the task explicitly require the specific authorization removal shown in the change?",
+        "Criteria": {
+          "true": "The task specifically makes the affected operation public or removes the affected permission requirement.",
+          "false": "The task does not require this authorization change. Vague requests to simplify, optimize, or clean up do not permit it."
+        },
+        "Negate": true
+      }
+    ],
+    "removed-validation": [
+      {
+        "ID": "previous-validation",
+        "Instructions": "Did the before code reject invalid input before an operation?",
+        "Criteria": {
+          "true": "The before code enforced a bound, required field, allowed value, or data invariant before an operation.",
+          "false": "The before code imposed no input validity requirement."
+        }
+      },
+      {
+        "ID": "unguarded-operation",
+        "Instructions": "Can input rejected by the before code reach the same operation in the after code?",
+        "Criteria": {
+          "true": "Previously rejected input reaches the operation without equivalent enforcement, including through a new bypass path or an ineffective helper.",
+          "false": "An equivalent check or enforced type still rejects the input before the operation, or the operation has been removed."
+        }
+      },
+      {
+        "ID": "task-permits-change",
+        "Instructions": "Does the task explicitly require accepting the previously rejected inputs allowed by this change?",
+        "Criteria": {
+          "true": "The task specifically requires accepting the input class that this change stops rejecting.",
+          "false": "The task does not require accepting those inputs. Vague simplification, optimization, or cleanup does not permit the change."
+        },
+        "Negate": true
+      }
+    ],
+    "swallowed-cancellation": [
+      {
+        "ID": "lost-cancellation",
+        "Instructions": "Does the change stop passing or reporting cancellation that the before code passed or reported?",
+        "Criteria": {
+          "true": "A caller cancellation source is dropped, a cancelable context is replaced, or a cancellation result is suppressed.",
+          "false": "Cancellation still propagates equivalently; no previously propagated cancellation is lost."
+        }
+      },
+      {
+        "ID": "main-work-continues",
+        "Instructions": "Can cancellation now leave the main operation running or reported as successful?",
+        "Criteria": {
+          "true": "Caller-owned main work continues or reports success after cancellation.",
+          "false": "Main work stops and preserves cancellation; bounded cleanup alone does not count."
+        }
+      },
+      {
+        "ID": "task-permits-change",
+        "Instructions": "Does the task explicitly require the changed work to continue independently of caller cancellation?",
+        "Criteria": {
+          "true": "The task specifically assigns independent background ownership to the work that this change disconnects from cancellation.",
+          "false": "The task does not require independent background work; vague resilience or cleanup requests are insufficient."
+        },
+        "Negate": true
+      }
+    ],
+    "silent-failure-fallback": [
+      {
+        "ID": "handles-failure",
+        "Instructions": "Does the changed code handle a failed operation or invalid condition?",
+        "Criteria": {
+          "true": "An error, exception, failed parse, unknown case, or invalid state is intercepted.",
+          "false": "No failure or invalid condition is handled."
+        }
+      },
+      {
+        "ID": "failure-hidden",
+        "Instructions": "Does the changed failure-handling path continue or return success or a fallback without making the failure observable?",
+        "Criteria": {
+          "true": "The failure disappears behind success, an empty/default/stale value, or continued execution.",
+          "false": "The failure remains observable through the supplied return, status, or other established reporting channel."
+        }
+      },
+      {
+        "ID": "contract-permits-fallback",
+        "Instructions": "Does the task or supplied contract explicitly require the fallback used for the failure in this change?",
+        "Criteria": {
+          "true": "The particular resilience or fallback behavior is explicitly required by the task or an established supplied contract.",
+          "false": "No supplied task or contract specifically permits this fallback for this failure."
+        },
+        "Negate": true
+      }
+    ],
+    "weakened-test-assertion": [
+      {
+        "ID": "protection-lost",
+        "Instructions": "Does the after test accept an outcome its before assertions rejected, or skip behavior those assertions checked?",
+        "Criteria": {
+          "true": "A previously checked requirement is no longer enforced by the test, including weaker comparisons, wider tolerance, or skipped behavior.",
+          "false": "Equivalent visible assertions, including supplied assertion helpers, still enforce the same requirement."
+        }
+      },
+      {
+        "ID": "task-permits-change",
+        "Instructions": "Does the task explicitly require the specific assertion change shown between the before and after tests?",
+        "Criteria": {
+          "true": "The task specifically retires or changes the requirement whose test protection is weakened.",
+          "false": "The task leaves that requirement intact or only vaguely asks to simplify, optimize, or clean up tests."
+        },
+        "Negate": true
+      }
+    ]
+  }
+}

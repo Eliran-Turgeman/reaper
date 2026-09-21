@@ -21,6 +21,7 @@ func TestIndexSnapshotPinsRegularBlobContentsAndBoundsReads(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	runGit(t, dir, "-c", "user.name=Test", "-c", "user.email=test@example.com", "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "before")
 	if err := os.WriteFile(file, []byte("replacement"), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -35,6 +36,14 @@ func TestIndexSnapshotPinsRegularBlobContentsAndBoundsReads(t *testing.T) {
 	changed, err := collector.SnapshotIndex(context.Background())
 	if err != nil || changed.Fingerprint == snapshot.Fingerprint {
 		t.Fatal("index drift not detected", err)
+	}
+	tree, err := collector.SnapshotTree(context.Background(), "HEAD")
+	if err != nil {
+		t.Fatal(err)
+	}
+	historical, err := tree.Read(context.Background(), "source.go", 100)
+	if err != nil || string(historical) != "staged source" {
+		t.Fatal("wrong before tree", string(historical), err)
 	}
 	if _, err := snapshot.Read(context.Background(), "source.go", 2); !errors.Is(err, ErrSourceTooLarge) {
 		t.Fatal("oversized blob read", err)

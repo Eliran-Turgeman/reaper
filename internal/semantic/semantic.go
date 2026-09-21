@@ -1,6 +1,7 @@
 package semantic
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 )
@@ -46,6 +47,7 @@ var sourceLanguagesByExtension = map[string]string{
 }
 
 type Unit struct {
+	RelatedEvidence  json.RawMessage
 	FilePath         string
 	Language         string
 	OldContent       string

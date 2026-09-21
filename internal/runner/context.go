@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -51,7 +52,10 @@ func (r *Runner) repositoryContext(ctx context.Context, unit semantic.Unit, rule
 		if !semantic.IsSupportedSource(file) || semantic.IsMinifiedSource(file) || !r.matches(rule, file) {
 			continue
 		}
-		data, err := r.contextSource(ctx, file)
+		data, err := r.contextSource(ctx, file, 1<<20)
+		if errors.Is(err, repogit.ErrSourceTooLarge) {
+			continue
+		}
 		if err != nil {
 			return "", err
 		}
@@ -71,13 +75,9 @@ func (r *Runner) repositoryContext(ctx context.Context, unit semantic.Unit, rule
 	return b.String(), nil
 }
 
-func (r *Runner) contextSource(ctx context.Context, file string) ([]byte, error) {
+func (r *Runner) contextSource(ctx context.Context, file string, limit int64) ([]byte, error) {
 	if r.IndexSnapshot != nil {
-		data, err := r.IndexSnapshot.Read(ctx, file, 1<<20)
-		if errors.Is(err, repogit.ErrSourceTooLarge) {
-			return nil, nil
-		}
-		return data, err
+		return r.IndexSnapshot.Read(ctx, file, limit)
 	}
 	full := filepath.Join(r.Root, filepath.FromSlash(file))
 	info, err := os.Lstat(full)
@@ -87,8 +87,20 @@ func (r *Runner) contextSource(ctx context.Context, file string) ([]byte, error)
 	if err != nil {
 		return nil, err
 	}
-	if !info.Mode().IsRegular() || info.Size() > 1<<20 {
+	if !info.Mode().IsRegular() {
 		return nil, nil
 	}
-	return os.ReadFile(full)
+	if info.Size() > limit {
+		return nil, repogit.ErrSourceTooLarge
+	}
+	source, err := os.Open(full)
+	if err != nil {
+		return nil, err
+	}
+	defer source.Close()
+	data, err := io.ReadAll(io.LimitReader(source, limit+1))
+	if int64(len(data)) > limit {
+		return nil, repogit.ErrSourceTooLarge
+	}
+	return data, err
 }

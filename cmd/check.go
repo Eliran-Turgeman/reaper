@@ -21,21 +21,22 @@ import (
 )
 
 type checkOptions struct {
-	baseline      string
-	taskFile      string
-	taskFromPR    bool
-	config        string
-	failOnWarning bool
-	all           bool
-	staged        bool
-	ref           string
-	task          string
-	format        string
-	verbose       bool
-	debug         bool
-	noCache       bool
-	provider      string
-	model         string
+	experimentalContext string
+	baseline            string
+	taskFile            string
+	taskFromPR          bool
+	config              string
+	failOnWarning       bool
+	all                 bool
+	staged              bool
+	ref                 string
+	task                string
+	format              string
+	verbose             bool
+	debug               bool
+	noCache             bool
+	provider            string
+	model               string
 }
 
 func newCheck(app App) *cobra.Command {
@@ -45,6 +46,12 @@ func newCheck(app App) *cobra.Command {
 		Short: "Check changed code for semantic violations",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(command *cobra.Command, paths []string) error {
+			if options.experimentalContext != "" && options.experimentalContext != "targeted-go" {
+				return fmt.Errorf("--experimental-context must be targeted-go")
+			}
+			if options.all && options.experimentalContext != "" {
+				return fmt.Errorf("experimental targeted context requires a diff, not --all")
+			}
 			if options.all && (options.staged || options.ref != "") {
 				return errors.New("--all cannot be used with --staged or --diff")
 			}
@@ -58,6 +65,7 @@ func newCheck(app App) *cobra.Command {
 		},
 	}
 	flags := command.Flags()
+	flags.StringVar(&options.experimentalContext, "experimental-context", "", "opt-in targeted-go before/after helper evidence for authorization and validation")
 	flags.StringVar(&options.baseline, "baseline", "", "baseline of accepted existing findings")
 	flags.StringVar(&options.taskFile, "task-file", "", "read task context from a UTF-8 file")
 	flags.BoolVar(&options.taskFromPR, "task-from-pr", false, "derive task from GITHUB_EVENT_PATH pull request title and body")
@@ -97,7 +105,7 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		return err
 	}
 	collector := gitpkg.CommandCollector{Dir: cwd}
-	var indexSnapshot *gitpkg.IndexSnapshot
+	var indexSnapshot *gitpkg.SourceSnapshot
 	if options.staged {
 		indexSnapshot, err = collector.SnapshotIndex(ctx)
 		if err != nil {
@@ -128,6 +136,27 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 	if err != nil {
 		return fmt.Errorf("extract semantic units: %w", err)
 	}
+	var beforeSnapshot *gitpkg.SourceSnapshot
+	if options.experimentalContext != "" {
+		needsSource := false
+		for _, u := range units {
+			if u.Language == "go" && u.ExistingModified && !u.IsTest {
+				needsSource = true
+			}
+		}
+		if needsSource {
+			if options.staged {
+				beforeSnapshot, err = collector.SnapshotTree(ctx, "HEAD")
+			} else if options.ref != "" {
+				beforeSnapshot, err = collector.SnapshotTree(ctx, options.ref)
+			} else {
+				beforeSnapshot, err = collector.SnapshotIndex(ctx)
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}
 	log := func(format string, args ...any) {}
 	if options.verbose || options.debug {
 		log = func(format string, args ...any) {
@@ -153,6 +182,7 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		cacheStore = &cache.FileStore{Dir: dir}
 	}
 	engine := &runner.Runner{
+		TargetedContext: options.experimentalContext != "", BeforeSnapshot: beforeSnapshot, ContextPatch: rawDiff,
 		IndexSnapshot: indexSnapshot,
 		Root:          root,
 		Config:        cfg, Cache: cacheStore, Version: Version, Verbose: log,

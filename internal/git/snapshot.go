@@ -12,20 +12,47 @@ import (
 
 var ErrSourceTooLarge = errors.New("source exceeds evidence byte limit")
 
-// IndexSnapshot holds immutable blob IDs, so later index/worktree edits cannot
+// SourceSnapshot holds immutable blob IDs, so later index/worktree edits cannot
 // change source returned from this snapshot. Only regular staged files qualify.
-type IndexSnapshot struct {
+type SourceSnapshot struct {
 	collector   CommandCollector
 	blobs       map[string]string
 	Fingerprint string
 }
 
-func (c CommandCollector) SnapshotIndex(ctx context.Context) (*IndexSnapshot, error) {
+func (c CommandCollector) SnapshotTree(ctx context.Context, ref string) (*SourceSnapshot, error) {
+	resolved, err := c.command(ctx, "-C", c.Dir, "rev-parse", "--verify", "--end-of-options", ref+"^{tree}").Output()
+	if err != nil {
+		return nil, fmt.Errorf("resolve evidence base %q: %w", ref, err)
+	}
+	id := strings.TrimSpace(string(resolved))
+	data, err := c.command(ctx, "-C", c.Dir, "ls-tree", "-r", "-z", "--full-tree", id).Output()
+	if err != nil {
+		return nil, fmt.Errorf("list evidence base: %w", err)
+	}
+	s := &SourceSnapshot{collector: c, blobs: map[string]string{}, Fingerprint: id}
+	for _, entry := range strings.Split(string(data), "\x00") {
+		if entry == "" {
+			continue
+		}
+		metadata, name, ok := strings.Cut(entry, "\t")
+		fields := strings.Fields(metadata)
+		if !ok || len(fields) != 3 {
+			return nil, fmt.Errorf("invalid tree entry")
+		}
+		if fields[1] == "blob" && (fields[0] == "100644" || fields[0] == "100755") {
+			s.blobs[name] = fields[2]
+		}
+	}
+	return s, nil
+}
+
+func (c CommandCollector) SnapshotIndex(ctx context.Context) (*SourceSnapshot, error) {
 	data, err := c.command(ctx, "-C", c.Dir, "ls-files", "--full-name", "--stage", "-z").Output()
 	if err != nil {
 		return nil, fmt.Errorf("capture index: %w", err)
 	}
-	s := &IndexSnapshot{collector: c, blobs: map[string]string{}, Fingerprint: fmt.Sprintf("%x", sha256.Sum256(data))}
+	s := &SourceSnapshot{collector: c, blobs: map[string]string{}, Fingerprint: fmt.Sprintf("%x", sha256.Sum256(data))}
 	for _, entry := range strings.Split(string(data), "\x00") {
 		if entry == "" {
 			continue
@@ -45,7 +72,7 @@ func (c CommandCollector) SnapshotIndex(ctx context.Context) (*IndexSnapshot, er
 	return s, nil
 }
 
-func (s *IndexSnapshot) Files() []string {
+func (s *SourceSnapshot) Files() []string {
 	files := make([]string, 0, len(s.blobs))
 	for file := range s.blobs {
 		files = append(files, file)
@@ -54,7 +81,7 @@ func (s *IndexSnapshot) Files() []string {
 	return files
 }
 
-func (s *IndexSnapshot) Read(ctx context.Context, name string, limit int64) ([]byte, error) {
+func (s *SourceSnapshot) Read(ctx context.Context, name string, limit int64) ([]byte, error) {
 	id, ok := s.blobs[name]
 	if !ok {
 		return nil, fmt.Errorf("no regular staged source for %s", name)
@@ -75,6 +102,9 @@ func (s *IndexSnapshot) Read(ctx context.Context, name string, limit int64) ([]b
 	data, err := s.collector.command(ctx, "-C", s.collector.Dir, "cat-file", "blob", id).Output()
 	if err != nil {
 		return nil, fmt.Errorf("read captured staged blob %s: %w", name, err)
+	}
+	if data == nil {
+		data = []byte{}
 	}
 	return data, nil
 }

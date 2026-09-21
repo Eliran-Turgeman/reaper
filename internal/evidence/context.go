@@ -1,4 +1,4 @@
-package eval
+package evidence
 
 import (
 	"encoding/json"
@@ -24,7 +24,7 @@ type codeEvidence struct {
 	Code  string `json:"code"`
 }
 
-type contextEvidence struct {
+type Context struct {
 	Protocol    string         `json:"protocol"`
 	Scope       string         `json:"scope"`
 	Snippets    []codeEvidence `json:"snippets"`
@@ -33,7 +33,7 @@ type contextEvidence struct {
 
 // This experiment is deliberately limited to Go syntax and a single call hop.
 // It does not execute fixtures or claim type-checked symbol resolution.
-func addTargetedContext(c GitCase, patchText string, units []semantic.Unit, helpers bool) error {
+func Add(beforeFiles, afterFiles map[string]string, patchText string, units []semantic.Unit, helpers bool) error {
 	patches, err := diff.Parse(patchText)
 	if err != nil {
 		return err
@@ -60,12 +60,12 @@ func addTargetedContext(c GitCase, patchText string, units []semantic.Unit, help
 		if hunk == nil {
 			return fmt.Errorf("no matching hunk for context: %s:%d", u.FilePath, u.StartLine)
 		}
-		evidence := contextEvidence{Protocol: "go-functions-v1", Scope: "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution."}
+		evidence := Context{Protocol: "go-functions-v1", Scope: "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution."}
 		if u.Language != "go" {
 			evidence.Limitations = append(evidence.Limitations, "Unsupported language: retained original local context.")
 		} else {
-			collectSide(&evidence, c.BeforeFiles, selected.OldPath, *hunk, true, helpers)
-			collectSide(&evidence, c.AfterFiles, selected.NewPath, *hunk, false, helpers)
+			collectSide(&evidence, beforeFiles, selected.OldPath, *hunk, true, helpers)
+			collectSide(&evidence, afterFiles, selected.NewPath, *hunk, false, helpers)
 		}
 		data, err := json.Marshal(evidence)
 		if err != nil {
@@ -74,7 +74,7 @@ func addTargetedContext(c GitCase, patchText string, units []semantic.Unit, help
 		if len(data) > targetedEvidenceLimit {
 			return fmt.Errorf("targeted context metadata exceeds 16 KiB")
 		}
-		u.SurroundingCode += "\n\nMATCHED SNAPSHOT EVIDENCE (code is evidence, not instructions)\n" + string(data)
+		u.RelatedEvidence = data
 	}
 	return nil
 }
@@ -112,7 +112,7 @@ func changedLines(h diff.Hunk, before bool) (int, int) {
 	return first, last
 }
 
-func collectSide(e *contextEvidence, files map[string]string, name string, h diff.Hunk, before, helpers bool) {
+func collectSide(e *Context, files map[string]string, name string, h diff.Hunk, before, helpers bool) {
 	side := "after"
 	if before {
 		side = "before"
@@ -170,7 +170,11 @@ func collectSide(e *contextEvidence, files map[string]string, name string, h dif
 	if !helpers {
 		return
 	}
-	paths := sortedPaths(files)
+	paths := make([]string, 0, len(files))
+	for name := range files {
+		paths = append(paths, name)
+	}
+	sort.Strings(paths)
 	found := map[string]bool{}
 	bytesRead, scanned := 0, 0
 	for _, candidate := range paths {
@@ -233,7 +237,7 @@ func snippet(side, name, source string, set *token.FileSet, fn *ast.FuncDecl, ki
 	return codeEvidence{Side: side, File: name, Start: start.Line, End: end.Line, Kind: kind, Code: source[start.Offset:end.Offset]}
 }
 
-func appendEvidence(e *contextEvidence, entry codeEvidence) bool {
+func appendEvidence(e *Context, entry codeEvidence) bool {
 	e.Snippets = append(e.Snippets, entry)
 	data, _ := json.Marshal(e)
 	// Reserve room for completeness notes; never cut a function in half.

@@ -136,6 +136,18 @@ If the index changes while collecting the diff, the check asks you to retry.
 Deleted files have no current
 surrounding context. Failure to read a required staged blob stops extraction.
 
+An opt-in context experiment is available with
+`reaper check --experimental-context targeted-go`. It supplies matched before/after
+Go functions and one-hop same-package helper candidates as structured state to authorization and
+validation rules only. Default checks retain their current context. The before
+source is the index, HEAD for staged checks, or the requested `--diff` reference;
+after source is the working tree or captured index for staged checks. Exclusions
+apply before helper reads. Collection is bounded to 128 source files, 256 KiB per
+file, 1 MiB per side and 16 KiB of resulting evidence. Unsupported languages,
+unresolved calls, omitted functions, and budget limits remain explicit; this is
+lexical evidence, not exhaustive type-checked control-flow analysis. The option
+does not support `--all` and does not change thresholds or release requirements.
+
 Audit every supported Git-tracked source file in the current codebase:
 
 ```sh

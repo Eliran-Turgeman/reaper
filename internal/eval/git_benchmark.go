@@ -15,6 +15,7 @@ import (
 	"github.com/Eliran-Turgeman/reaper/internal/config"
 	"github.com/Eliran-Turgeman/reaper/internal/decision"
 	"github.com/Eliran-Turgeman/reaper/internal/diff"
+	sourceevidence "github.com/Eliran-Turgeman/reaper/internal/evidence"
 	repogit "github.com/Eliran-Turgeman/reaper/internal/git"
 	"github.com/Eliran-Turgeman/reaper/internal/rules"
 	"github.com/Eliran-Turgeman/reaper/internal/runner"
@@ -233,7 +234,7 @@ func runGitCaseExperiment(ctx context.Context, client decision.Evaluator, c GitC
 		return ScoredCase{}, err
 	}
 	if experiment != nil && (experiment.Context == "matched" || experiment.Context == "targeted") {
-		if err := addTargetedContext(c, patch, units, experiment.Context == "targeted"); err != nil {
+		if err := sourceevidence.Add(c.BeforeFiles, c.AfterFiles, patch, units, experiment.Context == "targeted"); err != nil {
 			return ScoredCase{}, err
 		}
 	}
