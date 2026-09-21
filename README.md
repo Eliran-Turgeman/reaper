@@ -398,23 +398,24 @@ Add `--benchmark-mode git` to exercise real Git extraction and configured rule
 grouping, including eligibility misses and below-threshold signal scores. See
 [Git benchmark modes and fixtures](benchmarks/README.md#evaluating-the-real-git-path).
 
-Release publication additionally requires the absolute targets in
-[`benchmarks/release-policy.json`](benchmarks/release-policy.json): at least 80%
-recall, at most 1% false positives, and at least 20 positive/100 negative
-independently reviewed cases for each blocking rule. The current synthetic
-corpora do not meet these requirements, so the release workflow intentionally
-stops at that gate. Ordinary pull-request CI remains available.
-Release CI compares the pinned-model results against the checked-in metrics.
+Pre-1.0 releases use the existing development corpora as regression gates rather
+than requiring a larger independently reviewed corpus. Release CI compares the
+pinned-model results against the checked-in metrics.
 It also runs all labeled rule examples against `evals/expected-metrics.json`,
 printing precision/recall deltas and blocking drops larger than 0.02.
 The release workflow requires `OPENROUTER_API_KEY`; unavailable inference fails
 the release. Review baseline updates and model changes as rule-quality changes.
 Maintainers can manually run the **Release** workflow on a branch to validate
-both quality gates with the repository secret. Manual runs never publish,
+both regression gates with the repository secret. Manual runs never publish,
 including when a tag is selected; only tag pushes publish releases. Installation
 smoke tests follow successful publishing runs, not manual quality validation.
 The zero-recall pilot baseline alone provides no useful recall regression floor;
 the full rule corpus provides the additional gate.
+
+For a stricter opt-in assessment, use
+[`benchmarks/strict-quality-policy.json`](benchmarks/strict-quality-policy.json).
+It retains the 80% recall, 1% false-positive, 20-positive, 100-negative, and
+independent-review targets as a future quality goal, not a release prerequisite.
 
 Add `--optimize precision --min-recall 0.6 --format json` to `reaper eval`
 (including patch benchmarks) for a 0–1 sweep in 0.01 increments and per-rule

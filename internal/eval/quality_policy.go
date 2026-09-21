@@ -142,7 +142,7 @@ func CheckQualityPolicy(w io.Writer, report Report, policy QualityPolicy) error 
 		}
 	}
 	if failed {
-		return fmt.Errorf("absolute release-quality requirements are not met")
+		return fmt.Errorf("strict quality requirements are not met")
 	}
 	return nil
 }

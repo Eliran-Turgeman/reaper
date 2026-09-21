@@ -27,15 +27,15 @@ func TestEvalRejectsInvalidBenchmarkModesBeforeProviderSetup(t *testing.T) {
 	}
 }
 
-func TestReleasePolicyFailsBeforeProviderWithoutIndependentReview(t *testing.T) {
+func TestStrictQualityPolicyFailsBeforeProviderWithoutIndependentReview(t *testing.T) {
 	var output bytes.Buffer
 	command := NewWith(App{Out: &output, ErrOut: &output, Getenv: func(string) string { return "" }})
-	command.SetArgs([]string{"eval", "--benchmark-dir", "../benchmarks/validation", "--benchmark-mode", "git", "--quality-policy", "../benchmarks/release-policy.json"})
+	command.SetArgs([]string{"eval", "--benchmark-dir", "../benchmarks/validation", "--benchmark-mode", "git", "--quality-policy", "../benchmarks/strict-quality-policy.json"})
 	err := command.Execute()
 	if ExitCode(err) != 1 || !strings.Contains(err.Error(), "independent corpus review is missing") {
 		t.Fatalf("gate did not fail before provider setup: %v", err)
 	}
 	if !strings.Contains(output.String(), "independent corpus review is missing") {
-		t.Fatal("exit-1 failure must explain the unmet release requirement")
+		t.Fatal("exit-1 failure must explain the unmet quality requirement")
 	}
 }

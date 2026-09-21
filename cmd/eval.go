@@ -183,7 +183,7 @@ func newEval(app App) *cobra.Command {
 	flags.StringVar(&options.benchmarkMode, "benchmark-mode", "snippet", "benchmark input path: snippet or git")
 	flags.StringVar(&options.benchmarkGrouping, "benchmark-grouping", "configured", "Git benchmark rule grouping: configured or isolated")
 	flags.StringVar(&options.experimentFile, "benchmark-experiment", "", "JSON question/context experiment for examples or Git fixtures; does not change check defaults")
-	flags.StringVar(&options.qualityPolicyFile, "quality-policy", "", "absolute release-quality policy with independent corpus review")
+	flags.StringVar(&options.qualityPolicyFile, "quality-policy", "", "strict quality policy with independent corpus review")
 	flags.StringVar(&options.rule, "rule", "", "evaluate one rule")
 	flags.Float64Var(&options.threshold, "threshold", 0, "override the configured threshold")
 	flags.StringVar(&options.format, "format", "text", "output format: text or json")

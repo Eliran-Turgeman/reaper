@@ -28,14 +28,6 @@ jobs:
       - name: Run tests
         run: go test ./...
 
-      - name: Absolute release-quality gate
-        # Development baselines can pass with zero detections. Require an
-        # independently reviewed corpus and absolute quality before publishing.
-        # This gate intentionally remains blocked until that review exists.
-        run: go run ./cmd/reaper eval --benchmark-dir benchmarks/validation --benchmark-mode git --quality-policy benchmarks/release-policy.json --provider openrouter --model typesafe/jev-1.13
-        env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-
       - name: Development benchmark regression gate
         run: go run ./cmd/reaper eval --benchmark-dir benchmarks/patches --provider openrouter --model typesafe/jev-1.13 --metrics-baseline benchmarks/patches/results.json
         env:

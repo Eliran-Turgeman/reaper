@@ -23,7 +23,7 @@ func TestQualityPolicyMustCoverNewlyConfiguredBlockingRules(t *testing.T) {
 
 func qualityFixture(t *testing.T) (Report, QualityPolicy) {
 	t.Helper()
-	policy, err := LoadQualityPolicy("../../benchmarks/release-policy.json")
+	policy, err := LoadQualityPolicy("../../benchmarks/strict-quality-policy.json")
 	if err != nil {
 		t.Fatal(err)
 	}
