@@ -82,6 +82,47 @@ func TestStructuredExperimentPreservesFactsAndRecordsCriteria(t *testing.T) {
 	}
 }
 
+func TestExampleExperimentsKeepInputsIsolated(t *testing.T) {
+	thresholds := map[string]float64{"removed-validation": .95}
+	var baselineState, baselineQuestions string
+	for _, variant := range []string{"baseline", "wording", "json-text", "json-object", "criteria"} {
+		e := &Experiment{Version: 1, Name: variant, Context: "current"}
+		if variant != "baseline" {
+			e.Questions = map[string]string{"removed-validation:removes-validation": "Does the change bypass an old input check?"}
+		}
+		if variant == "json-text" || variant == "json-object" {
+			e.StateFormat = variant
+		}
+		if variant == "criteria" {
+			e.Criteria = map[string]decision.NoulCriteria{"removed-validation:removes-validation": {True: "Old input enforcement is lost.", False: "Old input enforcement remains."}}
+		}
+		client := &benchmarkEvaluator{score: .7}
+		report, err := RunExamplesExperiment(context.Background(), client, "../../evals", "typesafe", "m", "removed-validation", nil, thresholds, e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		request := client.requests[0]
+		if variant == "baseline" {
+			baselineState, baselineQuestions = fingerprint(request.State), fingerprint(request.Questions)
+		}
+		if (variant == "wording" || variant == "criteria") && fingerprint(request.State) != baselineState {
+			t.Fatal("question variant changed state")
+		}
+		if variant != "baseline" && fingerprint(request.Questions) == baselineQuestions {
+			t.Fatal("question override missing")
+		}
+		if report.Cases[0].Requests[0].SHA256 != fingerprint(request) || report.Provenance.ExperimentSHA256 != fingerprint(e) {
+			t.Fatal("missing actual experiment provenance")
+		}
+		if variant == "json-object" && len(request.StructuredState) == 0 {
+			t.Fatal("missing native state")
+		}
+	}
+	if _, err := RunExamplesExperiment(context.Background(), &benchmarkEvaluator{}, "../../evals", "typesafe", "m", "removed-validation", nil, thresholds, &Experiment{Version: 1, Name: "bad", Context: "targeted"}); err == nil {
+		t.Fatal("accepted nonexistent repository evidence")
+	}
+}
+
 func TestExperimentRejectsUnknownQuestionsAndOversizedContext(t *testing.T) {
 	for _, data := range []string{`{"version":1,"name":"x","context":"current","questions":{"unknown":"text"}}`, `{"version":1,"name":"x","context":"current","threshold":0}`, `{"version":1,"name":"x","context":"current"} {}`, `{"version":1,"name":"x","context":"current","state_format":"yaml"}`, `{"version":1,"name":"x","context":"current","criteria":{"unknown":{"true":"yes","false":"no"}}}`, `{"version":1,"name":"x","context":"current","criteria":{"removed-validation:removes-validation":{"true":"yes"}}}`} {
 		file := filepath.Join(t.TempDir(), "experiment.json")

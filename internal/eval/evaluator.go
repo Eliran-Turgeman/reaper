@@ -76,6 +76,18 @@ func Load(dir, id string) ([]Example, error) {
 }
 
 func Run(ctx context.Context, client decision.Evaluator, dir, provider, model, onlyRule string, thresholdOverride *float64, thresholds map[string]float64) (Report, error) {
+	return RunExamplesExperiment(ctx, client, dir, provider, model, onlyRule, thresholdOverride, thresholds, nil)
+}
+
+func RunExamplesExperiment(ctx context.Context, client decision.Evaluator, dir, provider, model, onlyRule string, thresholdOverride *float64, thresholds map[string]float64, experiment *Experiment) (Report, error) {
+	if experiment != nil {
+		if err := experiment.validate(); err != nil {
+			return Report{}, err
+		}
+		if experiment.Context != "current" {
+			return Report{}, fmt.Errorf("example experiments require context current; repository evidence requires Git fixtures")
+		}
+	}
 	selected := rules.All()
 	if onlyRule != "" {
 		rule, ok := rules.Get(onlyRule)
@@ -104,8 +116,31 @@ func Run(ctx context.Context, client decision.Evaluator, dir, provider, model, o
 		for _, example := range examples {
 			state := evalState(example)
 			request := decision.Request{Model: model, State: state, Questions: rules.Questions([]rules.Rule{rule}, false, false)}
+			if experiment != nil && experiment.StateFormat != "" {
+				fields := map[string]string{"language": example.Language, "current_code": example.Code}
+				if example.Task != "" {
+					fields["task"] = example.Task
+				}
+				if example.OldCode != "" {
+					fields["previous_code"] = example.OldCode
+				}
+				data, err := json.Marshal(fields)
+				if err != nil {
+					return Report{}, err
+				}
+				if experiment.StateFormat == "json-text" {
+					request.State = string(data)
+				} else {
+					request.State = ""
+					request.StructuredState = data
+				}
+			}
 			recorder := &recordingEvaluator{Evaluator: client}
-			response, err := decision.Evaluate(ctx, recorder, request)
+			var evaluator decision.Evaluator = recorder
+			if experiment != nil {
+				evaluator = &experimentEvaluator{Evaluator: recorder, experiment: experiment}
+			}
+			response, err := decision.Evaluate(ctx, evaluator, request)
 			if err != nil {
 				return Report{}, fmt.Errorf("evaluate example %s: %w", example.ID, err)
 			}
@@ -115,7 +150,13 @@ func Run(ctx context.Context, client decision.Evaluator, dir, provider, model, o
 			}
 			var signals []diagnostics.SignalScore
 			for _, signal := range rule.Signals {
-				signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: response.Scores[rule.QuestionID(signal)], Evidence: signal.Instructions})
+				instructions := signal.Instructions
+				if experiment != nil {
+					if text, ok := experiment.Questions[rule.QuestionID(signal)]; ok {
+						instructions = text
+					}
+				}
+				signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: response.Scores[rule.QuestionID(signal)], Evidence: instructions})
 			}
 			report.Cases = append(report.Cases, ScoredCase{ID: example.ID, Rule: rule.ID, Expected: example.Expected, Score: score, Split: "dev", Requests: recorder.Records(), Observations: []runner.Observation{{Rule: rule.ID, Score: score, Signals: signals}}})
 			predicted := score >= threshold
@@ -146,6 +187,9 @@ func Run(ctx context.Context, client decision.Evaluator, dir, provider, model, o
 	}
 	sort.Slice(report.Rules, func(i, j int) bool { return report.Rules[i].Rule < report.Rules[j].Rule })
 	report.Provenance = provenance("seed-v1", corpus, cfg)
+	if experiment != nil {
+		report.Provenance.ExperimentSHA256 = fingerprint(experiment)
+	}
 	return report, nil
 }
 

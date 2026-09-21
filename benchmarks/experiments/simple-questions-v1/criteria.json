@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "name": "simple-questions-v1-criteria",
+  "context": "current",
+  "questions": {
+    "boolean-mode-parameter:introduces-boolean-input": "Does the change add a boolean input that callers must supply?",
+    "boolean-mode-parameter:selects-behavior-mode": "Does a boolean input choose between different execution modes? Exclude domain data, product policy, security choices, and feature state.",
+    "caller-managed-mechanics:introduces-caller-duty": "Does the change make callers handle low-level setup, ordering, cleanup, retries, serialization, error translation, filtering, or state transitions?",
+    "caller-managed-mechanics:duty-is-mechanical": "Is a caller's required duty part of operating the lower-level component? Exclude caller-owned policy, data, resource ownership, coordination, data meaning, and security decisions.",
+    "ceremonial-abstraction:introduces-abstraction": "Does the change introduce a named abstraction, such as a class, interface, wrapper, builder, or option object?",
+    "ceremonial-abstraction:adds-interface-ceremony": "Does using the new abstraction require extra names, methods, construction steps, options, or protocol?",
+    "ceremonial-abstraction:hides-little-visible-behavior": "Does the abstraction's supplied implementation do only trivial calculation, assignment, lookup, or forwarding? Exclude invariant checks, policy, translation, difficult dependency handling, and meaningful state management.",
+    "implementation-detail-exposure:changes-external-boundary": "Does the change alter an interface exposed outside its immediate implementation, including types, values, fields, errors, or required call sequences?",
+    "implementation-detail-exposure:exposes-implementation-detail": "Does the interface expose internal dependencies, state, storage, encoding, identifiers, or algorithm steps? Exclude intended public contracts, standard formats, diagnostics, the module's purpose, and information callers need.",
+    "named-special-case:changes-reusable-mechanism": "Is the changed code part of a shared technical mechanism, framework, infrastructure, or utility?",
+    "named-special-case:branches-on-named-policy": "Does the shared mechanism branch on a named customer, endpoint, workflow, product, tenant, or one-off case? Exclude required protocol, security, boundary compatibility, and core mechanism behavior.",
+    "narrating-comment:restates-visible-code": "Does an added or changed comment only repeat the adjacent code? Exclude API or required documentation, reasons, intent, constraints, invariants, domain facts, warnings, compatibility notes, links, and non-obvious explanations.",
+    "removed-authorization-check:removes-authorization": "Does the change remove or bypass permission, ownership, role, or tenant checks that previously guarded an operation? Compare before and after; authentication alone does not qualify.",
+    "removed-authorization-check:loses-protection": "Does the previously protected operation remain without equivalent authorization in the supplied code? Exclude an enforcing helper or middleware, a removed operation, and a task that explicitly makes the operation public.",
+    "removed-validation:removes-validation": "Does the change remove or bypass an input check enforced before the change? Include bounds, required fields, allowed values, and data invariants.",
+    "removed-validation:retains-unsafe-operation": "Does the previously guarded operation remain without equivalent input enforcement? Exclude equivalent validators, enforced types or contracts, removed operations, and tasks explicitly requiring acceptance of the previously rejected inputs.",
+    "scope-creep:unrelated-substantial-change": "Does the patch add substantial implementation changes or observable behavior unrelated to the task? Exclude necessary small refactors, safety cleanup, required tests, and mechanical API consequences.",
+    "silent-failure-fallback:intercepts-failure": "Does the changed code catch, check, discard, or suppress an error, invalid value, failed parse, unknown case, or broken invariant?",
+    "silent-failure-fallback:returns-success-or-default": "Does failure handling return success or a fallback, or continue, without exposing the failure? Exclude resilience explicitly required by the task or a visible contract.",
+    "swallowed-cancellation:discards-cancellation": "Does the change newly suppress cancellation, ignore a canceled context or abort signal, or replace a cancelable context with a background context? Compare before and after.",
+    "swallowed-cancellation:violates-cancellation-contract": "Does cancellation now produce success or continued main work? Exclude bounded cleanup that preserves cancellation, task-required independently owned background work, and equivalent cancellation propagation.",
+    "unchanged-argument-forwarder:introduces-forwarder": "Does the change add or materially alter a callable that mainly calls another callable and relays its result?",
+    "unchanged-argument-forwarder:preserves-operation-and-arguments": "Does the forwarding callable expose the same operation and pass essentially the same arguments unchanged?",
+    "unchanged-argument-forwarder:adds-no-visible-behavior": "Does the supplied forwarding callable add no meaningful behavior? Count validation, authorization, policy, translation, composition, transactions, lifecycle, observability, compatibility, and error handling as behavior.",
+    "unused-extensibility-point:introduces-extensibility": "Does the change add an interface, callback, hook, plugin point, generic parameter, strategy, registry, or configurable factory for replacing or adding behavior?",
+    "unused-extensibility-point:only-one-visible-behavior": "Does the supplied evidence show just one implementation, registration, instantiation, or behavior for the new extension point? Limited search does not prove absence of other uses.",
+    "unused-extensibility-point:task-does-not-request-extensibility": "Is a task supplied without an explicit need for multiple implementations, configuration, plugins, substitution, testing seams, or other extensibility? Return zero when no task is supplied.",
+    "weakened-test-assertion:reduces-visible-protection": "Does the changed test accept an outcome its previous assertions rejected, or skip behavior those assertions checked?"
+  },
+  "state_format": "json-object",
+  "criteria": {
+    "boolean-mode-parameter:introduces-boolean-input": {
+      "true": "A new caller-supplied boolean parameter, option, or flag is introduced.",
+      "false": "No new caller-supplied boolean input is introduced."
+    },
+    "boolean-mode-parameter:selects-behavior-mode": {
+      "true": "A boolean selects a procedural execution mode.",
+      "false": "The boolean represents domain truth, product or security policy, feature state, or no distinct execution modes."
+    },
+    "caller-managed-mechanics:introduces-caller-duty": {
+      "true": "Callers must perform or choose a visible low-level operating duty.",
+      "false": "The change imposes no visible low-level operating duty on callers."
+    },
+    "caller-managed-mechanics:duty-is-mechanical": {
+      "true": "The required duty concerns mechanical operation of the lower-level component.",
+      "false": "The duty is caller-owned policy, required data, explicit resource ownership, coordination, observable data meaning, or security."
+    },
+    "ceremonial-abstraction:introduces-abstraction": {
+      "true": "The change introduces a named abstraction.",
+      "false": "No named abstraction is introduced."
+    },
+    "ceremonial-abstraction:adds-interface-ceremony": {
+      "true": "The new abstraction adds concepts or steps for its users.",
+      "false": "Using the new abstraction adds no visible concepts or steps."
+    },
+    "ceremonial-abstraction:hides-little-visible-behavior": {
+      "true": "The supplied abstraction provides only trivial behavior.",
+      "false": "The supplied abstraction enforces invariants or provides meaningful policy, translation, dependency handling, or state management."
+    },
+    "implementation-detail-exposure:changes-external-boundary": {
+      "true": "An externally exposed interface element changes.",
+      "false": "Only internal implementation changes; no externally exposed interface changes."
+    },
+    "implementation-detail-exposure:exposes-implementation-detail": {
+      "true": "The interface exposes an implementation-specific representation callers do not need.",
+      "false": "The information belongs to an intended public contract, standard format, diagnostic, module purpose, or visible caller need."
+    },
+    "named-special-case:changes-reusable-mechanism": {
+      "true": "The changed component implements a shared or reusable mechanism.",
+      "false": "The changed component implements specific product policy rather than a reusable mechanism."
+    },
+    "named-special-case:branches-on-named-policy": {
+      "true": "A named product or one-off policy determines behavior inside a shared mechanism.",
+      "false": "The branch implements required protocol, security, boundary compatibility, or behavior fundamental to the mechanism; or there is no such branch."
+    },
+    "narrating-comment:restates-visible-code": {
+      "true": "The changed comment merely restates the adjacent visible operation.",
+      "false": "The comment supplies required/API documentation or additional reasons, constraints, intent, domain information, warnings, links, or non-obvious meaning."
+    },
+    "removed-authorization-check:removes-authorization": {
+      "true": "Before-and-after code shows a previously required authorization check removed or bypassed.",
+      "false": "No previous authorization requirement is removed or bypassed; authentication alone is not authorization."
+    },
+    "removed-authorization-check:loses-protection": {
+      "true": "The operation remains without equivalent visible permission enforcement and without an explicit task requirement to make it public.",
+      "false": "Equivalent authorization remains, the operation is removed, or the task explicitly requires making that operation public."
+    },
+    "removed-validation:removes-validation": {
+      "true": "Before-and-after code shows loss or bypass of a previously enforced validity check.",
+      "false": "The previously enforced input checks remain effective, or no previous validity check is shown."
+    },
+    "removed-validation:retains-unsafe-operation": {
+      "true": "The operation remains without equivalent input enforcement or an explicit task requirement to accept the previously rejected inputs.",
+      "false": "Equivalent validation or enforced types/contracts remain, the operation is removed, or the task explicitly requires accepting those inputs."
+    },
+    "scope-creep:unrelated-substantial-change": {
+      "true": "The patch contains substantial or externally observable changes unrelated to completing the task.",
+      "false": "Changes are required for the task or are necessary small refactors, safety cleanup, tests, or mechanical API consequences."
+    },
+    "silent-failure-fallback:intercepts-failure": {
+      "true": "The changed code intercepts a failure or invalid condition.",
+      "false": "The changed code does not intercept a failure or invalid condition."
+    },
+    "silent-failure-fallback:returns-success-or-default": {
+      "true": "Failure is replaced by success, a default/stale value, or continued execution without being observable or explicitly permitted.",
+      "false": "The failure stays observable, or the task or visible contract explicitly requires this resilience behavior."
+    },
+    "swallowed-cancellation:discards-cancellation": {
+      "true": "Previously handled cancellation is newly discarded or replaced.",
+      "false": "Cancellation is not newly discarded; before-and-after evidence is required."
+    },
+    "swallowed-cancellation:violates-cancellation-contract": {
+      "true": "Cancellation now results in successful output or continued main work.",
+      "false": "Cancellation still propagates, only bounded cleanup runs while preserving cancellation, or the task explicitly requires independently owned background work."
+    },
+    "unchanged-argument-forwarder:introduces-forwarder": {
+      "true": "An added or materially changed callable mainly invokes another callable and relays its result.",
+      "false": "No such callable is added or materially changed."
+    },
+    "unchanged-argument-forwarder:preserves-operation-and-arguments": {
+      "true": "The wrapper preserves the target operation and arguments.",
+      "false": "The wrapper changes the operation or transforms meaningful arguments."
+    },
+    "unchanged-argument-forwarder:adds-no-visible-behavior": {
+      "true": "The callable only forwards and adds no meaningful visible behavior.",
+      "false": "The callable adds meaningful validation, authorization, policy, translation, composition, transactions, lifecycle, observability, compatibility, or error handling."
+    },
+    "unused-extensibility-point:introduces-extensibility": {
+      "true": "The change introduces a mechanism for extensibility.",
+      "false": "No extensibility mechanism is introduced."
+    },
+    "unused-extensibility-point:only-one-visible-behavior": {
+      "true": "The supplied evidence shows one concrete behavior for the new mechanism.",
+      "false": "The supplied evidence shows multiple concrete behaviors; limited search alone cannot establish absence."
+    },
+    "unused-extensibility-point:task-does-not-request-extensibility": {
+      "true": "A supplied task contains no concrete extensibility requirement.",
+      "false": "No task is supplied, or the task explicitly requires a concrete extensibility need."
+    },
+    "weakened-test-assertion:reduces-visible-protection": {
+      "true": "The changed test weakens or removes a specific check, widens tolerance, or skips previously tested behavior.",
+      "false": "The supplied test retains equivalent checks for the same behavior."
+    }
+  }
+}

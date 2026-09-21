@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "status": "frozen before measurement",
+  "conditions": [
+    "current",
+    "wording",
+    "json-text",
+    "json-object",
+    "criteria"
+  ],
+  "repeats": 3,
+  "corpora": {
+    "seed": "evals (280 existing development examples; all 14 rules)",
+    "validation": "benchmarks/validation (32 development Git cases, isolated grouping)"
+  },
+  "contrasts": {
+    "wording vs current": "Only question instructions change. Existing policies and composition are retained; explicit task permission for assertions is deferred to a separate policy experiment.",
+    "json-text vs wording": "Named JSON fields replace flat headings; same source facts.",
+    "json-object vs json-text": "Identical JSON fields, native object versus string.",
+    "criteria vs json-object": "Same native state and instructions, additional explicit true/false criteria."
+  },
+  "thresholds": "unchanged production thresholds; no cutoff selection from these measurements",
+  "composition": "minimum of all signal scores; not a calibrated violation probability",
+  "limitations": [
+    "Existing synthetic development labels; no independent review or release evidence.",
+    "The criteria variant is an added rubric, not just fewer words.",
+    "Non-exhaustive search remains insufficient for repository-wide absence claims.",
+    "No tool use, reasoning explanation, or additional retrieval is enabled."
+  ],
+  "analysis": [
+    "per-rule TP/FP/FN/TN and score ranges",
+    "verify state/question hashes for each intended contrast",
+    "record resolved model, usage, cost and elapsed time",
+    "report regressions and non-evaluated Git cases; do not cherry-pick promotion"
+  ]
+}

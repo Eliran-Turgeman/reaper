@@ -17,6 +17,13 @@ experiment-only controls, not production configuration settings. Exact criteria
 and structured state are recorded and included in request fingerprints. Native
 state, text state, and different criteria cannot share production cache entries.
 
+The same `--benchmark-experiment` flag also works with `--eval-dir evals` (without
+`--benchmark-dir`) for all 14 seed-rule corpora. Example experiments require
+`context: "current"`; repository snapshots and helper retrieval require Git
+fixtures. Existing example inputs and provenance remain identical when no
+experiment is selected. This enables matched wording/state/criteria comparisons
+without inventing task descriptions or converting snippet labels to Git labels.
+
 Latest: [correctness and targeted-context follow-up](experiments/targeted-context-v3/report.md),
 including the three extraction fixes, repeated helper-context experiments,
 enforcement-focused question candidate, and remaining calibration overlap.

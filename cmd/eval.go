@@ -56,13 +56,16 @@ func newEval(app App) *cobra.Command {
 			}
 			var experiment *evalpkg.Experiment
 			if options.experimentFile != "" {
-				if options.benchmarkMode != "git" || options.benchmarkDir == "" {
-					return fmt.Errorf("--benchmark-experiment requires --benchmark-dir and --benchmark-mode git")
+				if options.benchmarkDir != "" && options.benchmarkMode != "git" {
+					return fmt.Errorf("patch experiments require --benchmark-mode git")
 				}
 				var err error
 				experiment, err = evalpkg.LoadExperiment(options.experimentFile)
 				if err != nil {
 					return err
+				}
+				if options.benchmarkDir == "" && experiment.Context != "current" {
+					return fmt.Errorf("example experiments require context current")
 				}
 			}
 			if options.benchmarkMode != "snippet" && options.benchmarkMode != "git" {
@@ -138,7 +141,7 @@ func newEval(app App) *cobra.Command {
 					report, err = evalpkg.RunBenchmark(command.Context(), client, options.benchmarkDir, cfg)
 				}
 			} else {
-				report, err = evalpkg.Run(command.Context(), client, dir, cfg.Provider, cfg.Model, options.rule, override, thresholds)
+				report, err = evalpkg.RunExamplesExperiment(command.Context(), client, dir, cfg.Provider, cfg.Model, options.rule, override, thresholds, experiment)
 			}
 			if err != nil {
 				return err
@@ -179,7 +182,7 @@ func newEval(app App) *cobra.Command {
 	flags.StringVar(&options.benchmarkDir, "benchmark-dir", "", "evaluate labeled coding-agent patches from cases.json")
 	flags.StringVar(&options.benchmarkMode, "benchmark-mode", "snippet", "benchmark input path: snippet or git")
 	flags.StringVar(&options.benchmarkGrouping, "benchmark-grouping", "configured", "Git benchmark rule grouping: configured or isolated")
-	flags.StringVar(&options.experimentFile, "benchmark-experiment", "", "Git-only JSON question/context experiment; does not change check defaults")
+	flags.StringVar(&options.experimentFile, "benchmark-experiment", "", "JSON question/context experiment for examples or Git fixtures; does not change check defaults")
 	flags.StringVar(&options.qualityPolicyFile, "quality-policy", "", "absolute release-quality policy with independent corpus review")
 	flags.StringVar(&options.rule, "rule", "", "evaluate one rule")
 	flags.Float64Var(&options.threshold, "threshold", 0, "override the configured threshold")
