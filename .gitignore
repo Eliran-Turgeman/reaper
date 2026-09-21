@@ -2,3 +2,8 @@
 /reaper.exe
 /.reaper-cache/
 /dist/
+/.local/
+# Generated experiment reports stay local; release/test baselines remain tracked.
+/benchmarks/experiments/**/results/
+/benchmarks/experiments/**/report.md
+/benchmarks/experiments/**/summary.json

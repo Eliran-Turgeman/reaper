@@ -4,7 +4,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$repo = "Eliran-Turgeman/repear"
+$repo = "Eliran-Turgeman/reaper"
 
 if (-not [Environment]::Is64BitOperatingSystem) {
     throw "reaper installer: 32-bit Windows is not supported"

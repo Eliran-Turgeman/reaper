@@ -1,0 +1,289 @@
+{
+  "cases": [
+    {
+      "id": "tenant-query",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.85,
+      "split": "dev"
+    },
+    {
+      "id": "export-role",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.9,
+      "split": "dev"
+    },
+    {
+      "id": "late-permission",
+      "rule": "removed-authorization-check",
+      "expected": "positive",
+      "score": 0.56,
+      "split": "dev"
+    },
+    {
+      "id": "extracted-permission",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "owner-early-return",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "public-catalog",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.19,
+      "split": "dev"
+    },
+    {
+      "id": "retired-admin-operation",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.21,
+      "split": "dev"
+    },
+    {
+      "id": "authorization-error-wrap",
+      "rule": "removed-authorization-check",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "positive-transfer",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.45,
+      "split": "dev"
+    },
+    {
+      "id": "archive-traversal",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.29,
+      "split": "dev"
+    },
+    {
+      "id": "invalid-port-condition",
+      "rule": "removed-validation",
+      "expected": "positive",
+      "score": 0.61,
+      "split": "dev"
+    },
+    {
+      "id": "validator-helper",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.04,
+      "split": "dev"
+    },
+    {
+      "id": "explicit-zero-capacity",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.24,
+      "split": "dev"
+    },
+    {
+      "id": "bounds-equivalence",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "removed-shell-operation",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.07,
+      "split": "dev"
+    },
+    {
+      "id": "validated-constructor",
+      "rule": "removed-validation",
+      "expected": "negative",
+      "score": 0.05,
+      "split": "dev"
+    },
+    {
+      "id": "lost-read-error",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.94,
+      "split": "dev"
+    },
+    {
+      "id": "empty-search-on-outage",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.75,
+      "split": "dev"
+    },
+    {
+      "id": "ignored-write-rejection",
+      "rule": "silent-failure-fallback",
+      "expected": "positive",
+      "score": 0.8,
+      "split": "dev"
+    },
+    {
+      "id": "wrapped-storage-error",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "explicit-offline-cache",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.26,
+      "split": "dev"
+    },
+    {
+      "id": "typed-result-failure",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "finally-closes-resource",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.1,
+      "split": "dev"
+    },
+    {
+      "id": "rethrow-after-audit",
+      "rule": "silent-failure-fallback",
+      "expected": "negative",
+      "score": 0.02,
+      "split": "dev"
+    },
+    {
+      "id": "detached-query",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.63,
+      "split": "dev"
+    },
+    {
+      "id": "cancelled-upload-success",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.92,
+      "split": "dev"
+    },
+    {
+      "id": "dropped-fetch-signal",
+      "rule": "swallowed-cancellation",
+      "expected": "positive",
+      "score": 0.59,
+      "split": "dev"
+    },
+    {
+      "id": "cancelled-cleanup",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.16,
+      "split": "dev"
+    },
+    {
+      "id": "reraise-cancellation",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.04,
+      "split": "dev"
+    },
+    {
+      "id": "forward-cancel-token",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.03,
+      "split": "dev"
+    },
+    {
+      "id": "independent-audit-job",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.68,
+      "split": "dev"
+    },
+    {
+      "id": "preserve-abort-rejection",
+      "rule": "swallowed-cancellation",
+      "expected": "negative",
+      "score": 0.04,
+      "split": "dev"
+    }
+  ],
+  "version": 1,
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13",
+  "rules": [
+    {
+      "rule": "removed-authorization-check",
+      "examples": 8,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 5,
+      "false_negative": 3,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.77,
+      "average_negative_score": 0.096
+    },
+    {
+      "rule": "removed-validation",
+      "examples": 8,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 5,
+      "false_negative": 3,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.45,
+      "average_negative_score": 0.086
+    },
+    {
+      "rule": "silent-failure-fallback",
+      "examples": 8,
+      "true_positive": 1,
+      "false_positive": 0,
+      "true_negative": 5,
+      "false_negative": 2,
+      "precision": 1,
+      "recall": 0.3333333333333333,
+      "false_positive_rate": 0,
+      "threshold": 0.92,
+      "average_positive_score": 0.8300000000000001,
+      "average_negative_score": 0.08600000000000001
+    },
+    {
+      "rule": "swallowed-cancellation",
+      "examples": 8,
+      "true_positive": 0,
+      "false_positive": 0,
+      "true_negative": 5,
+      "false_negative": 3,
+      "precision": 0,
+      "recall": 0,
+      "false_positive_rate": 0,
+      "threshold": 0.95,
+      "average_positive_score": 0.7133333333333334,
+      "average_negative_score": 0.19
+    }
+  ]
+}

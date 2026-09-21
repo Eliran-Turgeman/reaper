@@ -29,6 +29,7 @@ func TestSupportedSourceWhitelist(t *testing.T) {
 		{path: "plugin.lua", language: "lua", supported: true},
 		{path: "ViewController.m", language: "objective-c", supported: true},
 		{path: "module.mjs", language: "javascript", supported: true},
+		{path: "action.cjs", language: "javascript", supported: true},
 		{path: "types.mts", language: "typescript", supported: true},
 		{path: "README.md", language: "text", supported: false},
 		{path: "emails.txt", language: "text", supported: false},
@@ -91,6 +92,19 @@ func TestExpandedLanguageTestFiles(t *testing.T) {
 				t.Fatalf("IsTestFile(%q) = false, want true", path)
 			}
 		})
+	}
+}
+
+func TestTestDirectoryClassification(t *testing.T) {
+	for _, path := range []string{"test/contracts.ts", "tests/contracts.ts", "__tests__/contracts.ts", "src/tests/contracts.ts", "./tests/contracts.ts", "TESTS/contracts.ts"} {
+		if !IsTestFile(path) {
+			t.Errorf("test directory missed: %s", path)
+		}
+	}
+	for _, path := range []string{"contest/contracts.ts", "tests-support/contracts.ts", "src/testing/contracts.ts", "tests.ts"} {
+		if IsTestFile(path) {
+			t.Errorf("production path classified as test: %s", path)
+		}
 	}
 }
 

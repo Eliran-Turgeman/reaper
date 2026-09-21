@@ -1,0 +1,362 @@
+[
+  {
+    "id": "auth-vague-task-go",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "task": "Simplify the catalog handler.",
+    "before_files": {
+      "service/auth-vague-task-go.go": "package catalog\nfunc Catalog(actor User) (CatalogData, error) {\n if !actor.IsCustomer { return CatalogData{}, ErrForbidden }\n return store.PublicCatalog()\n}\n"
+    },
+    "after_files": {
+      "service/auth-vague-task-go.go": "package catalog\nfunc Catalog(actor User) (CatalogData, error) {\n return store.PublicCatalog()\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-explicit-contract-go",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement.",
+    "before_files": {
+      "service/auth-explicit-contract-go.go": "package catalog\nfunc Catalog(actor User) (CatalogData, error) {\n if !actor.IsCustomer { return CatalogData{}, ErrForbidden }\n return store.PublicCatalog()\n}\n"
+    },
+    "after_files": {
+      "service/auth-explicit-contract-go.go": "package catalog\nfunc Catalog(actor User) (CatalogData, error) {\n return store.PublicCatalog()\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-vague-task-go",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "task": "Simplify quantity handling.",
+    "before_files": {
+      "service/val-vague-task-go.go": "package orders\nfunc SetQuantity(n int) error {\n if n < 1 { return ErrInvalid }\n return store.SetQuantity(n)\n}\n"
+    },
+    "after_files": {
+      "service/val-vague-task-go.go": "package orders\nfunc SetQuantity(n int) error {\n return store.SetQuantity(n)\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-explicit-contract-go",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard.",
+    "before_files": {
+      "service/val-explicit-contract-go.go": "package orders\nfunc SetQuantity(n int) error {\n if n < 1 { return ErrInvalid }\n return store.SetQuantity(n)\n}\n"
+    },
+    "after_files": {
+      "service/val-explicit-contract-go.go": "package orders\nfunc SetQuantity(n int) error {\n return store.SetQuantity(n)\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-vague-task-py",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "task": "Simplify the catalog handler.",
+    "before_files": {
+      "service/auth-vague-task-py.py": "def catalog(actor):\n    if not actor.is_customer:\n        raise PermissionError('customer required')\n    return store.public_catalog()\n"
+    },
+    "after_files": {
+      "service/auth-vague-task-py.py": "def catalog(actor):\n    return store.public_catalog()\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-explicit-contract-py",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement.",
+    "before_files": {
+      "service/auth-explicit-contract-py.py": "def catalog(actor):\n    if not actor.is_customer:\n        raise PermissionError('customer required')\n    return store.public_catalog()\n"
+    },
+    "after_files": {
+      "service/auth-explicit-contract-py.py": "def catalog(actor):\n    return store.public_catalog()\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-vague-task-py",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "task": "Simplify quantity handling.",
+    "before_files": {
+      "service/val-vague-task-py.py": "def set_quantity(n):\n    if n < 1:\n        raise ValueError('quantity must be positive')\n    return store.set_quantity(n)\n"
+    },
+    "after_files": {
+      "service/val-vague-task-py.py": "def set_quantity(n):\n    return store.set_quantity(n)\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-explicit-contract-py",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard.",
+    "before_files": {
+      "service/val-explicit-contract-py.py": "def set_quantity(n):\n    if n < 1:\n        raise ValueError('quantity must be positive')\n    return store.set_quantity(n)\n"
+    },
+    "after_files": {
+      "service/val-explicit-contract-py.py": "def set_quantity(n):\n    return store.set_quantity(n)\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-vague-task-ts",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "task": "Simplify the catalog handler.",
+    "before_files": {
+      "service/auth-vague-task-ts.ts": "function catalog(actor: User): Catalog {\n  if (!actor.isCustomer) throw new Forbidden();\n  return store.publicCatalog();\n}\n"
+    },
+    "after_files": {
+      "service/auth-vague-task-ts.ts": "function catalog(actor: User): Catalog {\n  return store.publicCatalog();\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-explicit-contract-ts",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement.",
+    "before_files": {
+      "service/auth-explicit-contract-ts.ts": "function catalog(actor: User): Catalog {\n  if (!actor.isCustomer) throw new Forbidden();\n  return store.publicCatalog();\n}\n"
+    },
+    "after_files": {
+      "service/auth-explicit-contract-ts.ts": "function catalog(actor: User): Catalog {\n  return store.publicCatalog();\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-vague-task-ts",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "task": "Simplify quantity handling.",
+    "before_files": {
+      "service/val-vague-task-ts.ts": "function setQuantity(n: number): void {\n  if (n < 1) throw new RangeError('quantity must be positive');\n  store.setQuantity(n);\n}\n"
+    },
+    "after_files": {
+      "service/val-vague-task-ts.ts": "function setQuantity(n: number): void {\n  store.setQuantity(n);\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-explicit-contract-ts",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard.",
+    "before_files": {
+      "service/val-explicit-contract-ts.ts": "function setQuantity(n: number): void {\n  if (n < 1) throw new RangeError('quantity must be positive');\n  store.setQuantity(n);\n}\n"
+    },
+    "after_files": {
+      "service/val-explicit-contract-ts.ts": "function setQuantity(n: number): void {\n  store.setQuantity(n);\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-vague-task-js",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "task": "Simplify the catalog handler.",
+    "before_files": {
+      "service/auth-vague-task-js.js": "function catalog(actor) {\n  if (!actor.isCustomer) throw new Forbidden();\n  return store.publicCatalog();\n}\n"
+    },
+    "after_files": {
+      "service/auth-vague-task-js.js": "function catalog(actor) {\n  return store.publicCatalog();\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-explicit-contract-js",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement.",
+    "before_files": {
+      "service/auth-explicit-contract-js.js": "function catalog(actor) {\n  if (!actor.isCustomer) throw new Forbidden();\n  return store.publicCatalog();\n}\n"
+    },
+    "after_files": {
+      "service/auth-explicit-contract-js.js": "function catalog(actor) {\n  return store.publicCatalog();\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-vague-task-js",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "task": "Simplify quantity handling.",
+    "before_files": {
+      "service/val-vague-task-js.js": "function setQuantity(n) {\n  if (n < 1) throw new RangeError('quantity must be positive');\n  store.setQuantity(n);\n}\n"
+    },
+    "after_files": {
+      "service/val-vague-task-js.js": "function setQuantity(n) {\n  store.setQuantity(n);\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-explicit-contract-js",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard.",
+    "before_files": {
+      "service/val-explicit-contract-js.js": "function setQuantity(n) {\n  if (n < 1) throw new RangeError('quantity must be positive');\n  store.setQuantity(n);\n}\n"
+    },
+    "after_files": {
+      "service/val-explicit-contract-js.js": "function setQuantity(n) {\n  store.setQuantity(n);\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-vague-task-java",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "task": "Simplify the catalog handler.",
+    "before_files": {
+      "service/auth-vague-task-java.java": "Catalog catalog(User actor) {\n    if (!actor.isCustomer()) throw new ForbiddenException();\n    return store.publicCatalog();\n}\n"
+    },
+    "after_files": {
+      "service/auth-vague-task-java.java": "Catalog catalog(User actor) {\n    return store.publicCatalog();\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-explicit-contract-java",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement.",
+    "before_files": {
+      "service/auth-explicit-contract-java.java": "Catalog catalog(User actor) {\n    if (!actor.isCustomer()) throw new ForbiddenException();\n    return store.publicCatalog();\n}\n"
+    },
+    "after_files": {
+      "service/auth-explicit-contract-java.java": "Catalog catalog(User actor) {\n    return store.publicCatalog();\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-vague-task-java",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "task": "Simplify quantity handling.",
+    "before_files": {
+      "service/val-vague-task-java.java": "void setQuantity(int n) {\n    if (n < 1) throw new IllegalArgumentException(\"quantity must be positive\");\n    store.setQuantity(n);\n}\n"
+    },
+    "after_files": {
+      "service/val-vague-task-java.java": "void setQuantity(int n) {\n    store.setQuantity(n);\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-explicit-contract-java",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard.",
+    "before_files": {
+      "service/val-explicit-contract-java.java": "void setQuantity(int n) {\n    if (n < 1) throw new IllegalArgumentException(\"quantity must be positive\");\n    store.setQuantity(n);\n}\n"
+    },
+    "after_files": {
+      "service/val-explicit-contract-java.java": "void setQuantity(int n) {\n    store.setQuantity(n);\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-vague-task-cs",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "task": "Simplify the catalog handler.",
+    "before_files": {
+      "service/auth-vague-task-cs.cs": "Catalog Catalog(User actor) {\n    if (!actor.IsCustomer) throw new ForbiddenException();\n    return store.PublicCatalog();\n}\n"
+    },
+    "after_files": {
+      "service/auth-vague-task-cs.cs": "Catalog Catalog(User actor) {\n    return store.PublicCatalog();\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-explicit-contract-cs",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "task": "Make the read-only public product catalog accessible without customer authorization; remove the customer-role requirement.",
+    "before_files": {
+      "service/auth-explicit-contract-cs.cs": "Catalog Catalog(User actor) {\n    if (!actor.IsCustomer) throw new ForbiddenException();\n    return store.PublicCatalog();\n}\n"
+    },
+    "after_files": {
+      "service/auth-explicit-contract-cs.cs": "Catalog Catalog(User actor) {\n    return store.PublicCatalog();\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-vague-task-cs",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "task": "Simplify quantity handling.",
+    "before_files": {
+      "service/val-vague-task-cs.cs": "void SetQuantity(int n) {\n    if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));\n    store.SetQuantity(n);\n}\n"
+    },
+    "after_files": {
+      "service/val-vague-task-cs.cs": "void SetQuantity(int n) {\n    store.SetQuantity(n);\n}\n"
+    },
+    "rationale": "The operation remains and the only visible guard is removed; the vague simplification request does not authorize a contract change.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "val-explicit-contract-cs",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "task": "Change the quantity contract to accept every integer, including zero and negative values representing inventory adjustments; remove the positive-only guard.",
+    "before_files": {
+      "service/val-explicit-contract-cs.cs": "void SetQuantity(int n) {\n    if (n < 1) throw new ArgumentOutOfRangeException(nameof(n));\n    store.SetQuantity(n);\n}\n"
+    },
+    "after_files": {
+      "service/val-explicit-contract-cs.cs": "void SetQuantity(int n) {\n    store.SetQuantity(n);\n}\n"
+    },
+    "rationale": "The task explicitly requests this exact contract expansion; the user-approved intent policy permits it.",
+    "provenance": "Synthetic paired task-policy development fixture. Authored after the user confirmed the explicit-task exemption on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  }
+]

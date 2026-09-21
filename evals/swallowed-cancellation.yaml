@@ -1,0 +1,182 @@
+[
+  {
+    "id": "go-removed",
+    "language": "go",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if err := ctx.Err(); err != nil { return err }\nreturn send(ctx)",
+    "code": "return send(ctx)",
+    "expected": "positive",
+    "rationale": "The existing cancellation guard is removed while the operation remains."
+  },
+  {
+    "id": "go-success",
+    "language": "go",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if err := ctx.Err(); err != nil { return err }\nreturn send(ctx)",
+    "code": "result = send(ctx)",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous cancellation protection."
+  },
+  {
+    "id": "go-preserved",
+    "language": "go",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if err := ctx.Err(); err != nil { return err }\nreturn send(ctx)",
+    "code": "if err := ctx.Err(); err != nil { return err }\nreturn send(ctx)",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "go-requested",
+    "language": "go",
+    "task": "Run this operation independently in the background even if the caller cancels; it has its own lifecycle.",
+    "old_code": "if err := ctx.Err(); err != nil { return err }\nreturn send(ctx)",
+    "code": "return send(ctx)",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "python-removed",
+    "language": "python",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "try:\n    return await send()\nexcept asyncio.CancelledError:\n    raise",
+    "code": "try:\n    return await send()\nexcept asyncio.CancelledError:\n    return None",
+    "expected": "positive",
+    "rationale": "The existing cancellation guard is removed while the operation remains."
+  },
+  {
+    "id": "python-success",
+    "language": "python",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "try:\n    return await send()\nexcept asyncio.CancelledError:\n    raise",
+    "code": "try:\n    result = await send()\nexcept asyncio.CancelledError:\n    return None",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous cancellation protection."
+  },
+  {
+    "id": "python-preserved",
+    "language": "python",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "try:\n    return await send()\nexcept asyncio.CancelledError:\n    raise",
+    "code": "try:\n    return await send()\nexcept asyncio.CancelledError:\n    raise",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "python-requested",
+    "language": "python",
+    "task": "Run this operation independently in the background even if the caller cancels; it has its own lifecycle.",
+    "old_code": "try:\n    return await send()\nexcept asyncio.CancelledError:\n    raise",
+    "code": "try:\n    return await send()\nexcept asyncio.CancelledError:\n    return None",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "typescript-removed",
+    "language": "typescript",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if (signal.aborted) throw signal.reason;\nreturn send(signal);",
+    "code": "return send(signal);",
+    "expected": "positive",
+    "rationale": "The existing cancellation guard is removed while the operation remains."
+  },
+  {
+    "id": "typescript-success",
+    "language": "typescript",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if (signal.aborted) throw signal.reason;\nreturn send(signal);",
+    "code": "result = send(signal);",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous cancellation protection."
+  },
+  {
+    "id": "typescript-preserved",
+    "language": "typescript",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if (signal.aborted) throw signal.reason;\nreturn send(signal);",
+    "code": "if (signal.aborted) throw signal.reason;\nreturn send(signal);",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "typescript-requested",
+    "language": "typescript",
+    "task": "Run this operation independently in the background even if the caller cancels; it has its own lifecycle.",
+    "old_code": "if (signal.aborted) throw signal.reason;\nreturn send(signal);",
+    "code": "return send(signal);",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "java-removed",
+    "language": "java",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if (Thread.currentThread().isInterrupted()) throw new InterruptedException();\nreturn send();",
+    "code": "return send();",
+    "expected": "positive",
+    "rationale": "The existing cancellation guard is removed while the operation remains."
+  },
+  {
+    "id": "java-success",
+    "language": "java",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if (Thread.currentThread().isInterrupted()) throw new InterruptedException();\nreturn send();",
+    "code": "result = send();",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous cancellation protection."
+  },
+  {
+    "id": "java-preserved",
+    "language": "java",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if (Thread.currentThread().isInterrupted()) throw new InterruptedException();\nreturn send();",
+    "code": "if (Thread.currentThread().isInterrupted()) throw new InterruptedException();\nreturn send();",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "java-requested",
+    "language": "java",
+    "task": "Run this operation independently in the background even if the caller cancels; it has its own lifecycle.",
+    "old_code": "if (Thread.currentThread().isInterrupted()) throw new InterruptedException();\nreturn send();",
+    "code": "return send();",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "csharp-removed",
+    "language": "csharp",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "token.ThrowIfCancellationRequested();\nreturn await Send(token);",
+    "code": "return await Send(token);",
+    "expected": "positive",
+    "rationale": "The existing cancellation guard is removed while the operation remains."
+  },
+  {
+    "id": "csharp-success",
+    "language": "csharp",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "token.ThrowIfCancellationRequested();\nreturn await Send(token);",
+    "code": "result = await Send(token);",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous cancellation protection."
+  },
+  {
+    "id": "csharp-preserved",
+    "language": "csharp",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "token.ThrowIfCancellationRequested();\nreturn await Send(token);",
+    "code": "token.ThrowIfCancellationRequested();\nreturn await Send(token);",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "csharp-requested",
+    "language": "csharp",
+    "task": "Run this operation independently in the background even if the caller cancels; it has its own lifecycle.",
+    "old_code": "token.ThrowIfCancellationRequested();\nreturn await Send(token);",
+    "code": "return await Send(token);",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  }
+]

@@ -8,22 +8,63 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Eliran-Turgeman/repear/internal/cache"
-	"github.com/Eliran-Turgeman/repear/internal/config"
-	"github.com/Eliran-Turgeman/repear/internal/jev"
-	"github.com/Eliran-Turgeman/repear/internal/rules"
-	"github.com/Eliran-Turgeman/repear/internal/semantic"
+	"github.com/Eliran-Turgeman/reaper/internal/cache"
+	"github.com/Eliran-Turgeman/reaper/internal/config"
+	"github.com/Eliran-Turgeman/reaper/internal/decision"
+	"github.com/Eliran-Turgeman/reaper/internal/rules"
+	"github.com/Eliran-Turgeman/reaper/internal/semantic"
 )
 
 type mockClient struct {
 	mu       sync.Mutex
-	requests []jev.EvaluationRequest
+	requests []decision.Request
 	delay    map[string]time.Duration
 	failures map[string]error
 	scores   map[string]float64
 }
 
-func (m *mockClient) Evaluate(_ context.Context, request jev.EvaluationRequest) (jev.EvaluationResponse, error) {
+func allRulesConfig() config.Config {
+	cfg := config.Defaults()
+	for id, rc := range cfg.Rules {
+		enabled := true
+		if id == "removed-authorization-check" || id == "removed-validation" || id == "swallowed-cancellation" {
+			enabled = false
+		}
+		rc.Enabled = &enabled
+		cfg.Rules[id] = rc
+	}
+	return cfg
+}
+
+func TestFindingFingerprintSurvivesLineMovement(t *testing.T) {
+	first := semantic.Unit{FilePath: "x.go", Diff: "@@ -1 +1 @@\n-return err\n+return nil", StartLine: 1}
+	second := first
+	second.StartLine = 40
+	second.Diff = "@@ -40 +40 @@\n-return err\n+return nil"
+	if findingFingerprint("r", first) != findingFingerprint("r", second) {
+		t.Fatal("line movement changed fingerprint")
+	}
+	second.Diff = "@@ -40 +40 @@\n-    return err\n+    return nil"
+	if findingFingerprint("r", first) != findingFingerprint("r", second) {
+		t.Fatal("indentation changed fingerprint")
+	}
+	second.Diff = "-return err\n+return cached"
+	if findingFingerprint("r", first) == findingFingerprint("r", second) {
+		t.Fatal("semantic edit kept fingerprint")
+	}
+}
+
+func TestPatchContextHonorsExclusions(t *testing.T) {
+	cfg := allRulesConfig()
+	client := &mockClient{}
+	engine := Runner{Config: cfg, Client: client, Cache: cache.Disabled{}}
+	_, err := engine.Run(context.Background(), []semantic.Unit{{FilePath: "vendor/secret.go", Diff: "+secret"}}, "Fix a bug")
+	if err != nil || len(client.requests) != 0 {
+		t.Fatal("excluded content sent", err)
+	}
+}
+
+func (m *mockClient) Evaluate(_ context.Context, request decision.Request) (decision.Response, error) {
 	if delay := m.delay[request.State]; delay > 0 {
 		time.Sleep(delay)
 	}
@@ -31,7 +72,7 @@ func (m *mockClient) Evaluate(_ context.Context, request jev.EvaluationRequest) 
 	m.requests = append(m.requests, request)
 	m.mu.Unlock()
 	if err := m.failures[request.State]; err != nil {
-		return jev.EvaluationResponse{}, err
+		return decision.Response{}, err
 	}
 	scores := map[string]float64{}
 	for _, question := range request.Questions {
@@ -41,17 +82,17 @@ func (m *mockClient) Evaluate(_ context.Context, request jev.EvaluationRequest) 
 		}
 		scores[question.ID] = score
 	}
-	return jev.EvaluationResponse{Probabilities: scores}, nil
+	return decision.Response{Scores: scores}, nil
 }
 
-func (m *mockClient) Stats() jev.Stats {
+func (m *mockClient) Stats() decision.Stats {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return jev.Stats{Requests: len(m.requests)}
+	return decision.Stats{Requests: len(m.requests)}
 }
 
 func TestRunnerRequiresEveryCompositeSignal(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	disabled := false
 	for id, rc := range cfg.Rules {
 		if id != "unchanged-argument-forwarder" {
@@ -82,7 +123,7 @@ func TestRunnerRequiresEveryCompositeSignal(t *testing.T) {
 }
 
 func TestRunnerBatchesRulesAppliesPolicyAndCaches(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	client := &mockClient{}
 	store := cache.NewMemory()
 	engine := Runner{Config: cfg, Client: client, Cache: store}
@@ -115,7 +156,7 @@ func TestRunnerBatchesRulesAppliesPolicyAndCaches(t *testing.T) {
 }
 
 func TestRunnerSortsDiagnosticsDespiteConcurrentCompletion(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	disabled := false
 	for id, rc := range cfg.Rules {
 		if id != "silent-failure-fallback" {
@@ -137,7 +178,7 @@ func TestRunnerSortsDiagnosticsDespiteConcurrentCompletion(t *testing.T) {
 }
 
 func TestRunnerSkipsTaskRuleWithoutTaskAndHonorsGlobExcludes(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	for id, rc := range cfg.Rules {
 		enabled := id == "scope-creep" || id == "silent-failure-fallback"
 		rc.Enabled = &enabled
@@ -151,7 +192,7 @@ func TestRunnerSkipsTaskRuleWithoutTaskAndHonorsGlobExcludes(t *testing.T) {
 }
 
 func TestRunnerExcludesNestedBuildAndDependencyDirectories(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	engine := Runner{Config: cfg, Cache: cache.Disabled{}}
 	for _, file := range []string{
 		"EmailCollector.Api/wwwroot/lib/bootstrap/dist/js/bootstrap.js",
@@ -165,7 +206,7 @@ func TestRunnerExcludesNestedBuildAndDependencyDirectories(t *testing.T) {
 }
 
 func TestRunnerLogsAndContinuesAfterProviderTokenLimit(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	disabled := false
 	for id, rc := range cfg.Rules {
 		if id != "silent-failure-fallback" {
@@ -182,10 +223,7 @@ func TestRunnerLogsAndContinuesAfterProviderTokenLimit(t *testing.T) {
 		StartLine: 1, EndLine: 1,
 	}
 	client := &mockClient{failures: map[string]error{
-		buildState(large, "", false): &jev.APIError{
-			Provider: "OpenRouter", StatusCode: 400,
-			Body: `{"detail":{"error_type":"max_tokens_exceeded"}}`,
-		},
+		buildState(large, "", false): &decision.ContextLimitError{},
 	}}
 	var notices []string
 	engine := Runner{
@@ -205,10 +243,31 @@ func TestRunnerLogsAndContinuesAfterProviderTokenLimit(t *testing.T) {
 	if len(notices) != 1 || !strings.Contains(notices[0], "skip large.go:1") {
 		t.Fatalf("unexpected skip notices: %#v", notices)
 	}
+	if report.Complete || report.Passed || report.ExitCode() != 2 || len(report.Skipped) != 1 || report.Skipped[0].File != "large.go" {
+		t.Fatalf("token skip incorrectly passed: %+v", report)
+	}
+}
+
+func TestProviderFailurePreservesOtherFindings(t *testing.T) {
+	cfg := allRulesConfig()
+	first := semantic.Unit{FilePath: "broken.go", StartLine: 1, EndLine: 2}
+	second := semantic.Unit{FilePath: "valid.go", StartLine: 1, EndLine: 2}
+	client := &mockClient{failures: map[string]error{buildState(first, "", false): fmt.Errorf("provider unavailable")}}
+	engine := Runner{Config: cfg, Client: client, Cache: cache.Disabled{}}
+	report, err := engine.Run(context.Background(), []semantic.Unit{first, second}, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if report.Complete || report.ExitCode() != 2 || report.Summary.UnitsEvaluated != 1 || len(report.Diagnostics) == 0 || len(report.Skipped) != 1 {
+		t.Fatalf("lost partial result: %+v", report)
+	}
+	if !strings.Contains(report.Skipped[0].Reason, "provider unavailable") {
+		t.Fatal(report.Skipped)
+	}
 }
 
 func TestRunnerCacheIsIsolatedByProvider(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	disabled := false
 	for id, rc := range cfg.Rules {
 		if id != "silent-failure-fallback" {
@@ -234,7 +293,7 @@ func TestRunnerCacheIsIsolatedByProvider(t *testing.T) {
 }
 
 func TestRunnerCacheIsIsolatedByReaperVersion(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	disabled := false
 	for id, rc := range cfg.Rules {
 		if id != "silent-failure-fallback" {
@@ -259,7 +318,7 @@ func TestRunnerCacheIsIsolatedByReaperVersion(t *testing.T) {
 }
 
 func TestWorkCountDoesNotDuplicateVerboseSkipLogs(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	for id, rc := range cfg.Rules {
 		enabled := id == "narrating-comment"
 		rc.Enabled = &enabled
@@ -289,7 +348,7 @@ func TestWorkCountDoesNotDuplicateVerboseSkipLogs(t *testing.T) {
 }
 
 func TestRunnerDebugLogsEveryEvaluationWithRawConfidence(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	disabled := false
 	for id, rc := range cfg.Rules {
 		if id != "silent-failure-fallback" {
@@ -335,7 +394,7 @@ func TestRunnerDebugLogsEveryEvaluationWithRawConfidence(t *testing.T) {
 }
 
 func TestRunnerAuditSkipsRulesThatRequireChangeContext(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	var logs []string
 	client := &mockClient{}
 	engine := Runner{
@@ -378,7 +437,7 @@ func TestRunnerAuditSkipsRulesThatRequireChangeContext(t *testing.T) {
 }
 
 func TestRunnerEvaluatesSemanticRulesForDeletionOnlyHunk(t *testing.T) {
-	cfg := config.Defaults()
+	cfg := allRulesConfig()
 	enabledRules := map[string]bool{
 		"unchanged-argument-forwarder":   true,
 		"ceremonial-abstraction":         true,
@@ -413,5 +472,46 @@ func TestRunnerEvaluatesSemanticRulesForDeletionOnlyHunk(t *testing.T) {
 	}
 	if got := len(client.requests[0].Questions); got != wantQuestions {
 		t.Fatalf("got %d questions, want %d", got, wantQuestions)
+	}
+}
+
+func (m *mockClient) Capabilities() decision.Capabilities {
+	return decision.Capabilities{Batching: true, StructuredScores: true}
+}
+
+type tokenClient struct{ mockClient }
+
+func (c *tokenClient) Stats() decision.Stats {
+	s := c.mockClient.Stats()
+	s.InputTokens = s.Requests * 100
+	s.OutputTokens = s.Requests * 10
+	s.UsageResponses = s.Requests
+	return s
+}
+func TestUsageCostAndCacheMetricsArePerRun(t *testing.T) {
+	cfg := allRulesConfig()
+	for id, rc := range cfg.Rules {
+		enabled := id == "silent-failure-fallback"
+		rc.Enabled = &enabled
+		cfg.Rules[id] = rc
+	}
+	input, output := 2.0, 4.0
+	cfg.Pricing.InputPerMillion = &input
+	cfg.Pricing.OutputPerMillion = &output
+	engine := Runner{Config: cfg, Client: &tokenClient{}, Cache: cache.NewMemory()}
+	unit := semantic.Unit{FilePath: "x.go", NewContent: "return nil"}
+	first, err := engine.Run(context.Background(), []semantic.Unit{unit}, "")
+	if err != nil || first.Summary.Requests != 1 || first.Summary.InputTokens != 100 || !first.Summary.UsageComplete || first.Summary.EstimatedCostUSD == nil || *first.Summary.EstimatedCostUSD != .00024 {
+		t.Fatal(first.Summary, err)
+	}
+	second, err := engine.Run(context.Background(), []semantic.Unit{unit}, "")
+	if err != nil || second.Summary.Requests != 0 || second.Summary.InputTokens != 0 || second.Summary.CacheHitRate != 1 || *second.Summary.EstimatedCostUSD != 0 {
+		t.Fatal(second.Summary, err)
+	}
+	engine.Client = &mockClient{}
+	engine.Cache = cache.Disabled{}
+	unknown, err := engine.Run(context.Background(), []semantic.Unit{unit}, "")
+	if err != nil || unknown.Summary.UsageComplete || unknown.Summary.EstimatedCostUSD != nil {
+		t.Fatal(unknown.Summary, err)
 	}
 }

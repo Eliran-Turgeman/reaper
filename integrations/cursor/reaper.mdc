@@ -1,0 +1,10 @@
+---
+description: Run Reaper after tests for semantic regression protection
+alwaysApply: true
+---
+
+Integration version 1. After editing code, run repository tests and static
+checks, then `reaper check --format agent --task "the user's requested change"`.
+Fix blocking findings and applicable warnings; rerun tests and Reaper.
+Investigate exit 2 or `complete: false`. Never weaken rules to pass, broaden the
+task to justify unrelated edits, or write API keys to source files.

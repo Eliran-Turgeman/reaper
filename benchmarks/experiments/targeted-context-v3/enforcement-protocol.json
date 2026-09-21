@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "name": "enforcement-question-followup",
+  "reason": "Initial targeted-context results exposed low first-predicate scores even when the remaining-operation predicate scores high.",
+  "development_only": true,
+  "control": "targeted-questions.json",
+  "candidate": "enforcement-questions.json",
+  "changed_inputs": [
+    "Two first-predicate question texts only; second predicates, context algorithm, thresholds, corpus and requested model unchanged."
+  ],
+  "runs": 3,
+  "corpora": [
+    "cases",
+    "benchmarks/validation",
+    "benchmarks/quality-dev",
+    "benchmarks/git-path"
+  ],
+  "promotion": "No automatic production or threshold change; fresh independent review still required."
+}

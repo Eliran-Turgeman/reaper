@@ -10,8 +10,11 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/Eliran-Turgeman/repear/internal/jev"
-	"github.com/Eliran-Turgeman/repear/internal/rules"
+	"github.com/Eliran-Turgeman/reaper/internal/config"
+	"github.com/Eliran-Turgeman/reaper/internal/decision"
+	"github.com/Eliran-Turgeman/reaper/internal/diagnostics"
+	"github.com/Eliran-Turgeman/reaper/internal/rules"
+	"github.com/Eliran-Turgeman/reaper/internal/runner"
 	"gopkg.in/yaml.v3"
 )
 
@@ -41,10 +44,15 @@ type RuleReport struct {
 }
 
 type Report struct {
-	Version  int          `json:"version"`
-	Provider string       `json:"provider"`
-	Model    string       `json:"model"`
-	Rules    []RuleReport `json:"rules"`
+	Provenance  *Provenance   `json:"provenance,omitempty"`
+	Mode        string        `json:"mode,omitempty"`
+	Grouping    string        `json:"grouping,omitempty"`
+	Calibration []Calibration `json:"calibration,omitempty"`
+	Cases       []ScoredCase  `json:"cases,omitempty"`
+	Version     int           `json:"version"`
+	Provider    string        `json:"provider"`
+	Model       string        `json:"model"`
+	Rules       []RuleReport  `json:"rules"`
 }
 
 func Load(dir, id string) ([]Example, error) {
@@ -67,7 +75,19 @@ func Load(dir, id string) ([]Example, error) {
 	return examples, nil
 }
 
-func Run(ctx context.Context, client jev.Client, dir, provider, model, onlyRule string, thresholdOverride *float64, thresholds map[string]float64) (Report, error) {
+func Run(ctx context.Context, client decision.Evaluator, dir, provider, model, onlyRule string, thresholdOverride *float64, thresholds map[string]float64) (Report, error) {
+	return RunExamplesExperiment(ctx, client, dir, provider, model, onlyRule, thresholdOverride, thresholds, nil)
+}
+
+func RunExamplesExperiment(ctx context.Context, client decision.Evaluator, dir, provider, model, onlyRule string, thresholdOverride *float64, thresholds map[string]float64, experiment *Experiment) (Report, error) {
+	if experiment != nil {
+		if err := experiment.validate(); err != nil {
+			return Report{}, err
+		}
+		if experiment.Context != "current" {
+			return Report{}, fmt.Errorf("example experiments require context current; repository evidence requires Git fixtures")
+		}
+	}
 	selected := rules.All()
 	if onlyRule != "" {
 		rule, ok := rules.Get(onlyRule)
@@ -76,7 +96,12 @@ func Run(ctx context.Context, client jev.Client, dir, provider, model, onlyRule 
 		}
 		selected = []rules.Rule{rule}
 	}
+	if experiment != nil {
+		selected = experiment.ruleSet(selected)
+	}
 	report := Report{Version: 1, Provider: provider, Model: model}
+	corpus := map[string][]Example{}
+	cfg := config.Config{Rules: map[string]config.RuleConfig{}}
 	for _, rule := range selected {
 		examples, err := Load(dir, rule.ID)
 		if err != nil {
@@ -86,25 +111,57 @@ func Run(ctx context.Context, client jev.Client, dir, provider, model, onlyRule 
 		if thresholdOverride != nil {
 			threshold = *thresholdOverride
 		}
+		corpus[rule.ID] = examples
+		cfg.Rules[rule.ID] = config.RuleConfig{Threshold: threshold}
 		result := RuleReport{Rule: rule.ID, Examples: len(examples), Threshold: threshold}
 		var positiveTotal, negativeTotal float64
 		var positives, negatives int
 		for _, example := range examples {
 			state := evalState(example)
-			request := jev.EvaluationRequest{Model: model, State: state}
-			for _, signal := range rule.Signals {
-				request.Questions = append(request.Questions, jev.Question{
-					ID: rule.QuestionID(signal), Instructions: signal.Instructions,
-				})
+			request := decision.Request{Model: model, State: state, Questions: rules.Questions([]rules.Rule{rule}, false, false)}
+			if experiment != nil && experiment.StateFormat != "" {
+				fields := map[string]string{"language": example.Language, "current_code": example.Code}
+				if example.Task != "" {
+					fields["task"] = example.Task
+				}
+				if example.OldCode != "" {
+					fields["previous_code"] = example.OldCode
+				}
+				data, err := json.Marshal(fields)
+				if err != nil {
+					return Report{}, err
+				}
+				if experiment.StateFormat == "json-text" {
+					request.State = string(data)
+				} else {
+					request.State = ""
+					request.StructuredState = data
+				}
 			}
-			response, err := client.Evaluate(ctx, request)
+			recorder := &recordingEvaluator{Evaluator: client}
+			var evaluator decision.Evaluator = recorder
+			if experiment != nil {
+				evaluator = &experimentEvaluator{Evaluator: recorder, experiment: experiment}
+			}
+			response, err := decision.Evaluate(ctx, evaluator, request)
 			if err != nil {
 				return Report{}, fmt.Errorf("evaluate example %s: %w", example.ID, err)
 			}
-			score, ok := rule.Compose(response.Probabilities)
+			score, ok := rule.Compose(response.Scores)
 			if !ok || score < 0 || score > 1 {
 				return Report{}, fmt.Errorf("invalid probability for example %s", example.ID)
 			}
+			var signals []diagnostics.SignalScore
+			for _, signal := range rule.Signals {
+				instructions := signal.Instructions
+				if experiment != nil {
+					if text, ok := experiment.Questions[rule.QuestionID(signal)]; ok {
+						instructions = text
+					}
+				}
+				signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: response.Scores[rule.QuestionID(signal)], Evidence: instructions, Negated: signal.Negate})
+			}
+			report.Cases = append(report.Cases, ScoredCase{ID: example.ID, Rule: rule.ID, Expected: example.Expected, Score: score, Split: "dev", Requests: recorder.Records(), Observations: []runner.Observation{{Rule: rule.ID, Score: score, Signals: signals, Composition: rule.Composition(), RuleVersion: rule.Version}}})
 			predicted := score >= threshold
 			if example.Expected == "positive" {
 				positives++
@@ -132,6 +189,10 @@ func Run(ctx context.Context, client jev.Client, dir, provider, model, onlyRule 
 		report.Rules = append(report.Rules, result)
 	}
 	sort.Slice(report.Rules, func(i, j int) bool { return report.Rules[i].Rule < report.Rules[j].Rule })
+	report.Provenance = provenance("seed-v1", corpus, cfg)
+	if experiment != nil {
+		report.Provenance.ExperimentSHA256 = fingerprint(experiment)
+	}
 	return report, nil
 }
 
@@ -142,6 +203,13 @@ func WriteJSON(w io.Writer, report Report) error {
 }
 
 func WriteText(w io.Writer, report Report) error {
+	for _, c := range report.Calibration {
+		if c.Candidate == nil {
+			fmt.Fprintf(w, "%s: no threshold meets the recall constraint\n", c.Rule)
+		} else {
+			fmt.Fprintf(w, "%s candidate threshold=%.2f precision=%.3f recall=%.3f (report only)\n", c.Rule, c.Candidate.Threshold, c.Candidate.Precision, c.Candidate.Recall)
+		}
+	}
 	fmt.Fprintf(w, "Provider: %s\nModel: %s\n\n", report.Provider, report.Model)
 	for i, result := range report.Rules {
 		if i > 0 {

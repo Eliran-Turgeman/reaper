@@ -1,0 +1,182 @@
+[
+  {
+    "id": "go-removed",
+    "language": "go",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if !allowed(user, record) { return ErrForbidden }\nreturn deleteRecord(record)",
+    "code": "return deleteRecord(record)",
+    "expected": "positive",
+    "rationale": "The existing authorization guard is removed while the operation remains."
+  },
+  {
+    "id": "go-success",
+    "language": "go",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if !allowed(user, record) { return ErrForbidden }\nreturn deleteRecord(record)",
+    "code": "result = deleteRecord(record)",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous authorization protection."
+  },
+  {
+    "id": "go-preserved",
+    "language": "go",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if !allowed(user, record) { return ErrForbidden }\nreturn deleteRecord(record)",
+    "code": "if !allowed(user, record) { return ErrForbidden }\nreturn deleteRecord(record)",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "go-requested",
+    "language": "go",
+    "task": "Make this delete operation public; authorization is intentionally no longer required.",
+    "old_code": "if !allowed(user, record) { return ErrForbidden }\nreturn deleteRecord(record)",
+    "code": "return deleteRecord(record)",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "python-removed",
+    "language": "python",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if not allowed(user, record):\n    raise Forbidden()\nreturn delete_record(record)",
+    "code": "return delete_record(record)",
+    "expected": "positive",
+    "rationale": "The existing authorization guard is removed while the operation remains."
+  },
+  {
+    "id": "python-success",
+    "language": "python",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if not allowed(user, record):\n    raise Forbidden()\nreturn delete_record(record)",
+    "code": "result = delete_record(record)",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous authorization protection."
+  },
+  {
+    "id": "python-preserved",
+    "language": "python",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if not allowed(user, record):\n    raise Forbidden()\nreturn delete_record(record)",
+    "code": "if not allowed(user, record):\n    raise Forbidden()\nreturn delete_record(record)",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "python-requested",
+    "language": "python",
+    "task": "Make this delete operation public; authorization is intentionally no longer required.",
+    "old_code": "if not allowed(user, record):\n    raise Forbidden()\nreturn delete_record(record)",
+    "code": "return delete_record(record)",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "typescript-removed",
+    "language": "typescript",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if (!allowed(user, record)) throw new Forbidden();\nreturn deleteRecord(record);",
+    "code": "return deleteRecord(record);",
+    "expected": "positive",
+    "rationale": "The existing authorization guard is removed while the operation remains."
+  },
+  {
+    "id": "typescript-success",
+    "language": "typescript",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if (!allowed(user, record)) throw new Forbidden();\nreturn deleteRecord(record);",
+    "code": "result = deleteRecord(record);",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous authorization protection."
+  },
+  {
+    "id": "typescript-preserved",
+    "language": "typescript",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if (!allowed(user, record)) throw new Forbidden();\nreturn deleteRecord(record);",
+    "code": "if (!allowed(user, record)) throw new Forbidden();\nreturn deleteRecord(record);",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "typescript-requested",
+    "language": "typescript",
+    "task": "Make this delete operation public; authorization is intentionally no longer required.",
+    "old_code": "if (!allowed(user, record)) throw new Forbidden();\nreturn deleteRecord(record);",
+    "code": "return deleteRecord(record);",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "java-removed",
+    "language": "java",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if (!allowed(user, record)) throw new Forbidden();\nreturn deleteRecord(record);",
+    "code": "return deleteRecord(record);",
+    "expected": "positive",
+    "rationale": "The existing authorization guard is removed while the operation remains."
+  },
+  {
+    "id": "java-success",
+    "language": "java",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if (!allowed(user, record)) throw new Forbidden();\nreturn deleteRecord(record);",
+    "code": "result = deleteRecord(record);",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous authorization protection."
+  },
+  {
+    "id": "java-preserved",
+    "language": "java",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if (!allowed(user, record)) throw new Forbidden();\nreturn deleteRecord(record);",
+    "code": "if (!allowed(user, record)) throw new Forbidden();\nreturn deleteRecord(record);",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "java-requested",
+    "language": "java",
+    "task": "Make this delete operation public; authorization is intentionally no longer required.",
+    "old_code": "if (!allowed(user, record)) throw new Forbidden();\nreturn deleteRecord(record);",
+    "code": "return deleteRecord(record);",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "csharp-removed",
+    "language": "csharp",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if (!Allowed(user, record)) throw new ForbiddenException();\nreturn DeleteRecord(record);",
+    "code": "return DeleteRecord(record);",
+    "expected": "positive",
+    "rationale": "The existing authorization guard is removed while the operation remains."
+  },
+  {
+    "id": "csharp-success",
+    "language": "csharp",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if (!Allowed(user, record)) throw new ForbiddenException();\nreturn DeleteRecord(record);",
+    "code": "result = DeleteRecord(record);",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous authorization protection."
+  },
+  {
+    "id": "csharp-preserved",
+    "language": "csharp",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if (!Allowed(user, record)) throw new ForbiddenException();\nreturn DeleteRecord(record);",
+    "code": "if (!Allowed(user, record)) throw new ForbiddenException();\nreturn DeleteRecord(record);",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "csharp-requested",
+    "language": "csharp",
+    "task": "Make this delete operation public; authorization is intentionally no longer required.",
+    "old_code": "if (!Allowed(user, record)) throw new ForbiddenException();\nreturn DeleteRecord(record);",
+    "code": "return DeleteRecord(record);",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  }
+]

@@ -7,6 +7,47 @@ import (
 	"time"
 )
 
+func TestIncompleteAnalysisPolicy(t *testing.T) {
+	for _, policy := range []string{"error", "warning", "ignore", "invalid"} {
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, FileName), []byte("incomplete_analysis: "+policy), 0600); err != nil {
+			t.Fatal(err)
+		}
+		cfg, _, err := Load(dir)
+		if policy == "invalid" {
+			if err == nil {
+				t.Fatal("accepted invalid policy")
+			}
+			continue
+		}
+		if err != nil || cfg.IncompleteAnalysis != policy {
+			t.Fatalf("%s: %v %+v", policy, err, cfg)
+		}
+	}
+}
+
+func TestPacksAndExplicitRulePrecedence(t *testing.T) {
+	cfg := Defaults()
+	if !*cfg.Rules["silent-failure-fallback"].Enabled || *cfg.Rules["narrating-comment"].Enabled {
+		t.Fatal("unexpected default packs")
+	}
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, FileName), []byte("packs: [style]\nrules:\n  silent-failure-fallback:\n    enabled: true\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, _, err := Load(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !*cfg.Rules["narrating-comment"].Enabled || !*cfg.Rules["silent-failure-fallback"].Enabled || *cfg.Rules["weakened-test-assertion"].Enabled {
+		t.Fatal("pack or explicit override ignored")
+	}
+	cfg.Packs = []string{"typo"}
+	if cfg.Validate() == nil {
+		t.Fatal("accepted unknown pack")
+	}
+}
+
 func TestLoadMergesOverridesIncludingZeroThreshold(t *testing.T) {
 	dir := t.TempDir()
 	data := []byte(`version: 1

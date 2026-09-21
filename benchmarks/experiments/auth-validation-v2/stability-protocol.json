@@ -1,0 +1,37 @@
+{
+  "purpose": "Repeated-request stability on known development errors and boundaries; not holdout validation or approval of default thresholds.",
+  "model": "typesafe/jev-1.13",
+  "grouping": "isolated",
+  "additional_runs": 2,
+  "variants": [
+    "current",
+    "questions",
+    "context",
+    "both"
+  ],
+  "origins": {
+    "late-permission": "validation",
+    "explicit-zero-capacity": "validation",
+    "val-vague-task-go": "quality-dev",
+    "val-explicit-contract-go": "quality-dev",
+    "auth-explicit-contract-py": "quality-dev",
+    "auth-inserted-bypass": "git-path",
+    "validation-inserted-bypass": "git-path"
+  },
+  "default_thresholds": {
+    "removed-authorization-check": 0.95,
+    "removed-validation": 0.95
+  },
+  "exploratory_probe_thresholds": {
+    "removed-authorization-check": 0.4,
+    "removed-validation": 0.67
+  },
+  "probe_rationale": "Probe cutoffs lie inside the best observed development separation for authorization/current questions with snapshots and validation/revised questions with current context. They are not blocking recommendations.",
+  "spec_sha256": {
+    "current": "fc06957793706aa275159c9a85c8d42ae2e073ed623797000d88f312377d968b",
+    "questions": "4f0f07813f87eb1ba306aeaf8219767dc4d0ae9064e7ffdbd33fa0f900e99e89",
+    "context": "b96c86bf0ec4e754ad15c8e59ca2fb73950a1b836c8c9febf75897a00c78c3cb",
+    "both": "66ed13ab2c3ef658fd6ee1fe0f28a58756e0a3f76a5157529fb6ca2a990a78ba"
+  },
+  "verification": "Require the same per-case request fingerprint multiset as the original corresponding corpus/variant run before comparing repeated scores."
+}

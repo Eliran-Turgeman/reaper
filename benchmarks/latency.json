@@ -1,0 +1,39 @@
+{
+  "provider": "openrouter",
+  "model": "typesafe/jev-1.13",
+  "platform": "nt",
+  "cache": false,
+  "provenance": "Generated one-line function changes; three wall-clock samples per size, not a production workload.",
+  "results": [
+    {
+      "size": "small",
+      "changed_files": 1,
+      "samples_seconds": [
+        0.8283040000242181,
+        0.5712616000091657,
+        0.570429100014735
+      ],
+      "median_seconds": 0.5712616000091657
+    },
+    {
+      "size": "medium",
+      "changed_files": 8,
+      "samples_seconds": [
+        1.4004158000461757,
+        1.214130699983798,
+        1.301152899977751
+      ],
+      "median_seconds": 1.301152899977751
+    },
+    {
+      "size": "large",
+      "changed_files": 32,
+      "samples_seconds": [
+        3.2935533999698237,
+        3.3601230999920517,
+        3.322311100026127
+      ],
+      "median_seconds": 3.322311100026127
+    }
+  ]
+}

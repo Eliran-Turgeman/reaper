@@ -1,0 +1,182 @@
+[
+  {
+    "id": "go-removed",
+    "language": "go",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if amount <= 0 { return ErrInvalid }\nreturn charge(amount)",
+    "code": "return charge(amount)",
+    "expected": "positive",
+    "rationale": "The existing validation guard is removed while the operation remains."
+  },
+  {
+    "id": "go-success",
+    "language": "go",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if amount <= 0 { return ErrInvalid }\nreturn charge(amount)",
+    "code": "result = charge(amount)",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous validation protection."
+  },
+  {
+    "id": "go-preserved",
+    "language": "go",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if amount <= 0 { return ErrInvalid }\nreturn charge(amount)",
+    "code": "if amount <= 0 { return ErrInvalid }\nreturn charge(amount)",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "go-requested",
+    "language": "go",
+    "task": "Allow zero and negative amounts for refund processing; remove the positive-only constraint.",
+    "old_code": "if amount <= 0 { return ErrInvalid }\nreturn charge(amount)",
+    "code": "return charge(amount)",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "python-removed",
+    "language": "python",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if amount <= 0:\n    raise ValueError()\nreturn charge(amount)",
+    "code": "return charge(amount)",
+    "expected": "positive",
+    "rationale": "The existing validation guard is removed while the operation remains."
+  },
+  {
+    "id": "python-success",
+    "language": "python",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if amount <= 0:\n    raise ValueError()\nreturn charge(amount)",
+    "code": "result = charge(amount)",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous validation protection."
+  },
+  {
+    "id": "python-preserved",
+    "language": "python",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if amount <= 0:\n    raise ValueError()\nreturn charge(amount)",
+    "code": "if amount <= 0:\n    raise ValueError()\nreturn charge(amount)",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "python-requested",
+    "language": "python",
+    "task": "Allow zero and negative amounts for refund processing; remove the positive-only constraint.",
+    "old_code": "if amount <= 0:\n    raise ValueError()\nreturn charge(amount)",
+    "code": "return charge(amount)",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "typescript-removed",
+    "language": "typescript",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if (amount <= 0) throw new Error(\"invalid\");\nreturn charge(amount);",
+    "code": "return charge(amount);",
+    "expected": "positive",
+    "rationale": "The existing validation guard is removed while the operation remains."
+  },
+  {
+    "id": "typescript-success",
+    "language": "typescript",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if (amount <= 0) throw new Error(\"invalid\");\nreturn charge(amount);",
+    "code": "result = charge(amount);",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous validation protection."
+  },
+  {
+    "id": "typescript-preserved",
+    "language": "typescript",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if (amount <= 0) throw new Error(\"invalid\");\nreturn charge(amount);",
+    "code": "if (amount <= 0) throw new Error(\"invalid\");\nreturn charge(amount);",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "typescript-requested",
+    "language": "typescript",
+    "task": "Allow zero and negative amounts for refund processing; remove the positive-only constraint.",
+    "old_code": "if (amount <= 0) throw new Error(\"invalid\");\nreturn charge(amount);",
+    "code": "return charge(amount);",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "java-removed",
+    "language": "java",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if (amount <= 0) throw new IllegalArgumentException();\nreturn charge(amount);",
+    "code": "return charge(amount);",
+    "expected": "positive",
+    "rationale": "The existing validation guard is removed while the operation remains."
+  },
+  {
+    "id": "java-success",
+    "language": "java",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if (amount <= 0) throw new IllegalArgumentException();\nreturn charge(amount);",
+    "code": "result = charge(amount);",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous validation protection."
+  },
+  {
+    "id": "java-preserved",
+    "language": "java",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if (amount <= 0) throw new IllegalArgumentException();\nreturn charge(amount);",
+    "code": "if (amount <= 0) throw new IllegalArgumentException();\nreturn charge(amount);",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "java-requested",
+    "language": "java",
+    "task": "Allow zero and negative amounts for refund processing; remove the positive-only constraint.",
+    "old_code": "if (amount <= 0) throw new IllegalArgumentException();\nreturn charge(amount);",
+    "code": "return charge(amount);",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  },
+  {
+    "id": "csharp-removed",
+    "language": "csharp",
+    "task": "Refactor naming without changing behavior.",
+    "old_code": "if (amount <= 0) throw new ArgumentException();\nreturn Charge(amount);",
+    "code": "return Charge(amount);",
+    "expected": "positive",
+    "rationale": "The existing validation guard is removed while the operation remains."
+  },
+  {
+    "id": "csharp-success",
+    "language": "csharp",
+    "task": "Simplify the handler without changing its contract.",
+    "old_code": "if (amount <= 0) throw new ArgumentException();\nreturn Charge(amount);",
+    "code": "result = Charge(amount);",
+    "expected": "positive",
+    "rationale": "The main operation still runs without its previous validation protection."
+  },
+  {
+    "id": "csharp-preserved",
+    "language": "csharp",
+    "task": "Improve the surrounding logging; preserve all guards.",
+    "old_code": "if (amount <= 0) throw new ArgumentException();\nreturn Charge(amount);",
+    "code": "if (amount <= 0) throw new ArgumentException();\nreturn Charge(amount);",
+    "expected": "negative",
+    "rationale": "The equivalent existing guard still protects the operation."
+  },
+  {
+    "id": "csharp-requested",
+    "language": "csharp",
+    "task": "Allow zero and negative amounts for refund processing; remove the positive-only constraint.",
+    "old_code": "if (amount <= 0) throw new ArgumentException();\nreturn Charge(amount);",
+    "code": "return Charge(amount);",
+    "expected": "negative",
+    "rationale": "The explicit task changes the contract; this is an intended change, not a silent regression."
+  }
+]

@@ -1,0 +1,214 @@
+[
+  {
+    "id": "auth-helper-does-not-enforce",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "task": "Use the shared permission helper while preserving editor-only reads.",
+    "before_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if !actor.IsEditor { return Record{}, ErrDenied }\n return store.Read()\n}\n",
+      "policy.go": "package service\nfunc ensurePermission(actor User) error { return nil }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if err := ensurePermission(actor); err != nil { return Record{}, err }\n return store.Read()\n}\n",
+      "policy.go": "package service\nfunc ensurePermission(actor User) error { return nil }\n"
+    },
+    "rationale": "The unchanged helper returns success for every input; replacing the inline guard loses enforcement.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-helper-enforces",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "task": "Use the shared permission helper while preserving editor-only reads.",
+    "before_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if !actor.IsEditor { return Record{}, ErrDenied }\n return store.Read()\n}\n",
+      "policy.go": "package service\nfunc ensurePermission(actor User) error { if !actor.IsEditor { return ErrDenied }; return nil }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if err := ensurePermission(actor); err != nil { return Record{}, err }\n return store.Read()\n}\n",
+      "policy.go": "package service\nfunc ensurePermission(actor User) error { if !actor.IsEditor { return ErrDenied }; return nil }\n"
+    },
+    "rationale": "The unchanged helper enforces the same guard before the retained operation.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-helper-does-not-enforce",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "task": "Use the shared amount helper while preserving the positive-quantity contract.",
+    "before_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if n <= 0 { return ErrInvalid }\n return store.Save(n)\n}\n",
+      "policy.go": "package service\nfunc validateAmount(n int) error { return nil }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if err := validateAmount(n); err != nil { return err }\n return store.Save(n)\n}\n",
+      "policy.go": "package service\nfunc validateAmount(n int) error { return nil }\n"
+    },
+    "rationale": "The unchanged helper returns success for every input; replacing the inline guard loses enforcement.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-helper-enforces",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "task": "Use the shared amount helper while preserving the positive-quantity contract.",
+    "before_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if n <= 0 { return ErrInvalid }\n return store.Save(n)\n}\n",
+      "policy.go": "package service\nfunc validateAmount(n int) error { if n <= 0 { return ErrInvalid }; return nil }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if err := validateAmount(n); err != nil { return err }\n return store.Save(n)\n}\n",
+      "policy.go": "package service\nfunc validateAmount(n int) error { if n <= 0 { return ErrInvalid }; return nil }\n"
+    },
+    "rationale": "The unchanged helper enforces the same guard before the retained operation.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-helper-does-not-enforce-long",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "task": "Use the shared permission helper while preserving editor-only reads.",
+    "before_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if !actor.IsEditor { return Record{}, ErrDenied }\n traceStep(0)\n traceStep(1)\n traceStep(2)\n traceStep(3)\n traceStep(4)\n traceStep(5)\n traceStep(6)\n traceStep(7)\n traceStep(8)\n traceStep(9)\n traceStep(10)\n traceStep(11)\n traceStep(12)\n traceStep(13)\n traceStep(14)\n traceStep(15)\n traceStep(16)\n traceStep(17)\n traceStep(18)\n traceStep(19)\n traceStep(20)\n traceStep(21)\n traceStep(22)\n traceStep(23)\n traceStep(24)\n return store.Read()\n}\n",
+      "policy.go": "package service\nfunc ensurePermission(actor User) error { return nil }\n",
+      "noise.go": "package service\nfunc unusedPolicy() error { return ErrDenied }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if err := ensurePermission(actor); err != nil { return Record{}, err }\n traceStep(0)\n traceStep(1)\n traceStep(2)\n traceStep(3)\n traceStep(4)\n traceStep(5)\n traceStep(6)\n traceStep(7)\n traceStep(8)\n traceStep(9)\n traceStep(10)\n traceStep(11)\n traceStep(12)\n traceStep(13)\n traceStep(14)\n traceStep(15)\n traceStep(16)\n traceStep(17)\n traceStep(18)\n traceStep(19)\n traceStep(20)\n traceStep(21)\n traceStep(22)\n traceStep(23)\n traceStep(24)\n return store.Read()\n}\n",
+      "policy.go": "package service\nfunc ensurePermission(actor User) error { return nil }\n",
+      "noise.go": "package service\nfunc unusedPolicy() error { return ErrDenied }\n"
+    },
+    "rationale": "The unchanged helper returns success for every input; replacing the inline guard loses enforcement. The guarded operation lies beyond the local diff window in a long function.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-helper-does-not-enforce-changed-helper",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "task": "Use the shared permission helper while preserving editor-only reads.",
+    "before_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if !actor.IsEditor { return Record{}, ErrDenied }\n return store.Read()\n}\n",
+      "policy.go": "package service\nfunc ensurePermission(actor User) error { if !actor.IsEditor { return ErrDenied }; return nil }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if err := ensurePermission(actor); err != nil { return Record{}, err }\n return store.Read()\n}\n",
+      "policy.go": "package service\n// Shared policy implementation.\nfunc ensurePermission(actor User) error { return nil }\n"
+    },
+    "rationale": "The unchanged helper returns success for every input; replacing the inline guard loses enforcement. The helper also changes in this patch; before and after helper bodies must not be mixed.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-helper-enforces-long",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "task": "Use the shared permission helper while preserving editor-only reads.",
+    "before_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if !actor.IsEditor { return Record{}, ErrDenied }\n traceStep(0)\n traceStep(1)\n traceStep(2)\n traceStep(3)\n traceStep(4)\n traceStep(5)\n traceStep(6)\n traceStep(7)\n traceStep(8)\n traceStep(9)\n traceStep(10)\n traceStep(11)\n traceStep(12)\n traceStep(13)\n traceStep(14)\n traceStep(15)\n traceStep(16)\n traceStep(17)\n traceStep(18)\n traceStep(19)\n traceStep(20)\n traceStep(21)\n traceStep(22)\n traceStep(23)\n traceStep(24)\n return store.Read()\n}\n",
+      "policy.go": "package service\nfunc ensurePermission(actor User) error { if !actor.IsEditor { return ErrDenied }; return nil }\n",
+      "noise.go": "package service\nfunc unusedPolicy() error { return ErrDenied }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if err := ensurePermission(actor); err != nil { return Record{}, err }\n traceStep(0)\n traceStep(1)\n traceStep(2)\n traceStep(3)\n traceStep(4)\n traceStep(5)\n traceStep(6)\n traceStep(7)\n traceStep(8)\n traceStep(9)\n traceStep(10)\n traceStep(11)\n traceStep(12)\n traceStep(13)\n traceStep(14)\n traceStep(15)\n traceStep(16)\n traceStep(17)\n traceStep(18)\n traceStep(19)\n traceStep(20)\n traceStep(21)\n traceStep(22)\n traceStep(23)\n traceStep(24)\n return store.Read()\n}\n",
+      "policy.go": "package service\nfunc ensurePermission(actor User) error { if !actor.IsEditor { return ErrDenied }; return nil }\n",
+      "noise.go": "package service\nfunc unusedPolicy() error { return ErrDenied }\n"
+    },
+    "rationale": "The unchanged helper enforces the same guard before the retained operation. The guarded operation lies beyond the local diff window in a long function.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-helper-enforces-changed-helper",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "task": "Use the shared permission helper while preserving editor-only reads.",
+    "before_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if !actor.IsEditor { return Record{}, ErrDenied }\n return store.Read()\n}\n",
+      "policy.go": "package service\n// Existing policy implementation.\nfunc ensurePermission(actor User) error { if !actor.IsEditor { return ErrDenied }; return nil }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Read(actor User) (Record, error) {\n if err := ensurePermission(actor); err != nil { return Record{}, err }\n return store.Read()\n}\n",
+      "policy.go": "package service\n// Shared policy implementation.\nfunc ensurePermission(actor User) error { if !actor.IsEditor { return ErrDenied }; return nil }\n"
+    },
+    "rationale": "The unchanged helper enforces the same guard before the retained operation. The helper also changes in this patch; before and after helper bodies must not be mixed.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-helper-does-not-enforce-long",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "task": "Use the shared amount helper while preserving the positive-quantity contract.",
+    "before_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if n <= 0 { return ErrInvalid }\n traceStep(0)\n traceStep(1)\n traceStep(2)\n traceStep(3)\n traceStep(4)\n traceStep(5)\n traceStep(6)\n traceStep(7)\n traceStep(8)\n traceStep(9)\n traceStep(10)\n traceStep(11)\n traceStep(12)\n traceStep(13)\n traceStep(14)\n traceStep(15)\n traceStep(16)\n traceStep(17)\n traceStep(18)\n traceStep(19)\n traceStep(20)\n traceStep(21)\n traceStep(22)\n traceStep(23)\n traceStep(24)\n return store.Save(n)\n}\n",
+      "policy.go": "package service\nfunc validateAmount(n int) error { return nil }\n",
+      "noise.go": "package service\nfunc unusedPolicy() error { return ErrDenied }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if err := validateAmount(n); err != nil { return err }\n traceStep(0)\n traceStep(1)\n traceStep(2)\n traceStep(3)\n traceStep(4)\n traceStep(5)\n traceStep(6)\n traceStep(7)\n traceStep(8)\n traceStep(9)\n traceStep(10)\n traceStep(11)\n traceStep(12)\n traceStep(13)\n traceStep(14)\n traceStep(15)\n traceStep(16)\n traceStep(17)\n traceStep(18)\n traceStep(19)\n traceStep(20)\n traceStep(21)\n traceStep(22)\n traceStep(23)\n traceStep(24)\n return store.Save(n)\n}\n",
+      "policy.go": "package service\nfunc validateAmount(n int) error { return nil }\n",
+      "noise.go": "package service\nfunc unusedPolicy() error { return ErrDenied }\n"
+    },
+    "rationale": "The unchanged helper returns success for every input; replacing the inline guard loses enforcement. The guarded operation lies beyond the local diff window in a long function.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-helper-does-not-enforce-changed-helper",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "task": "Use the shared amount helper while preserving the positive-quantity contract.",
+    "before_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if n <= 0 { return ErrInvalid }\n return store.Save(n)\n}\n",
+      "policy.go": "package service\nfunc validateAmount(n int) error { if n <= 0 { return ErrInvalid }; return nil }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if err := validateAmount(n); err != nil { return err }\n return store.Save(n)\n}\n",
+      "policy.go": "package service\n// Shared policy implementation.\nfunc validateAmount(n int) error { return nil }\n"
+    },
+    "rationale": "The unchanged helper returns success for every input; replacing the inline guard loses enforcement. The helper also changes in this patch; before and after helper bodies must not be mixed.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-helper-enforces-long",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "task": "Use the shared amount helper while preserving the positive-quantity contract.",
+    "before_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if n <= 0 { return ErrInvalid }\n traceStep(0)\n traceStep(1)\n traceStep(2)\n traceStep(3)\n traceStep(4)\n traceStep(5)\n traceStep(6)\n traceStep(7)\n traceStep(8)\n traceStep(9)\n traceStep(10)\n traceStep(11)\n traceStep(12)\n traceStep(13)\n traceStep(14)\n traceStep(15)\n traceStep(16)\n traceStep(17)\n traceStep(18)\n traceStep(19)\n traceStep(20)\n traceStep(21)\n traceStep(22)\n traceStep(23)\n traceStep(24)\n return store.Save(n)\n}\n",
+      "policy.go": "package service\nfunc validateAmount(n int) error { if n <= 0 { return ErrInvalid }; return nil }\n",
+      "noise.go": "package service\nfunc unusedPolicy() error { return ErrDenied }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if err := validateAmount(n); err != nil { return err }\n traceStep(0)\n traceStep(1)\n traceStep(2)\n traceStep(3)\n traceStep(4)\n traceStep(5)\n traceStep(6)\n traceStep(7)\n traceStep(8)\n traceStep(9)\n traceStep(10)\n traceStep(11)\n traceStep(12)\n traceStep(13)\n traceStep(14)\n traceStep(15)\n traceStep(16)\n traceStep(17)\n traceStep(18)\n traceStep(19)\n traceStep(20)\n traceStep(21)\n traceStep(22)\n traceStep(23)\n traceStep(24)\n return store.Save(n)\n}\n",
+      "policy.go": "package service\nfunc validateAmount(n int) error { if n <= 0 { return ErrInvalid }; return nil }\n",
+      "noise.go": "package service\nfunc unusedPolicy() error { return ErrDenied }\n"
+    },
+    "rationale": "The unchanged helper enforces the same guard before the retained operation. The guarded operation lies beyond the local diff window in a long function.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-helper-enforces-changed-helper",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "task": "Use the shared amount helper while preserving the positive-quantity contract.",
+    "before_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if n <= 0 { return ErrInvalid }\n return store.Save(n)\n}\n",
+      "policy.go": "package service\n// Existing policy implementation.\nfunc validateAmount(n int) error { if n <= 0 { return ErrInvalid }; return nil }\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Save(n int) error {\n if err := validateAmount(n); err != nil { return err }\n return store.Save(n)\n}\n",
+      "policy.go": "package service\n// Shared policy implementation.\nfunc validateAmount(n int) error { if n <= 0 { return ErrInvalid }; return nil }\n"
+    },
+    "rationale": "The unchanged helper enforces the same guard before the retained operation. The helper also changes in this patch; before and after helper bodies must not be mixed.",
+    "provenance": "Synthetic development fixture; context-dev cases and controlled long-function/multi-file derivatives. Not independent samples, not held out, not independently reviewed. Frozen before targeted-context-v3 measurements.",
+    "split": "dev"
+  }
+]

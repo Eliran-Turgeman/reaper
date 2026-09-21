@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Eliran-Turgeman/repear/internal/config"
+	"github.com/Eliran-Turgeman/reaper/internal/config"
 )
 
 func TestApplyProviderOverridesUsesProviderModelDefault(t *testing.T) {

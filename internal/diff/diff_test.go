@@ -1,10 +1,49 @@
 package diff
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
+
+func TestHunkPreservesLeadingIncrementAndDecrement(t *testing.T) {
+	for _, tc := range []struct{ name, body, before, after string }{
+		{"insertion", "+++quota\n", "", "++quota"},
+		{"deletion", "---quota\n", "--quota", ""},
+		{"replacement", "---quota\n+++quota\n", "--quota", "++quota"},
+		{"header-like-content", "--- oldLabel\n+++ newLabel\n", "-- oldLabel", "++ newLabel"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			patch := "diff --git a/counter.js b/counter.js\n--- a/counter.js\n+++ b/counter.js\n@@ -1 +1 @@\n" + tc.body
+			units, err := Units(t.TempDir(), patch, 6)
+			if err != nil || len(units) != 1 {
+				t.Fatalf("extract: %+v, %v", units, err)
+			}
+			u := units[0]
+			if u.OldContent != tc.before || u.NewContent != tc.after || u.Diff != strings.TrimSuffix(tc.body, "\n") || !u.ExistingModified {
+				t.Fatalf("hunk code or eligibility lost: %+v", u)
+			}
+		})
+	}
+}
+
+func TestSnapshotSourceFailuresAndDeletion(t *testing.T) {
+	failure := errors.New("snapshot unavailable")
+	patch := "diff --git a/service.go b/service.go\n--- a/service.go\n+++ b/service.go\n@@ -1 +1 @@\n-old\n+new\n"
+	if _, err := UnitsWithSource(patch, 6, func(string) ([]byte, error) { return nil, failure }); !errors.Is(err, failure) {
+		t.Fatalf("source failure must stop extraction: %v", err)
+	}
+	deleted := "diff --git a/service.go b/service.go\n--- a/service.go\n+++ /dev/null\n@@ -1 +0,0 @@\n-old\n"
+	units, err := UnitsWithSource(deleted, 6, func(string) ([]byte, error) {
+		t.Fatal("deleted source must not be read")
+		return nil, failure
+	})
+	if err != nil || len(units) != 1 || units[0].SurroundingCode != "" || units[0].OldContent != "old" {
+		t.Fatalf("deleted file extraction: %+v, %v", units, err)
+	}
+}
 
 func TestUnitsExtractsBeforeAfterAndContext(t *testing.T) {
 	root := t.TempDir()

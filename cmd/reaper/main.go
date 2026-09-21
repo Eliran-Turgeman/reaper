@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Eliran-Turgeman/repear/cmd"
+	"github.com/Eliran-Turgeman/reaper/cmd"
 )
 
 func main() {

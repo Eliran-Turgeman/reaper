@@ -2,7 +2,7 @@
 
 set -eu
 
-repo="Eliran-Turgeman/repear"
+repo="Eliran-Turgeman/reaper"
 install_dir="${REAPER_INSTALL_DIR:-}"
 requested_version="${REAPER_VERSION:-latest}"
 

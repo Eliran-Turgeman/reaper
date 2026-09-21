@@ -1,0 +1,54 @@
+name: Reaper
+description: Check a pull request for semantic regressions and annotate findings
+inputs:
+  task:
+    description: Task that motivated the change
+    default: ''
+  provider:
+    description: typesafe or openrouter
+    default: typesafe
+  model:
+    description: Model override
+    default: ''
+  paths:
+    description: Newline-separated paths to check
+    default: ''
+  config:
+    description: Configuration file path
+    default: ''
+  fail-on-warning:
+    description: Fail on semantic warnings
+    default: 'false'
+  api-key:
+    description: API credential for the selected provider; pass a repository secret
+    required: true
+  base:
+    description: Base commit or reference; defaults to the pull request base SHA
+    default: ''
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@v5
+      with:
+        go-version-file: ${{ github.action_path }}/../../../go.mod
+        cache: false
+    - name: Build matching Reaper binary
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+      run: |
+        cd "$ACTION_PATH/../../.."
+        go build -o "$RUNNER_TEMP/reaper-action-bin/" ./cmd/reaper
+    - name: Check changes and annotate
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        REAPER_ACTION_TASK: ${{ inputs.task }}
+        REAPER_ACTION_PROVIDER: ${{ inputs.provider }}
+        REAPER_ACTION_MODEL: ${{ inputs.model }}
+        REAPER_ACTION_PATHS: ${{ inputs.paths }}
+        REAPER_ACTION_CONFIG: ${{ inputs.config }}
+        REAPER_ACTION_FAIL_ON_WARNING: ${{ inputs.fail-on-warning }}
+        REAPER_ACTION_API_KEY: ${{ inputs.api-key }}
+        REAPER_ACTION_BASE: ${{ inputs.base }}
+      run: node "$ACTION_PATH/run.cjs"

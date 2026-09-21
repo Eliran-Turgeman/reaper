@@ -1,16 +1,18 @@
 package semantic
 
 import (
+	"encoding/json"
 	"path/filepath"
 	"strings"
 )
 
-const SchemaVersion = 1
+const SchemaVersion = 2
 
 var sourceLanguagesByExtension = map[string]string{
 	".c":     "c",
 	".cc":    "cpp",
 	".cpp":   "cpp",
+	".cjs":   "javascript",
 	".cs":    "csharp",
 	".cts":   "typescript",
 	".cxx":   "cpp",
@@ -45,6 +47,7 @@ var sourceLanguagesByExtension = map[string]string{
 }
 
 type Unit struct {
+	RelatedEvidence  json.RawMessage
 	FilePath         string
 	Language         string
 	OldContent       string
@@ -77,7 +80,7 @@ func IsMinifiedSource(path string) bool {
 }
 
 func IsTestFile(path string) bool {
-	p := strings.ToLower(filepath.ToSlash(path))
+	p := "/" + strings.TrimLeft(strings.ToLower(filepath.ToSlash(path)), "/")
 	base := strings.ToLower(filepath.Base(path))
 	return strings.Contains(p, "/test/") ||
 		strings.Contains(p, "/tests/") ||

@@ -1,0 +1,182 @@
+[
+  {
+    "id": "cancel-main-query",
+    "rule": "swallowed-cancellation",
+    "expected": "positive",
+    "task": "Make the request handler more reliable.",
+    "before_files": {
+      "service/query.go": "func Load(ctx context.Context) (Rows, error) {\n return db.Query(ctx)\n}\n"
+    },
+    "after_files": {
+      "service/query.go": "func Load(ctx context.Context) (Rows, error) {\n return db.Query(context.Background())\n}\n"
+    },
+    "rationale": "The same main database operation loses request cancellation; reliability is not permission to detach its lifetime.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "cancel-independent-audit",
+    "rule": "swallowed-cancellation",
+    "expected": "negative",
+    "task": "Audit writes are independently owned: complete this write even if the request is canceled. The caller may wait for completion.",
+    "before_files": {
+      "service/audit.go": "func Audit(ctx context.Context, event Event) error {\n return audit.Write(ctx, event)\n}\n"
+    },
+    "after_files": {
+      "service/audit.go": "func Audit(ctx context.Context, event Event) error {\n return audit.Write(context.Background(), event)\n}\n"
+    },
+    "rationale": "The task explicitly assigns an independent lifetime to this audit operation; awaiting it does not revoke that requirement.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "cancel-success-result",
+    "rule": "swallowed-cancellation",
+    "expected": "positive",
+    "task": "Improve cancellation handling while preserving request cancellation.",
+    "before_files": {
+      "service/load.py": "import asyncio\nasync def load():\n    return await fetch()\n"
+    },
+    "after_files": {
+      "service/load.py": "import asyncio\nasync def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        return []\n"
+    },
+    "rationale": "Cancellation becomes an ordinary successful empty result.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "cancel-cleanup-rethrow",
+    "rule": "swallowed-cancellation",
+    "expected": "negative",
+    "task": "Close the local handle on cancellation and propagate the original cancellation.",
+    "before_files": {
+      "service/load.py": "import asyncio\nasync def load():\n    return await fetch()\n"
+    },
+    "after_files": {
+      "service/load.py": "import asyncio\nasync def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        handle.close()\n        raise\n"
+    },
+    "rationale": "Bounded local cleanup preserves cancellation by rethrowing.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "fallback-required-zone",
+    "rule": "silent-failure-fallback",
+    "expected": "positive",
+    "task": "Parse the required internal billing timezone. Invalid stored configuration must be reported; silently changing it can change billing dates.",
+    "before_files": {
+      "service/zone.java": "ZoneId parseZone(String raw) {\n    return ZoneId.of(raw);\n}\n"
+    },
+    "after_files": {
+      "service/zone.java": "ZoneId parseZone(String raw) {\n    try {\n        return ZoneId.of(raw);\n    } catch (DateTimeException invalid) {\n        return ZoneOffset.UTC;\n    }\n}\n"
+    },
+    "rationale": "A required internal configuration error becomes an unreported UTC value.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "fallback-optional-zone",
+    "rule": "silent-failure-fallback",
+    "expected": "negative",
+    "task": "Parse an optional client display preference. The specified display policy is to use UTC if the preference is invalid.",
+    "before_files": {
+      "service/zone.java": "ZoneId parseZone(String raw) {\n    return ZoneId.of(raw);\n}\n"
+    },
+    "after_files": {
+      "service/zone.java": "ZoneId parseZone(String raw) {\n    try {\n        return ZoneId.of(raw);\n    } catch (DateTimeException invalid) {\n        return ZoneOffset.UTC;\n    }\n}\n"
+    },
+    "rationale": "The task supplies the previously missing explicit UTC default policy.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "fallback-required-draft",
+    "rule": "silent-failure-fallback",
+    "expected": "positive",
+    "task": "Read the authoritative persisted draft. Preserve and report corrupt data instead of replacing the user's saved work.",
+    "before_files": {
+      "service/draft.ts": "function readDraft(raw: string): Draft {\n  return schema.parse(JSON.parse(raw));\n}\n"
+    },
+    "after_files": {
+      "service/draft.ts": "function readDraft(raw: string): Draft {\n  try {\n    return schema.parse(JSON.parse(raw));\n  } catch {\n    return createEmptyDraft();\n  }\n}\n"
+    },
+    "rationale": "Corrupt authoritative data is replaced with successful empty content.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "fallback-disposable-draft",
+    "rule": "silent-failure-fallback",
+    "expected": "negative",
+    "task": "Read a disposable local preview draft. If decoding or schema validation fails, the specified recovery policy is to return a new empty draft; authoritative saved work is stored separately.",
+    "before_files": {
+      "service/draft.ts": "function readDraft(raw: string): Draft {\n  return schema.parse(JSON.parse(raw));\n}\n"
+    },
+    "after_files": {
+      "service/draft.ts": "function readDraft(raw: string): Draft {\n  try {\n    return schema.parse(JSON.parse(raw));\n  } catch {\n    return createEmptyDraft();\n  }\n}\n"
+    },
+    "rationale": "The task establishes a disposable preview and its exact recovery behavior.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "assert-order-required",
+    "rule": "weakened-test-assertion",
+    "expected": "positive",
+    "task": "Simplify the test for ranked search keys without changing its order guarantee.",
+    "before_files": {
+      "service/keys_test.go": "func TestKeys(t *testing.T) {\n require.Equal(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}\n"
+    },
+    "after_files": {
+      "service/keys_test.go": "func TestKeys(t *testing.T) {\n require.ElementsMatch(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}\n"
+    },
+    "rationale": "The order-sensitive contract loses its order assertion.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "assert-order-unspecified",
+    "rule": "weakened-test-assertion",
+    "expected": "negative",
+    "task": "Map key order is intentionally unspecified. Remove the accidental order requirement while retaining every expected key and count.",
+    "before_files": {
+      "service/keys_test.go": "func TestKeys(t *testing.T) {\n require.Equal(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}\n"
+    },
+    "after_files": {
+      "service/keys_test.go": "func TestKeys(t *testing.T) {\n require.ElementsMatch(t, []string{\"blue\", \"green\", \"red\"}, keys())\n}\n"
+    },
+    "rationale": "The specific task authorizes only the order relaxation; ElementsMatch preserves the multiset.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "assert-message-required",
+    "rule": "weakened-test-assertion",
+    "expected": "positive",
+    "task": "Refactor this test while retaining the externally documented error message and exception type.",
+    "before_files": {
+      "tests/test_parse.py": "def test_parse():\n    with pytest.raises(ValueError, match=\"legacy parser failed\"):\n        parse(value)\n"
+    },
+    "after_files": {
+      "tests/test_parse.py": "def test_parse():\n    with pytest.raises(ValueError):\n        parse(value)\n"
+    },
+    "rationale": "The required message protection disappears while the behavior under test remains.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  },
+  {
+    "id": "assert-message-retired",
+    "rule": "weakened-test-assertion",
+    "expected": "negative",
+    "task": "The legacy parser message is no longer part of the contract. Remove its assertion while retaining the required ValueError exception type.",
+    "before_files": {
+      "tests/test_parse.py": "def test_parse():\n    with pytest.raises(ValueError, match=\"legacy parser failed\"):\n        parse(value)\n"
+    },
+    "after_files": {
+      "tests/test_parse.py": "def test_parse():\n    with pytest.raises(ValueError):\n        parse(value)\n"
+    },
+    "rationale": "The specific task permits exactly the removed message requirement.",
+    "provenance": "Synthetic contract development fixture authored under the user-approved task policy on 2026-09-20; not independently labeled or held out.",
+    "split": "dev"
+  }
+]

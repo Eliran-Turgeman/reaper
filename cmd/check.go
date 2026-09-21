@@ -8,27 +8,35 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Eliran-Turgeman/repear/internal/cache"
-	"github.com/Eliran-Turgeman/repear/internal/config"
-	"github.com/Eliran-Turgeman/repear/internal/diagnostics"
-	diffpkg "github.com/Eliran-Turgeman/repear/internal/diff"
-	gitpkg "github.com/Eliran-Turgeman/repear/internal/git"
-	"github.com/Eliran-Turgeman/repear/internal/jev"
-	"github.com/Eliran-Turgeman/repear/internal/runner"
+	"github.com/Eliran-Turgeman/reaper/internal/baseline"
+	"github.com/Eliran-Turgeman/reaper/internal/cache"
+	"github.com/Eliran-Turgeman/reaper/internal/config"
+	"github.com/Eliran-Turgeman/reaper/internal/diagnostics"
+	diffpkg "github.com/Eliran-Turgeman/reaper/internal/diff"
+	gitpkg "github.com/Eliran-Turgeman/reaper/internal/git"
+	"github.com/Eliran-Turgeman/reaper/internal/provider"
+	"github.com/Eliran-Turgeman/reaper/internal/runner"
+	"github.com/Eliran-Turgeman/reaper/internal/semantic"
 	"github.com/spf13/cobra"
 )
 
 type checkOptions struct {
-	all      bool
-	staged   bool
-	ref      string
-	task     string
-	format   string
-	verbose  bool
-	debug    bool
-	noCache  bool
-	provider string
-	model    string
+	experimentalContext string
+	baseline            string
+	taskFile            string
+	taskFromPR          bool
+	config              string
+	failOnWarning       bool
+	all                 bool
+	staged              bool
+	ref                 string
+	task                string
+	format              string
+	verbose             bool
+	debug               bool
+	noCache             bool
+	provider            string
+	model               string
 }
 
 func newCheck(app App) *cobra.Command {
@@ -38,24 +46,36 @@ func newCheck(app App) *cobra.Command {
 		Short: "Check changed code for semantic violations",
 		Args:  cobra.ArbitraryArgs,
 		RunE: func(command *cobra.Command, paths []string) error {
+			if options.experimentalContext != "" && options.experimentalContext != "targeted-go" {
+				return fmt.Errorf("--experimental-context must be targeted-go")
+			}
+			if options.all && options.experimentalContext != "" {
+				return fmt.Errorf("experimental targeted context requires a diff, not --all")
+			}
 			if options.all && (options.staged || options.ref != "") {
 				return errors.New("--all cannot be used with --staged or --diff")
 			}
 			if options.staged && options.ref != "" {
 				return errors.New("--staged and --diff cannot be used together")
 			}
-			if options.format != "text" && options.format != "json" {
-				return fmt.Errorf("--format must be text or json")
+			if options.format != "text" && options.format != "json" && options.format != "sarif" && options.format != "agent" {
+				return fmt.Errorf("--format must be text, json, sarif, or agent")
 			}
 			return runCheck(command.Context(), command, app, options, paths)
 		},
 	}
 	flags := command.Flags()
+	flags.StringVar(&options.experimentalContext, "experimental-context", "", "opt-in targeted-go before/after helper evidence for authorization and validation")
+	flags.StringVar(&options.baseline, "baseline", "", "baseline of accepted existing findings")
+	flags.StringVar(&options.taskFile, "task-file", "", "read task context from a UTF-8 file")
+	flags.BoolVar(&options.taskFromPR, "task-from-pr", false, "derive task from GITHUB_EVENT_PATH pull request title and body")
+	flags.StringVar(&options.config, "config", "", "explicit configuration file")
+	flags.BoolVar(&options.failOnWarning, "fail-on-warning", false, "exit 1 when warnings are found")
 	flags.BoolVar(&options.all, "all", false, "evaluate all tracked files instead of only changes")
 	flags.BoolVar(&options.staged, "staged", false, "inspect the staged diff")
 	flags.StringVar(&options.ref, "diff", "", "compare current code against a Git reference")
 	flags.StringVar(&options.task, "task", "", "task that motivated the code change")
-	flags.StringVar(&options.format, "format", "text", "output format: text or json")
+	flags.StringVar(&options.format, "format", "text", "output format: text, json, sarif, or agent")
 	flags.BoolVarP(&options.verbose, "verbose", "v", false, "show evaluation details")
 	flags.BoolVar(&options.debug, "debug", false, "show raw confidence for every evaluation")
 	flags.BoolVar(&options.noCache, "no-cache", false, "disable result caching")
@@ -71,26 +91,71 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		return fmt.Errorf("get working directory: %w", err)
 	}
 	cfg, configPath, err := config.Load(cwd)
+	if options.config != "" {
+		cfg, configPath, err = config.LoadFile(options.config)
+	}
 	if err != nil {
 		return err
 	}
 	if err := applyProviderOverrides(&cfg, options.provider, options.model); err != nil {
 		return err
 	}
-	task := options.task
-	if task == "" {
-		task = app.Getenv("REAPER_TASK")
+	task, taskSource, err := resolveTask(options, command.Flags().Changed("task"), app.Getenv)
+	if err != nil {
+		return err
 	}
 	collector := gitpkg.CommandCollector{Dir: cwd}
+	var indexSnapshot *gitpkg.SourceSnapshot
+	if options.staged {
+		indexSnapshot, err = collector.SnapshotIndex(ctx)
+		if err != nil {
+			return err
+		}
+	}
 	rawDiff, root, err := collector.Diff(ctx, gitpkg.Options{
 		All: options.all, Staged: options.staged, Ref: options.ref, Paths: paths,
 	})
 	if err != nil {
 		return err
 	}
-	units, err := diffpkg.Units(root, rawDiff, 6)
+	var units []semantic.Unit
+	if options.staged {
+		afterDiff, captureErr := collector.SnapshotIndex(ctx)
+		if captureErr != nil {
+			return captureErr
+		}
+		if afterDiff.Fingerprint != indexSnapshot.Fingerprint {
+			return fmt.Errorf("index changed while collecting the staged diff; retry the check")
+		}
+		units, err = diffpkg.UnitsWithSource(rawDiff, 6, func(path string) ([]byte, error) {
+			return indexSnapshot.Read(ctx, path, 0)
+		})
+	} else {
+		units, err = diffpkg.Units(root, rawDiff, 6)
+	}
 	if err != nil {
 		return fmt.Errorf("extract semantic units: %w", err)
+	}
+	var beforeSnapshot *gitpkg.SourceSnapshot
+	if options.experimentalContext != "" {
+		needsSource := false
+		for _, u := range units {
+			if u.Language == "go" && u.ExistingModified && !u.IsTest {
+				needsSource = true
+			}
+		}
+		if needsSource {
+			if options.staged {
+				beforeSnapshot, err = collector.SnapshotTree(ctx, "HEAD")
+			} else if options.ref != "" {
+				beforeSnapshot, err = collector.SnapshotTree(ctx, options.ref)
+			} else {
+				beforeSnapshot, err = collector.SnapshotIndex(ctx)
+			}
+			if err != nil {
+				return err
+			}
+		}
 	}
 	log := func(format string, args ...any) {}
 	if options.verbose || options.debug {
@@ -103,6 +168,7 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		}
 		log("config=%s provider=%s model=%s mode=%s units=%d",
 			displayConfig(configPath), cfg.Provider, cfg.Model, mode, len(units))
+		log("task_source=%s", taskSource)
 	}
 
 	cacheStore := cache.Store(cache.Disabled{})
@@ -116,14 +182,17 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 		cacheStore = &cache.FileStore{Dir: dir}
 	}
 	engine := &runner.Runner{
-		Config: cfg, Cache: cacheStore, Version: Version, Verbose: log,
+		TargetedContext: options.experimentalContext != "", BeforeSnapshot: beforeSnapshot, ContextPatch: rawDiff,
+		IndexSnapshot: indexSnapshot,
+		Root:          root,
+		Config:        cfg, Cache: cacheStore, Version: Version, Verbose: log,
 		Debug: options.debug, Audit: options.all,
 		Notice: func(format string, args ...any) {
 			fmt.Fprintf(command.ErrOrStderr(), "reaper: "+format+"\n", args...)
 		},
 	}
 	if engine.WorkCount(units, task) > 0 {
-		client, err := jev.NewProviderClient(cfg.Provider, jev.HTTPOptions{
+		client, err := provider.New(cfg.Provider, provider.Options{
 			BaseURL: cfg.BaseURL, APIKey: app.Getenv(config.APIKeyEnv(cfg.Provider)),
 			Timeout: cfg.RequestTimeout, MaxRetries: 2,
 		})
@@ -136,12 +205,29 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 	if err != nil {
 		return err
 	}
+	report, err = baseline.Apply(root, options.baseline, report)
+	if err != nil {
+		return err
+	}
+	if report.Complete && options.failOnWarning && report.Summary.Warnings > 0 {
+		report.Passed = false
+		report.Status = "failed"
+	}
 	if options.verbose || options.debug {
 		log("checks=%d requests=%d cache_hits=%d duration=%s",
 			report.Summary.SemanticChecks, report.Summary.JevRequests,
 			report.Summary.CacheHits, time.Since(started).Round(time.Millisecond))
+		cost := "unknown"
+		if report.Summary.EstimatedCostUSD != nil {
+			cost = fmt.Sprintf("%.6f", *report.Summary.EstimatedCostUSD)
+		}
+		log("input_tokens=%d output_tokens=%d usage_complete=%t cache_hit_rate=%.3f estimated_cost_usd=%s", report.Summary.InputTokens, report.Summary.OutputTokens, report.Summary.UsageComplete, report.Summary.CacheHitRate, cost)
 	}
-	if options.format == "json" {
+	if options.format == "agent" {
+		err = diagnostics.WriteAgent(command.OutOrStdout(), report, task)
+	} else if options.format == "sarif" {
+		err = diagnostics.WriteSARIF(command.OutOrStdout(), report)
+	} else if options.format == "json" {
 		err = diagnostics.WriteJSON(command.OutOrStdout(), report)
 	} else {
 		err = diagnostics.WriteText(command.OutOrStdout(), report)
@@ -149,8 +235,15 @@ func runCheck(ctx context.Context, command *cobra.Command, app App, options chec
 	if err != nil {
 		return fmt.Errorf("write output: %w", err)
 	}
-	if !report.Passed {
-		return &ExitError{Code: 1, Err: errors.New("blocking semantic violations found")}
+	if code := report.ExitCode(); code != 0 {
+		message := "blocking semantic violations found"
+		if code == 2 {
+			message = "analysis incomplete"
+		}
+		return &ExitError{Code: code, Err: errors.New(message)}
+	}
+	if options.failOnWarning && report.Summary.Warnings > 0 {
+		return &ExitError{Code: 1, Err: errors.New("semantic warnings found")}
 	}
 	return nil
 }

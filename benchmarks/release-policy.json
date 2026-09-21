@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "rules": {
+    "removed-authorization-check": {
+      "minimum_recall": 0.8,
+      "maximum_false_positive_rate": 0.01,
+      "minimum_positives": 20,
+      "minimum_negatives": 100
+    },
+    "removed-validation": {
+      "minimum_recall": 0.8,
+      "maximum_false_positive_rate": 0.01,
+      "minimum_positives": 20,
+      "minimum_negatives": 100
+    },
+    "swallowed-cancellation": {
+      "minimum_recall": 0.8,
+      "maximum_false_positive_rate": 0.01,
+      "minimum_positives": 20,
+      "minimum_negatives": 100
+    },
+    "silent-failure-fallback": {
+      "minimum_recall": 0.8,
+      "maximum_false_positive_rate": 0.01,
+      "minimum_positives": 20,
+      "minimum_negatives": 100
+    },
+    "weakened-test-assertion": {
+      "minimum_recall": 0.8,
+      "maximum_false_positive_rate": 0.01,
+      "minimum_positives": 20,
+      "minimum_negatives": 100
+    }
+  },
+  "review": null
+}

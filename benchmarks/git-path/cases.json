@@ -1,0 +1,88 @@
+[
+  {
+    "id": "auth-inserted-bypass",
+    "task": "Optimize reads while preserving authorization.",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "rationale": "The inserted fast path reaches the same protected read before authorization.",
+    "provenance": "Synthetic development fixture authored for the Git-path quality plan; not independently labeled.",
+    "split": "dev",
+    "before_files": {
+      "service.go": "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Read(fast bool) error {\n if fast { return read() }\n if !allowed() { return denied }\n return read()\n}\n"
+    }
+  },
+  {
+    "id": "validation-inserted-bypass",
+    "task": "Add a fast storage path while retaining the nonnegative input contract.",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "rationale": "The fast path persists values previously rejected by the nonnegative guard.",
+    "provenance": "Synthetic development fixture authored for the Git-path quality plan; not independently labeled.",
+    "split": "dev",
+    "before_files": {
+      "service.go": "package service\nfunc Save(value int, fast bool) error {\n if value < 0 { return invalid }\n return store(value)\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Save(value int, fast bool) error {\n if fast { return store(value) }\n if value < 0 { return invalid }\n return store(value)\n}\n"
+    }
+  },
+  {
+    "id": "cancel-inserted-handler",
+    "task": "Add retry bookkeeping while preserving cancellation propagation.",
+    "rule": "swallowed-cancellation",
+    "expected": "positive",
+    "rationale": "Cancellation previously propagated from fetch; the handler now returns normal success.",
+    "provenance": "Synthetic development fixture authored for the Git-path quality plan; not independently labeled.",
+    "split": "dev",
+    "before_files": {
+      "service.py": "async def load():\n    return await fetch()\n"
+    },
+    "after_files": {
+      "service.py": "import asyncio\nasync def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        return []\n"
+    }
+  },
+  {
+    "id": "auth-new-file-exclusion",
+    "task": "Introduce a pure arithmetic helper.",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "rationale": "No prior authorization behavior exists; this before/after regression rule intentionally excludes new files.",
+    "provenance": "Synthetic development fixture authored for the Git-path quality plan; not independently labeled.",
+    "split": "dev",
+    "before_files": {},
+    "after_files": {
+      "new.go": "package service\nfunc Double(n int) int { return n * 2 }\n"
+    }
+  },
+  {
+    "id": "auth-operation-deleted",
+    "task": "Remove the read endpoint completely.",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "rationale": "The guarded operation and guard are deleted together; no protected read remains.",
+    "provenance": "Synthetic development fixture authored for the Git-path quality plan; not independently labeled.",
+    "split": "dev",
+    "before_files": {
+      "service.go": "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}\n"
+    },
+    "after_files": {}
+  },
+  {
+    "id": "auth-equivalent-helper",
+    "task": "Extract authorization into a helper, preserving enforcement before reads.",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "rationale": "The visible helper still rejects the same actor before the read.",
+    "provenance": "Synthetic development fixture authored for the Git-path quality plan; not independently labeled.",
+    "split": "dev",
+    "before_files": {
+      "service.go": "package service\nfunc Read(fast bool) error {\n if !allowed() { return denied }\n return read()\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\nfunc Read(fast bool) error {\n if err := requireAccess(); err != nil { return err }\n return read()\n}\nfunc requireAccess() error {\n if !allowed() { return denied }\n return nil\n}\n"
+    }
+  }
+]

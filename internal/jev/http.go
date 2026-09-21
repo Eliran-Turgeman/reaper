@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Eliran-Turgeman/reaper/internal/decision"
 )
 
 const (
@@ -114,10 +116,14 @@ func newHTTPClient(options HTTPOptions, provider, defaultBaseURL, endpoint, keyE
 }
 
 func (c *HTTPClient) Evaluate(ctx context.Context, request EvaluationRequest) (EvaluationResponse, error) {
-	if request.Model == "" || request.State == "" || len(request.Questions) == 0 {
+	if request.Model == "" || len(request.Questions) == 0 {
 		return EvaluationResponse{}, errors.New("model, state, and at least one question are required")
 	}
-	wire := wireRequest{State: request.State, Model: request.Model, Questions: map[string]wireQuestion{}}
+	state, err := decision.EncodeState(request.State, request.StructuredState)
+	if err != nil {
+		return EvaluationResponse{}, err
+	}
+	wire := wireRequest{State: state, Model: request.Model, Questions: map[string]wireQuestion{}}
 	for _, question := range request.Questions {
 		if question.ID == "" || strings.TrimSpace(question.Instructions) == "" {
 			return EvaluationResponse{}, errors.New("question ID and instructions are required")
@@ -125,7 +131,10 @@ func (c *HTTPClient) Evaluate(ctx context.Context, request EvaluationRequest) (E
 		if _, exists := wire.Questions[question.ID]; exists {
 			return EvaluationResponse{}, fmt.Errorf("duplicate question ID %q", question.ID)
 		}
-		wire.Questions[question.ID] = wireQuestion{Type: "noul", Instructions: question.Instructions}
+		if err := question.Criteria.Validate(); err != nil {
+			return EvaluationResponse{}, fmt.Errorf("question %s: %w", question.ID, err)
+		}
+		wire.Questions[question.ID] = wireQuestion{Type: "noul", Instructions: question.Instructions, Criteria: question.Criteria}
 	}
 	body, err := json.Marshal(wire)
 	if err != nil {
@@ -194,7 +203,10 @@ func (c *HTTPClient) do(ctx context.Context, body []byte, questions []Question) 
 	if err := json.Unmarshal(data, &wireResp); err != nil {
 		return EvaluationResponse{}, 0, fmt.Errorf("decode Jev response: %w", err)
 	}
-	result := EvaluationResponse{Probabilities: make(map[string]float64, len(questions))}
+	result := EvaluationResponse{Probabilities: make(map[string]float64, len(questions)), Model: wireResp.Model, Provider: wireResp.Provider, RequestID: wireResp.ID, Usage: wireResp.Usage}
+	if result.RequestID == "" {
+		result.RequestID = requestID(resp.Header)
+	}
 	for _, question := range questions {
 		answer, ok := wireResp.Answers[question.ID]
 		if !ok {
@@ -209,8 +221,11 @@ func (c *HTTPClient) do(ctx context.Context, body []byte, questions []Question) 
 		result.Probabilities[question.ID] = *answer.Noul
 	}
 	c.mu.Lock()
-	c.stats.InputTokens += wireResp.Usage.InputTokens
-	c.stats.OutputTokens += wireResp.Usage.OutputTokens
+	if wireResp.Usage != nil {
+		c.stats.InputTokens += wireResp.Usage.InputTokens
+		c.stats.OutputTokens += wireResp.Usage.OutputTokens
+		c.stats.UsageResponses++
+	}
 	c.mu.Unlock()
 	return result, 0, nil
 }
@@ -231,31 +246,28 @@ func (c *HTTPClient) Stats() Stats {
 }
 
 type wireRequest struct {
-	State     string                  `json:"state"`
+	State     json.RawMessage         `json:"state"`
 	Model     string                  `json:"model"`
 	Questions map[string]wireQuestion `json:"questions"`
 }
 
 type wireQuestion struct {
-	Type         string            `json:"type"`
-	Instructions string            `json:"instructions"`
-	Criteria     map[string]string `json:"criteria,omitempty"`
+	Type         string                 `json:"type"`
+	Instructions string                 `json:"instructions"`
+	Criteria     *decision.NoulCriteria `json:"criteria,omitempty"`
 }
 
 type wireResponse struct {
-	Model   string                `json:"model"`
-	Answers map[string]wireAnswer `json:"answers"`
-	Usage   wireUsage             `json:"usage"`
+	ID       string                `json:"id"`
+	Provider string                `json:"provider"`
+	Model    string                `json:"model"`
+	Answers  map[string]wireAnswer `json:"answers"`
+	Usage    *Usage                `json:"usage"`
 }
 
 type wireAnswer struct {
 	Type string   `json:"type"`
 	Noul *float64 `json:"noul,omitempty"`
-}
-
-type wireUsage struct {
-	InputTokens  int `json:"input_tokens"`
-	OutputTokens int `json:"output_tokens"`
 }
 
 func retryable(status int) bool {
