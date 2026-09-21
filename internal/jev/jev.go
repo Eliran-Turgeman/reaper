@@ -1,16 +1,22 @@
 package jev
 
-import "context"
+import (
+	"context"
+	"encoding/json"
+	"github.com/Eliran-Turgeman/reaper/internal/decision"
+)
 
 type Question struct {
-	ID           string `json:"id"`
-	Instructions string `json:"instructions"`
+	ID           string                 `json:"id"`
+	Instructions string                 `json:"instructions"`
+	Criteria     *decision.NoulCriteria `json:"criteria,omitempty"`
 }
 
 type EvaluationRequest struct {
-	Model     string     `json:"model"`
-	State     string     `json:"state"`
-	Questions []Question `json:"questions"`
+	Model           string          `json:"model"`
+	State           string          `json:"state"`
+	Questions       []Question      `json:"questions"`
+	StructuredState json.RawMessage `json:"structured_state,omitempty"`
 }
 
 type EvaluationResponse struct {

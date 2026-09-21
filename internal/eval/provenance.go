@@ -27,14 +27,15 @@ type Provenance struct {
 // Fixture state is retained separately from scores so evidence is inspectable.
 // These records are benchmark artifacts, not production request logs.
 type RequestRecord struct {
-	SHA256      string                  `json:"sha256"`
-	StateSHA256 string                  `json:"state_sha256"`
-	Model       string                  `json:"requested_model"`
-	Questions   []decision.Question     `json:"questions"`
-	Scores      map[string]float64      `json:"scores"`
-	State       string                  `json:"state,omitempty"`
-	Calls       []decision.CallMetadata `json:"calls,omitempty"`
-	ElapsedMS   float64                 `json:"elapsed_ms"`
+	SHA256          string                  `json:"sha256"`
+	StateSHA256     string                  `json:"state_sha256"`
+	Model           string                  `json:"requested_model"`
+	Questions       []decision.Question     `json:"questions"`
+	Scores          map[string]float64      `json:"scores"`
+	State           string                  `json:"state,omitempty"`
+	StructuredState json.RawMessage         `json:"structured_state,omitempty"`
+	Calls           []decision.CallMetadata `json:"calls,omitempty"`
+	ElapsedMS       float64                 `json:"elapsed_ms"`
 }
 
 func fingerprint(v any) string {
@@ -82,6 +83,10 @@ func (r *recordingEvaluator) Evaluate(ctx context.Context, request decision.Requ
 		scores[id] = score
 	}
 	record := RequestRecord{SHA256: fingerprint(request), StateSHA256: fingerprint(request.State), Model: request.Model, Questions: append([]decision.Question(nil), request.Questions...), Scores: scores, State: request.State, Calls: response.Calls, ElapsedMS: float64(time.Since(started).Microseconds()) / 1000}
+	if len(request.StructuredState) > 0 {
+		record.StructuredState = append(json.RawMessage(nil), request.StructuredState...)
+		record.StateSHA256 = fingerprint(request.StructuredState)
+	}
 	r.mu.Lock()
 	r.records = append(r.records, record)
 	r.mu.Unlock()

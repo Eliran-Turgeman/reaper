@@ -3,6 +3,7 @@ package decision
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
@@ -11,11 +12,17 @@ import (
 type Question struct {
 	ID           string
 	Instructions string
+	Criteria     *NoulCriteria `json:",omitempty"`
+}
+type NoulCriteria struct {
+	True  string `json:"true"`
+	False string `json:"false"`
 }
 type Request struct {
-	Model     string
-	State     string
-	Questions []Question
+	Model           string
+	State           string
+	Questions       []Question
+	StructuredState json.RawMessage `json:",omitempty"`
 }
 type Usage struct {
 	InputTokens  int      `json:"input_tokens"`
@@ -63,7 +70,9 @@ func Evaluate(ctx context.Context, evaluator Evaluator, request Request) (Respon
 	if !evaluator.Capabilities().Batching {
 		requests = nil
 		for _, question := range request.Questions {
-			requests = append(requests, Request{Model: request.Model, State: request.State, Questions: []Question{question}})
+			single := request
+			single.Questions = []Question{question}
+			requests = append(requests, single)
 		}
 	}
 	out := Response{Scores: map[string]float64{}}

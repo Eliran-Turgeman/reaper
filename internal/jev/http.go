@@ -14,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/Eliran-Turgeman/reaper/internal/decision"
 )
 
 const (
@@ -114,10 +116,14 @@ func newHTTPClient(options HTTPOptions, provider, defaultBaseURL, endpoint, keyE
 }
 
 func (c *HTTPClient) Evaluate(ctx context.Context, request EvaluationRequest) (EvaluationResponse, error) {
-	if request.Model == "" || request.State == "" || len(request.Questions) == 0 {
+	if request.Model == "" || len(request.Questions) == 0 {
 		return EvaluationResponse{}, errors.New("model, state, and at least one question are required")
 	}
-	wire := wireRequest{State: request.State, Model: request.Model, Questions: map[string]wireQuestion{}}
+	state, err := decision.EncodeState(request.State, request.StructuredState)
+	if err != nil {
+		return EvaluationResponse{}, err
+	}
+	wire := wireRequest{State: state, Model: request.Model, Questions: map[string]wireQuestion{}}
 	for _, question := range request.Questions {
 		if question.ID == "" || strings.TrimSpace(question.Instructions) == "" {
 			return EvaluationResponse{}, errors.New("question ID and instructions are required")
@@ -125,7 +131,10 @@ func (c *HTTPClient) Evaluate(ctx context.Context, request EvaluationRequest) (E
 		if _, exists := wire.Questions[question.ID]; exists {
 			return EvaluationResponse{}, fmt.Errorf("duplicate question ID %q", question.ID)
 		}
-		wire.Questions[question.ID] = wireQuestion{Type: "noul", Instructions: question.Instructions}
+		if err := question.Criteria.Validate(); err != nil {
+			return EvaluationResponse{}, fmt.Errorf("question %s: %w", question.ID, err)
+		}
+		wire.Questions[question.ID] = wireQuestion{Type: "noul", Instructions: question.Instructions, Criteria: question.Criteria}
 	}
 	body, err := json.Marshal(wire)
 	if err != nil {
@@ -237,15 +246,15 @@ func (c *HTTPClient) Stats() Stats {
 }
 
 type wireRequest struct {
-	State     string                  `json:"state"`
+	State     json.RawMessage         `json:"state"`
 	Model     string                  `json:"model"`
 	Questions map[string]wireQuestion `json:"questions"`
 }
 
 type wireQuestion struct {
-	Type         string            `json:"type"`
-	Instructions string            `json:"instructions"`
-	Criteria     map[string]string `json:"criteria,omitempty"`
+	Type         string                 `json:"type"`
+	Instructions string                 `json:"instructions"`
+	Criteria     *decision.NoulCriteria `json:"criteria,omitempty"`
 }
 
 type wireResponse struct {

@@ -2,6 +2,7 @@ package rules
 
 import (
 	"fmt"
+	"github.com/Eliran-Turgeman/reaper/internal/decision"
 	"math"
 	"sort"
 
@@ -25,6 +26,7 @@ const (
 type Signal struct {
 	ID           string
 	Instructions string
+	Criteria     *decision.NoulCriteria `json:",omitempty"`
 }
 
 type Rule struct {

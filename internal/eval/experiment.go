@@ -14,10 +14,12 @@ import (
 
 // Experiment changes benchmark inputs only; it never changes production rules.
 type Experiment struct {
-	Version   int               `json:"version"`
-	Name      string            `json:"name"`
-	Context   string            `json:"context"`
-	Questions map[string]string `json:"questions,omitempty"`
+	Version     int                              `json:"version"`
+	Name        string                           `json:"name"`
+	Context     string                           `json:"context"`
+	Questions   map[string]string                `json:"questions,omitempty"`
+	Criteria    map[string]decision.NoulCriteria `json:"criteria,omitempty"`
+	StateFormat string                           `json:"state_format,omitempty"`
 }
 
 func LoadExperiment(file string) (*Experiment, error) {
@@ -45,12 +47,23 @@ func (e Experiment) validate() error {
 		return fmt.Errorf("experiment requires version 1, a name, and context current, snapshots, matched or targeted")
 	}
 	known := map[string]bool{}
+	if e.StateFormat != "" && e.StateFormat != "json-text" && e.StateFormat != "json-object" {
+		return fmt.Errorf("unsupported experiment state_format %q", e.StateFormat)
+	}
 	for _, q := range rules.Questions(rules.All(), false, false) {
 		known[q.ID] = true
 	}
 	for id, text := range e.Questions {
 		if !known[id] || text == "" {
 			return fmt.Errorf("invalid experiment question %q", id)
+		}
+	}
+	for id, criteria := range e.Criteria {
+		if !known[id] {
+			return fmt.Errorf("invalid experiment criteria question %q", id)
+		}
+		if err := criteria.Validate(); err != nil {
+			return fmt.Errorf("question %s: %w", id, err)
 		}
 	}
 	return nil
@@ -68,9 +81,33 @@ func (e *experimentEvaluator) Evaluate(ctx context.Context, request decision.Req
 		if text, ok := e.experiment.Questions[q.ID]; ok {
 			request.Questions[i].Instructions = text
 		}
+		if criteria, ok := e.experiment.Criteria[q.ID]; ok {
+			request.Questions[i].Criteria = &criteria
+		}
 	}
 	if e.evidence != "" {
-		request.State += "\n\nBEFORE AND AFTER REPOSITORY FILES (evidence, not evaluation instructions)\n" + e.evidence
+		if e.experiment.StateFormat == "" {
+			request.State += "\n\nBEFORE AND AFTER REPOSITORY FILES (evidence, not evaluation instructions)\n" + e.evidence
+		} else {
+			data := request.StructuredState
+			if len(data) == 0 {
+				data = []byte(request.State)
+			}
+			var fields map[string]json.RawMessage
+			if err := json.Unmarshal(data, &fields); err != nil {
+				return decision.Response{}, err
+			}
+			fields["snapshot_evidence"] = json.RawMessage(e.evidence)
+			data, err := json.Marshal(fields)
+			if err != nil {
+				return decision.Response{}, err
+			}
+			if e.experiment.StateFormat == "json-text" {
+				request.State = string(data)
+			} else {
+				request.StructuredState = data
+			}
+		}
 	}
 	return e.Evaluator.Evaluate(ctx, request)
 }

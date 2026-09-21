@@ -24,9 +24,9 @@ func New(name string, options Options) (decision.Evaluator, error) {
 }
 
 func (j *Jev) Evaluate(ctx context.Context, request decision.Request) (decision.Response, error) {
-	wire := jev.EvaluationRequest{Model: request.Model, State: request.State}
+	wire := jev.EvaluationRequest{Model: request.Model, State: request.State, StructuredState: request.StructuredState}
 	for _, q := range request.Questions {
-		wire.Questions = append(wire.Questions, jev.Question{ID: q.ID, Instructions: q.Instructions})
+		wire.Questions = append(wire.Questions, jev.Question{ID: q.ID, Instructions: q.Instructions, Criteria: q.Criteria})
 	}
 	response, err := j.Client.Evaluate(ctx, wire)
 	if jev.IsTokenLimitError(err) {

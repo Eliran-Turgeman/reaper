@@ -8,6 +8,15 @@ artifacts are unchanged. State contains source evidence; a signal's `evidence`
 field still contains its question, not a model-generated explanation. The minimum
 of signal values is a rule score, not a calibrated violation probability.
 
+Git experiment files may add `state_format: "json-text"` or `"json-object"`.
+Both contain identical named evidence fields; the former sends JSON as a string,
+the latter as a native object. Omitting the field preserves historical text.
+An optional `criteria` map uses complete question IDs as keys and objects with
+nonempty `true` and `false` descriptions. Questions remain Noul. These are
+experiment-only controls, not production configuration settings. Exact criteria
+and structured state are recorded and included in request fingerprints. Native
+state, text state, and different criteria cannot share production cache entries.
+
 Latest: [correctness and targeted-context follow-up](experiments/targeted-context-v3/report.md),
 including the three extraction fixes, repeated helper-context experiments,
 enforcement-focused question candidate, and remaining calibration overlap.

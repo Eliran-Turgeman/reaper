@@ -2,12 +2,14 @@ package eval
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/Eliran-Turgeman/reaper/internal/config"
+	"github.com/Eliran-Turgeman/reaper/internal/decision"
 )
 
 func TestExperimentsChangeOnlyChosenInputAndRecordActualRequest(t *testing.T) {
@@ -51,8 +53,37 @@ func TestExperimentsChangeOnlyChosenInputAndRecordActualRequest(t *testing.T) {
 	}
 }
 
+func TestStructuredExperimentPreservesFactsAndRecordsCriteria(t *testing.T) {
+	c := GitCase{PatchCase: PatchCase{ID: "structured", Rule: "removed-validation", Task: "Keep validation", Expected: "positive", Rationale: "PRIVATE GOLD LABEL"}, BeforeFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { if n < 0 { panic(n) }; store(n) }\n"}, AfterFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { store(n) }\n"}}
+	var textState string
+	for _, format := range []string{"json-text", "json-object"} {
+		client := &benchmarkEvaluator{score: .7}
+		e := &Experiment{Version: 1, Name: "format", Context: "snapshots", StateFormat: format, Criteria: map[string]decision.NoulCriteria{"removed-validation:removes-validation": {True: "A previous check is bypassed.", False: "Previous checks still apply."}}}
+		result, err := runGitCaseExperiment(context.Background(), client, c, config.Defaults(), "isolated", e)
+		if err != nil {
+			t.Fatal(err)
+		}
+		request := client.requests[0]
+		if format == "json-text" {
+			textState = request.State
+		} else if string(request.StructuredState) != textState || result.Requests[0].StateSHA256 != fingerprint(request.StructuredState) {
+			t.Fatal("representation changed the supplied facts")
+		}
+		if strings.Contains(textState, c.Rationale) {
+			t.Fatal("label leaked into evidence")
+		}
+		var fields map[string]json.RawMessage
+		if err := json.Unmarshal([]byte(textState), &fields); err != nil || fields["snapshot_evidence"] == nil {
+			t.Fatal("missing structured snapshot evidence", err)
+		}
+		if result.Requests[0].Questions[0].Criteria == nil || result.Requests[0].SHA256 != fingerprint(request) {
+			t.Fatal("criteria missing from actual request provenance")
+		}
+	}
+}
+
 func TestExperimentRejectsUnknownQuestionsAndOversizedContext(t *testing.T) {
-	for _, data := range []string{`{"version":1,"name":"x","context":"current","questions":{"unknown":"text"}}`, `{"version":1,"name":"x","context":"current","threshold":0}`, `{"version":1,"name":"x","context":"current"} {}`} {
+	for _, data := range []string{`{"version":1,"name":"x","context":"current","questions":{"unknown":"text"}}`, `{"version":1,"name":"x","context":"current","threshold":0}`, `{"version":1,"name":"x","context":"current"} {}`, `{"version":1,"name":"x","context":"current","state_format":"yaml"}`, `{"version":1,"name":"x","context":"current","criteria":{"unknown":{"true":"yes","false":"no"}}}`, `{"version":1,"name":"x","context":"current","criteria":{"removed-validation:removes-validation":{"true":"yes"}}}`} {
 		file := filepath.Join(t.TempDir(), "experiment.json")
 		if err := os.WriteFile(file, []byte(data), 0600); err != nil {
 			t.Fatal(err)

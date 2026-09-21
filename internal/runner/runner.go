@@ -2,6 +2,7 @@ package runner
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"path"
@@ -23,17 +24,19 @@ import (
 type VerboseFunc func(format string, args ...any)
 
 type Runner struct {
-	Observe func(Observation)
-	GitEnv  []string
-	Root    string
-	Config  config.Config
-	Client  decision.Evaluator
-	Cache   cache.Store
-	Version string
-	Verbose VerboseFunc
-	Notice  VerboseFunc
-	Debug   bool
-	Audit   bool
+	// StateFormat is an experimental representation override; empty preserves legacy text.
+	StateFormat string
+	Observe     func(Observation)
+	GitEnv      []string
+	Root        string
+	Config      config.Config
+	Client      decision.Evaluator
+	Cache       cache.Store
+	Version     string
+	Verbose     VerboseFunc
+	Notice      VerboseFunc
+	Debug       bool
+	Audit       bool
 }
 
 type job struct {
@@ -270,6 +273,24 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 			state += "\n\nREPOSITORY SEARCH EVIDENCE\n" + retrieved
 		}
 	}
+	request := decision.Request{Model: r.Config.Model, State: state}
+	if r.StateFormat != "" {
+		data, err := json.Marshal(stateFields(unit, task, r.Audit, retrieved))
+		if err != nil {
+			return result{err: err}
+		}
+		switch r.StateFormat {
+		case "json-text":
+			request.State = string(data)
+		case "json-object":
+			request.State = ""
+			request.StructuredState = data
+		default:
+			return result{err: fmt.Errorf("unsupported state format %q", r.StateFormat)}
+		}
+		// Separate text and object states even when their serialized facts match.
+		state = r.StateFormat + "\n" + string(data)
+	}
 	signalProbabilities := map[string]float64{}
 	ruleCached := map[string]bool{}
 	var missing []decision.Question
@@ -287,6 +308,12 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 				r.Version, strconv.Itoa(semantic.SchemaVersion), r.Config.Provider, r.Config.Model, state,
 				rule.ID, strconv.Itoa(rule.Version), signal.ID, instructions,
 			)
+			if criteria := questions[questionID].Criteria; criteria != nil {
+				if err := criteria.Validate(); err != nil {
+					return result{err: err}
+				}
+				key = cache.Key(key, "noul", criteria.True, criteria.False)
+			}
 			cacheKeys[questionID] = key
 			value, ok, err := r.Cache.Get(key)
 			if err != nil {
@@ -304,7 +331,7 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		if r.Client == nil {
 			return result{err: fmt.Errorf("an evaluator is required for uncached semantic checks")}
 		}
-		request := decision.Request{Model: r.Config.Model, State: state, Questions: missing}
+		request.Questions = missing
 		response, err := decision.Evaluate(ctx, r.Client, request)
 		if err != nil {
 			if decision.IsContextLimit(err) {

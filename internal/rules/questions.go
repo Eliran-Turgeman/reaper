@@ -14,7 +14,7 @@ func Questions(selected []Rule, audit, retrieved bool) []decision.Question {
 			if audit {
 				instructions = "Evaluate the current code as an existing-code audit, regardless of when it was introduced. " + instructions
 			}
-			questions = append(questions, decision.Question{ID: rule.QuestionID(signal), Instructions: instructions})
+			questions = append(questions, decision.Question{ID: rule.QuestionID(signal), Instructions: instructions, Criteria: signal.Criteria})
 		}
 	}
 	return questions
