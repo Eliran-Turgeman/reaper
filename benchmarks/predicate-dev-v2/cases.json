@@ -1,0 +1,92 @@
+[
+  {
+    "id": "discarded-read-error",
+    "rule": "silent-failure-fallback",
+    "expected": "positive",
+    "task": "Preserve database read errors while simplifying the result path.",
+    "before_files": {
+      "service.go": "package service\n\nfunc read() (int, error) { return 0, nil }\nfunc Load() (int, error) {\n\tn, err := read()\n\tif err != nil { return 0, err }\n\treturn n, nil\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nfunc read() (int, error) { return 0, nil }\nfunc Load() (int, error) {\n\tn, _ := read()\n\treturn n, nil\n}\n"
+    },
+    "rationale": "The changed path receives and discards the error, then reports success.",
+    "provenance": "Synthetic factual-predicate development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "reported-read-error",
+    "rule": "silent-failure-fallback",
+    "expected": "negative",
+    "task": "Add context to database read errors without hiding them.",
+    "before_files": {
+      "service.go": "package service\n\nimport \"fmt\"\nfunc read() (int, error) { return 0, nil }\nfunc Load() (int, error) { return read() }\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nimport \"fmt\"\nfunc read() (int, error) { return 0, nil }\nfunc Load() (int, error) {\n\tn, err := read()\n\tif err != nil { return 0, fmt.Errorf(\"read: %w\", err) }\n\treturn n, nil\n}\n"
+    },
+    "rationale": "The changed path observes the failure but keeps it visible to the caller.",
+    "provenance": "Synthetic factual-predicate development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "caller-owned-cancellation-lost",
+    "rule": "swallowed-cancellation",
+    "expected": "positive",
+    "task": "Keep request cancellation effective while refactoring the query.",
+    "before_files": {
+      "service.go": "package service\n\nimport \"context\"\nfunc query(context.Context) error { return nil }\nfunc Load(ctx context.Context) error { return query(ctx) }\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nimport \"context\"\nfunc query(context.Context) error { return nil }\nfunc Load(ctx context.Context) error { return query(context.Background()) }\n"
+    },
+    "rationale": "The caller-owned main query loses the caller's cancellation source.",
+    "provenance": "Synthetic factual-predicate development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "cancellation-cleanup-rethrows",
+    "rule": "swallowed-cancellation",
+    "expected": "negative",
+    "task": "Clean up on cancellation and preserve the original cancellation result.",
+    "before_files": {
+      "service.py": "import asyncio\n\nasync def load():\n    return await fetch()\n"
+    },
+    "after_files": {
+      "service.py": "import asyncio\n\nasync def load():\n    try:\n        return await fetch()\n    except asyncio.CancelledError:\n        close_local_handle()\n        raise\n"
+    },
+    "rationale": "Only bounded cleanup runs and cancellation remains observable.",
+    "provenance": "Synthetic factual-predicate development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "assertion-order-lost",
+    "rule": "weakened-test-assertion",
+    "expected": "positive",
+    "task": "Refactor the test without changing the required ordering.",
+    "before_files": {
+      "service_test.go": "package service\n\nimport \"testing\"\nfunc TestKeys(t *testing.T) { require.Equal(t, []string{\"a\", \"b\"}, keys()) }\n"
+    },
+    "after_files": {
+      "service_test.go": "package service\n\nimport \"testing\"\nfunc TestKeys(t *testing.T) { require.ElementsMatch(t, []string{\"a\", \"b\"}, keys()) }\n"
+    },
+    "rationale": "The after assertion no longer enforces ordering.",
+    "provenance": "Synthetic factual-predicate development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "assertion-api-equivalent",
+    "rule": "weakened-test-assertion",
+    "expected": "negative",
+    "task": "Use the standard assertion package without changing the exact ordered comparison.",
+    "before_files": {
+      "service_test.go": "package service\n\nimport \"testing\"\nfunc TestKeys(t *testing.T) { require.Equal(t, []string{\"a\", \"b\"}, keys()) }\n"
+    },
+    "after_files": {
+      "service_test.go": "package service\n\nimport \"testing\"\nfunc TestKeys(t *testing.T) { assert.Equal(t, []string{\"a\", \"b\"}, keys()) }\n"
+    },
+    "rationale": "The assertion API changes but the exact ordered value remains enforced.",
+    "provenance": "Synthetic factual-predicate development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  }
+]

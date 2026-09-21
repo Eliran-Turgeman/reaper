@@ -85,6 +85,117 @@ func TestSignalExperimentRecordsRawPermissionAndPreservesProductionRules(t *test
 	}
 }
 
+func TestPermissionExperimentKeepsFactsIndependentAndClassifiesUncertainty(t *testing.T) {
+	c := GitCase{PatchCase: PatchCase{ID: "permission-v2", Rule: "removed-validation", Task: "Simplify input handling", Expected: "positive"}, BeforeFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { if n < 0 { panic(n) }; store(n) }\n"}, AfterFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { store(n) }\n"}}
+	e := &Experiment{
+		Version: 1, Name: "permission-v2", Context: "current",
+		Permission: &rules.PermissionPolicy{AllowedAtLeast: .8, DisallowedAtMost: .2},
+		Signals: map[string][]rules.Signal{c.Rule: {
+			{ID: "previous-validation", Instructions: "Was validation present?"},
+			{ID: "unguarded-operation", Instructions: "Is the operation now unguarded?"},
+			{ID: "task-permits-change", Instructions: "Does the task explicitly permit this?", Role: rules.SignalRolePermission},
+		}},
+	}
+	client := &benchmarkEvaluator{scores: map[string]float64{
+		c.Rule + ":previous-validation": .98,
+		c.Rule + ":unguarded-operation": .97,
+		c.Rule + ":task-permits-change": .5,
+	}}
+	measured, err := runGitCaseExperiment(context.Background(), client, c, config.Defaults(), "isolated", e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	observation := measured.Observations[0]
+	if measured.Score != .97 || observation.Permission == nil || observation.Permission.Outcome != "uncertain" || observation.Permission.Score != .5 {
+		t.Fatalf("permission classification changed factual score: %+v", measured)
+	}
+	if observation.Composition != "minimum-of-factual-signals-with-separate-permission-v1" {
+		t.Fatal(observation.Composition)
+	}
+}
+
+func TestPermissionExperimentRequiresEveryPermissionCondition(t *testing.T) {
+	c := GitCase{PatchCase: PatchCase{ID: "permission-v3", Rule: "removed-validation", Task: "Accept zero but reject negatives", Expected: "positive"}, BeforeFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { if n <= 0 { panic(n) }; store(n) }\n"}, AfterFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { store(n) }\n"}}
+	e := &Experiment{
+		Version: 1, Name: "permission-v3", Context: "current",
+		Permission: &rules.PermissionPolicy{AllowedAtLeast: .8, DisallowedAtMost: .2},
+		Signals: map[string][]rules.Signal{c.Rule: {
+			{ID: "loss", Instructions: "Was validation lost?"},
+			{ID: "specific-scope", Instructions: "Does the task authorize the named scope?", Role: rules.SignalRolePermission},
+			{ID: "complete-scope", Instructions: "Does it authorize every newly accepted input?", Role: rules.SignalRolePermission},
+		}},
+	}
+	client := &benchmarkEvaluator{scores: map[string]float64{
+		c.Rule + ":loss":           .97,
+		c.Rule + ":specific-scope": .94,
+		c.Rule + ":complete-scope": .12,
+	}}
+	measured, err := runGitCaseExperiment(context.Background(), client, c, config.Defaults(), "isolated", e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	permission := measured.Observations[0].Permission
+	if permission == nil || permission.Score != .12 || permission.Outcome != "disallowed" || len(permission.Signals) != 2 {
+		t.Fatalf("permission conditions were not composed conservatively: %+v", permission)
+	}
+	if measured.Observations[0].Composition != "minimum-of-factual-signals-with-minimum-permission-v2" {
+		t.Fatal(measured.Observations[0].Composition)
+	}
+}
+
+func TestPermissionExperimentCanUseSeparateRequest(t *testing.T) {
+	c := GitCase{PatchCase: PatchCase{ID: "permission-separated", Rule: "removed-validation", Task: "Accept negatives", Expected: "negative"}, BeforeFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { if n < 0 { panic(n) }; store(n) }\n"}, AfterFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { store(n) }\n"}}
+	e := &Experiment{
+		Version: 1, Name: "permission-separated", Context: "current", PermissionEval: "separate-request-v1",
+		Permission: &rules.PermissionPolicy{AllowedAtLeast: .8, DisallowedAtMost: .2},
+		Signals: map[string][]rules.Signal{c.Rule: {
+			{ID: "loss", Instructions: "Was validation lost?"},
+			{ID: "scope", Instructions: "Was this scope authorized?", Role: rules.SignalRolePermission},
+			{ID: "complete", Instructions: "Was the whole change authorized?", Role: rules.SignalRolePermission},
+		}},
+	}
+	client := &benchmarkEvaluator{score: .9}
+	measured, err := runGitCaseExperiment(context.Background(), client, c, config.Defaults(), "isolated", e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(client.requests) != 2 || len(measured.Requests) != 2 {
+		t.Fatalf("permission questions were not isolated: requests=%d records=%d", len(client.requests), len(measured.Requests))
+	}
+	if len(client.requests[0].Questions) != 1 || len(client.requests[1].Questions) != 2 {
+		t.Fatalf("unexpected question groups: %+v", client.requests)
+	}
+}
+
+func TestPermissionExperimentSuppressesOnlyAllowedOutcome(t *testing.T) {
+	c := GitCase{PatchCase: PatchCase{ID: "permission-action", Rule: "removed-validation", Task: "Accept negative values", Expected: "negative"}, BeforeFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { if n < 0 { panic(n) }; store(n) }\n"}, AfterFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { store(n) }\n"}}
+	e := &Experiment{
+		Version: 1, Name: "permission-action", Context: "current", PermissionAction: "suppress-allowed",
+		Permission: &rules.PermissionPolicy{AllowedAtLeast: .8, DisallowedAtMost: .2},
+		Signals: map[string][]rules.Signal{c.Rule: {
+			{ID: "previous-validation", Instructions: "Was validation present?"},
+			{ID: "unguarded-operation", Instructions: "Is the operation now unguarded?"},
+			{ID: "task-permits-change", Instructions: "Does the task explicitly permit this?", Role: rules.SignalRolePermission},
+		}},
+	}
+	client := &benchmarkEvaluator{scores: map[string]float64{
+		c.Rule + ":previous-validation": .98,
+		c.Rule + ":unguarded-operation": .97,
+		c.Rule + ":task-permits-change": .9,
+	}}
+	measured, err := runGitCaseExperiment(context.Background(), client, c, config.Defaults(), "isolated", e)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if measured.Score != .97 || measured.Decision != "permission-allowed" || measured.PermissionOutcome != "allowed" {
+		t.Fatalf("allowed permission did not suppress independently: %+v", measured)
+	}
+	metrics := Metrics(c.Rule, []ScoredCase{measured}, .95)
+	if metrics.TrueNegative != 1 || metrics.FalsePositive != 0 {
+		t.Fatalf("suppressed permission counted as finding: %+v", metrics)
+	}
+}
+
 func TestStructuredExperimentPreservesFactsAndRecordsCriteria(t *testing.T) {
 	c := GitCase{PatchCase: PatchCase{ID: "structured", Rule: "removed-validation", Task: "Keep validation", Expected: "positive", Rationale: "PRIVATE GOLD LABEL"}, BeforeFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { if n < 0 { panic(n) }; store(n) }\n"}, AfterFiles: map[string]string{"x.go": "package x\nfunc Save(n int) { store(n) }\n"}}
 	var textState string
@@ -165,6 +276,7 @@ func TestExperimentRejectsUnknownQuestionsAndOversizedContext(t *testing.T) {
 			t.Fatal("invalid experiment accepted")
 		}
 	}
+
 	if _, err := experimentEvidence(GitCase{BeforeFiles: map[string]string{"x.go": strings.Repeat("x", 65537)}}, &Experiment{Context: "snapshots"}); err == nil {
 		t.Fatal("oversized context silently accepted")
 	}
@@ -192,6 +304,21 @@ func TestContextFixturesSupplyPreviouslyInvisibleHelperBodies(t *testing.T) {
 			if hasHelper != (mode == "snapshots") {
 				t.Fatalf("%s/%s supplied incorrect helper evidence", c.ID, mode)
 			}
+		}
+	}
+}
+
+func TestFollowUpExperimentSpecificationsLoad(t *testing.T) {
+	for _, file := range []string{
+		"../../benchmarks/experiments/permission-decision-v2/policy-targeted.json",
+		"../../benchmarks/experiments/permission-decision-v2/policy-contracts.json",
+		"../../benchmarks/experiments/permission-decision-v2/policy-assertion-dev.json",
+		"../../benchmarks/experiments/factual-predicates-v2/discarded-errors.json",
+		"../../benchmarks/experiments/factual-predicates-v2/cancellation-ownership.json",
+		"../../benchmarks/experiments/factual-predicates-v2/assertion-specificity.json",
+	} {
+		if _, err := LoadExperiment(file); err != nil {
+			t.Fatalf("%s: %v", file, err)
 		}
 	}
 }

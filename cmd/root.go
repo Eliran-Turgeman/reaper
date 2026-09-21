@@ -45,6 +45,7 @@ func NewWith(app App) *cobra.Command {
 		newInit(app),
 		newRules(app),
 		newEval(app),
+		newReviewPack(),
 		&cobra.Command{
 			Use: "version", Short: "Print the Reaper version",
 			Run: func(cmd *cobra.Command, _ []string) { fmt.Fprintln(cmd.OutOrStdout(), Version) },

@@ -20,6 +20,19 @@ func (r *Runner) needsTargetedContext(rule rules.Rule) bool {
 	return r.TargetedContext && (rule.ID == "removed-authorization-check" || rule.ID == "removed-validation")
 }
 
+type evidenceCoverage struct {
+	Complete bool
+	Reasons  []string
+}
+
+func sourceEvidenceCoverage(raw json.RawMessage) (evidenceCoverage, error) {
+	if len(raw) == 0 {
+		return evidenceCoverage{Reasons: []string{"targeted evidence is missing"}}, nil
+	}
+	coverage, err := evidence.Assess(raw)
+	return evidenceCoverage{Complete: coverage.Complete, Reasons: coverage.Reasons}, err
+}
+
 // addRelatedEvidence reuses the fixture collector over bounded repository source.
 // Each rule applies its own path policy before any helper source is read.
 func (r *Runner) addRelatedEvidence(ctx context.Context, units []semantic.Unit, rule rules.Rule) error {

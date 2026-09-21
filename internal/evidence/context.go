@@ -1,6 +1,7 @@
 package evidence
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"go/ast"
@@ -8,6 +9,7 @@ import (
 	"go/token"
 	"path"
 	"sort"
+	"strings"
 
 	"github.com/Eliran-Turgeman/reaper/internal/diff"
 	"github.com/Eliran-Turgeman/reaper/internal/semantic"
@@ -29,6 +31,50 @@ type Context struct {
 	Scope       string         `json:"scope"`
 	Snippets    []codeEvidence `json:"snippets"`
 	Limitations []string       `json:"limitations"`
+}
+
+type Coverage struct {
+	Complete bool
+	Reasons  []string
+}
+
+func Assess(raw json.RawMessage) (Coverage, error) {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	var report Context
+	if err := decoder.Decode(&report); err != nil {
+		return Coverage{}, fmt.Errorf("parse targeted evidence coverage: %w", err)
+	}
+	sides := map[string]bool{}
+	for _, snippet := range report.Snippets {
+		if snippet.Kind == "changed-function" {
+			sides[snippet.Side] = true
+		}
+	}
+	var reasons []string
+	for _, side := range []string{"before", "after"} {
+		if !sides[side] {
+			reasons = append(reasons, side+": changed function evidence is missing")
+		}
+	}
+	for _, limitation := range report.Limitations {
+		lower := strings.ToLower(limitation)
+		unresolved := strings.Contains(lower, "unresolved direct calls") &&
+			!strings.Contains(lower, "unchanged unresolved direct calls")
+		if strings.Contains(lower, "unsupported language") ||
+			strings.Contains(lower, "source missing") ||
+			strings.Contains(lower, "source unavailable") ||
+			strings.Contains(lower, "did not parse") ||
+			strings.Contains(lower, "could be located") ||
+			unresolved ||
+			strings.Contains(lower, "unresolved changed direct calls") ||
+			strings.Contains(lower, "limit reached") ||
+			strings.Contains(lower, "exceeds remaining") ||
+			strings.Contains(lower, "was omitted") {
+			reasons = append(reasons, limitation)
+		}
+	}
+	return Coverage{Complete: len(reasons) == 0, Reasons: reasons}, nil
 }
 
 // This experiment is deliberately limited to Go syntax and a single call hop.
@@ -60,12 +106,13 @@ func Add(beforeFiles, afterFiles map[string]string, patchText string, units []se
 		if hunk == nil {
 			return fmt.Errorf("no matching hunk for context: %s:%d", u.FilePath, u.StartLine)
 		}
-		evidence := Context{Protocol: "go-functions-v1", Scope: "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Lexical evidence, not exhaustive symbol resolution."}
+		evidence := Context{Protocol: "go-functions-v2", Scope: "Changed functions on each snapshot; optional one-hop same-package direct function candidates. Changed unresolved calls are incomplete evidence; identical unresolved calls on both sides are recorded without forcing abstention. Lexical evidence, not exhaustive symbol resolution."}
 		if u.Language != "go" {
 			evidence.Limitations = append(evidence.Limitations, "Unsupported language: retained original local context.")
 		} else {
-			collectSide(&evidence, beforeFiles, selected.OldPath, *hunk, true, helpers)
-			collectSide(&evidence, afterFiles, selected.NewPath, *hunk, false, helpers)
+			before := collectSide(&evidence, beforeFiles, selected.OldPath, *hunk, true, helpers)
+			after := collectSide(&evidence, afterFiles, selected.NewPath, *hunk, false, helpers)
+			appendUnresolvedLimitations(&evidence, before.unresolved, after.unresolved)
 		}
 		data, err := json.Marshal(evidence)
 		if err != nil {
@@ -112,36 +159,64 @@ func changedLines(h diff.Hunk, before bool) (int, int) {
 	return first, last
 }
 
-func collectSide(e *Context, files map[string]string, name string, h diff.Hunk, before, helpers bool) {
+type sideCoverage struct {
+	unresolved []string
+}
+
+func collectSide(e *Context, files map[string]string, name string, h diff.Hunk, before, helpers bool) sideCoverage {
 	side := "after"
 	if before {
 		side = "before"
 	}
 	if name == "/dev/null" {
-		return
+		return sideCoverage{}
 	}
 	source, exists := files[name]
 	if !exists {
 		e.Limitations = append(e.Limitations, side+": source missing")
-		return
+		return sideCoverage{}
 	}
 	set := token.NewFileSet()
 	file, err := parser.ParseFile(set, name, source, parser.ParseComments)
 	if err != nil {
 		e.Limitations = append(e.Limitations, side+": changed file did not parse")
-		return
+		return sideCoverage{}
 	}
 	first, last := changedLines(h, before)
-	calls := map[string]bool{}
+	calls := map[string]map[string]bool{}
 	focal := map[*ast.FuncDecl]bool{}
+	var functions, selectedFunctions []*ast.FuncDecl
 	for _, decl := range file.Decls {
 		fn, ok := decl.(*ast.FuncDecl)
-		if !ok || set.Position(fn.End()).Line < first || set.Position(fn.Pos()).Line > last {
+		if !ok {
 			continue
 		}
+		functions = append(functions, fn)
+		if set.Position(fn.End()).Line < first || set.Position(fn.Pos()).Line > last {
+			continue
+		}
+		selectedFunctions = append(selectedFunctions, fn)
+	}
+	if len(selectedFunctions) == 0 {
+		bestDistance := 3
+		for _, fn := range functions {
+			start, end := set.Position(fn.Pos()).Line, set.Position(fn.End()).Line
+			distance := start - last
+			if end < first {
+				distance = first - end
+			}
+			if distance >= 0 && distance < bestDistance {
+				selectedFunctions = []*ast.FuncDecl{fn}
+				bestDistance = distance
+			} else if distance == bestDistance {
+				selectedFunctions = append(selectedFunctions, fn)
+			}
+		}
+	}
+	for _, fn := range selectedFunctions {
 		focal[fn] = true
 		if !appendEvidence(e, snippet(side, name, source, set, fn, "changed-function")) {
-			return
+			return sideCoverage{}
 		}
 		if fn.Body == nil {
 			continue
@@ -159,16 +234,20 @@ func collectSide(e *Context, files map[string]string, name string, h diff.Hunk, 
 			if id.Obj != nil && id.Obj.Kind != ast.Fun {
 				return true
 			}
-			calls[id.Name] = true
+			if calls[id.Name] == nil {
+				calls[id.Name] = map[string]bool{}
+			}
+			start, end := set.Position(call.Pos()), set.Position(call.End())
+			calls[id.Name][strings.TrimSpace(source[start.Offset:end.Offset])] = true
 			return true
 		})
 	}
 	if len(focal) == 0 {
 		e.Limitations = append(e.Limitations, side+": no changed function could be located")
-		return
+		return sideCoverage{}
 	}
 	if !helpers {
-		return
+		return sideCoverage{}
 	}
 	paths := make([]string, 0, len(files))
 	for name := range files {
@@ -199,7 +278,10 @@ func collectSide(e *Context, files map[string]string, name string, h diff.Hunk, 
 		}
 		for _, decl := range parsed.Decls {
 			fn, ok := decl.(*ast.FuncDecl)
-			if !ok || fn.Recv != nil || !calls[fn.Name.Name] {
+			if !ok || fn.Recv != nil {
+				continue
+			}
+			if _, called := calls[fn.Name.Name]; !called {
 				continue
 			}
 			found[fn.Name.Name] = true
@@ -215,21 +297,55 @@ func collectSide(e *Context, files map[string]string, name string, h diff.Hunk, 
 				continue
 			}
 			if !appendEvidence(e, snippet(side, candidate, code, candidateSet, fn, "direct-helper-candidate")) {
-				return
+				return sideCoverage{}
 			}
 		}
 	}
 	var unresolved []string
-	for call := range calls {
-		if !found[call] {
-			unresolved = append(unresolved, call)
+	for name, references := range calls {
+		if found[name] {
+			continue
+		}
+		for reference := range references {
+			unresolved = append(unresolved, reference)
 		}
 	}
 	sort.Strings(unresolved)
-	if len(unresolved) > 0 {
-		e.Limitations = append(e.Limitations, fmt.Sprintf("%s: unresolved direct calls (possibly builtins/conversions): %v", side, unresolved))
-	}
 	e.Limitations = append(e.Limitations, side+": methods, imports, function values, transitive calls and build constraints are not resolved; duplicate definitions are candidates, not proof of enforcement")
+	return sideCoverage{unresolved: unresolved}
+}
+
+func appendUnresolvedLimitations(e *Context, before, after []string) {
+	beforeSet := make(map[string]bool, len(before))
+	afterSet := make(map[string]bool, len(after))
+	for _, call := range before {
+		beforeSet[call] = true
+	}
+	for _, call := range after {
+		afterSet[call] = true
+	}
+	var unchanged, beforeOnly, afterOnly []string
+	for _, call := range before {
+		if afterSet[call] {
+			unchanged = append(unchanged, call)
+		} else {
+			beforeOnly = append(beforeOnly, call)
+		}
+	}
+	for _, call := range after {
+		if !beforeSet[call] {
+			afterOnly = append(afterOnly, call)
+		}
+	}
+	if len(unchanged) > 0 {
+		e.Limitations = append(e.Limitations, fmt.Sprintf("unchanged unresolved direct calls (possibly builtins/conversions): %v", unchanged))
+	}
+	if len(beforeOnly) > 0 {
+		e.Limitations = append(e.Limitations, fmt.Sprintf("before: unresolved changed direct calls (possibly builtins/conversions): %v", beforeOnly))
+	}
+	if len(afterOnly) > 0 {
+		e.Limitations = append(e.Limitations, fmt.Sprintf("after: unresolved changed direct calls (possibly builtins/conversions): %v", afterOnly))
+	}
 }
 
 func snippet(side, name, source string, set *token.FileSet, fn *ast.FuncDecl, kind string) codeEvidence {

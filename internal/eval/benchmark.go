@@ -18,29 +18,36 @@ import (
 )
 
 type PatchCase struct {
-	ID         string `json:"id"`
-	Task       string `json:"task"`
-	Before     string `json:"before"`
-	After      string `json:"after"`
-	Diff       string `json:"diff"`
-	File       string `json:"file"`
-	Rule       string `json:"rule"`
-	Expected   string `json:"expected"`
-	Rationale  string `json:"rationale"`
-	Provenance string `json:"provenance"`
-	Split      string `json:"split"`
+	ID                 string `json:"id"`
+	Task               string `json:"task"`
+	Before             string `json:"before"`
+	After              string `json:"after"`
+	Diff               string `json:"diff"`
+	File               string `json:"file"`
+	Rule               string `json:"rule"`
+	Expected           string `json:"expected"`
+	Rationale          string `json:"rationale"`
+	Provenance         string `json:"provenance"`
+	Split              string `json:"split"`
+	Predecessor        string `json:"predecessor,omitempty"`
+	PermissionExpected string `json:"permission_expected,omitempty"`
 }
 
 type ScoredCase struct {
-	Requests       []RequestRecord      `json:"requests,omitempty"`
-	Evaluated      *bool                `json:"evaluated,omitempty"`
-	CoverageReason string               `json:"coverage_reason,omitempty"`
-	Observations   []runner.Observation `json:"observations,omitempty"`
-	ID             string               `json:"id"`
-	Rule           string               `json:"rule"`
-	Expected       string               `json:"expected"`
-	Score          float64              `json:"score"`
-	Split          string               `json:"split"`
+	Requests           []RequestRecord      `json:"requests,omitempty"`
+	Evaluated          *bool                `json:"evaluated,omitempty"`
+	CoverageReason     string               `json:"coverage_reason,omitempty"`
+	Decision           string               `json:"decision,omitempty"`
+	EvidenceReasons    []string             `json:"evidence_reasons,omitempty"`
+	Predecessor        string               `json:"predecessor,omitempty"`
+	PermissionExpected string               `json:"permission_expected,omitempty"`
+	PermissionOutcome  string               `json:"permission_outcome,omitempty"`
+	Observations       []runner.Observation `json:"observations,omitempty"`
+	ID                 string               `json:"id"`
+	Rule               string               `json:"rule"`
+	Expected           string               `json:"expected"`
+	Score              float64              `json:"score"`
+	Split              string               `json:"split"`
 }
 
 func LoadPatches(dir string) ([]PatchCase, error) {
@@ -114,13 +121,38 @@ func RunBenchmark(ctx context.Context, client decision.Evaluator, dir string, cf
 
 func Metrics(rule string, cases []ScoredCase, threshold float64) RuleReport {
 	m := RuleReport{Rule: rule, Threshold: threshold}
+	positiveScores, negativeScores := 0, 0
 	for _, c := range cases {
 		if c.Rule != rule {
 			continue
 		}
 		m.Examples++
-		predicted := (c.Evaluated == nil || *c.Evaluated) && c.Score >= threshold
+		if c.PermissionExpected != "" {
+			m.PermissionExamples++
+			switch c.PermissionOutcome {
+			case "allowed":
+				m.PermissionAllowed++
+			case "disallowed":
+				m.PermissionDisallowed++
+			case "uncertain":
+				m.PermissionUncertain++
+			}
+			if c.PermissionOutcome != c.PermissionExpected {
+				m.PermissionMismatch++
+			}
+		}
+		if c.Decision == "insufficient-evidence" {
+			if c.Expected == "positive" {
+				m.AbstainedPositive++
+				m.FalseNegative++
+			} else {
+				m.AbstainedNegative++
+			}
+			continue
+		}
+		predicted := c.Decision != "permission-allowed" && (c.Evaluated == nil || *c.Evaluated) && c.Score >= threshold
 		if c.Expected == "positive" {
+			positiveScores++
 			m.AveragePositiveScore += c.Score
 			if predicted {
 				m.TruePositive++
@@ -128,6 +160,7 @@ func Metrics(rule string, cases []ScoredCase, threshold float64) RuleReport {
 				m.FalseNegative++
 			}
 		} else {
+			negativeScores++
 			m.AverageNegativeScore += c.Score
 			if predicted {
 				m.FalsePositive++
@@ -139,7 +172,7 @@ func Metrics(rule string, cases []ScoredCase, threshold float64) RuleReport {
 	m.Precision = ratio(m.TruePositive, m.TruePositive+m.FalsePositive)
 	m.Recall = ratio(m.TruePositive, m.TruePositive+m.FalseNegative)
 	m.FalsePositiveRate = ratio(m.FalsePositive, m.FalsePositive+m.TrueNegative)
-	m.AveragePositiveScore = ratioFloat(m.AveragePositiveScore, m.TruePositive+m.FalseNegative)
-	m.AverageNegativeScore = ratioFloat(m.AverageNegativeScore, m.TrueNegative+m.FalsePositive)
+	m.AveragePositiveScore = ratioFloat(m.AveragePositiveScore, positiveScores)
+	m.AverageNegativeScore = ratioFloat(m.AverageNegativeScore, negativeScores)
 	return m
 }

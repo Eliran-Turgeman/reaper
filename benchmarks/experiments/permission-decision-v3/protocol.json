@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "status": "development candidate before measurement",
+  "purpose": "Strengthen factual helper decisions, avoid abstention on identical unresolved calls, and require every permission condition to pass independently.",
+  "permission_outcomes": {
+    "disallowed": "minimum permission signal <= 0.20",
+    "uncertain": "0.20 < minimum permission signal < 0.80",
+    "allowed": "every permission signal >= 0.80"
+  },
+  "constraints": [
+    "Permission never lowers or raises the factual rule score.",
+    "Only an allowed outcome suppresses the experimental finding.",
+    "Every permission signal must independently reach the allowed boundary.",
+    "Changed unresolved direct calls remain insufficient evidence.",
+    "Identical unresolved direct calls on both snapshots are disclosed but do not alone force abstention.",
+    "No production threshold or production question is changed."
+  ]
+}

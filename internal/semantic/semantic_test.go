@@ -120,3 +120,18 @@ func TestMinifiedSourceDetection(t *testing.T) {
 		}
 	}
 }
+
+func TestGoCandidateFacts(t *testing.T) {
+	source := "package service\nfunc Read(public bool, id string) Result {\n return store.Read(id)\n}\nfunc Work() { prepare(); execute() }\n"
+	known, booleanInput, forwarder := GoCandidateFacts(source, 2, 4)
+	if !known || !booleanInput || !forwarder {
+		t.Fatalf("candidate facts = known:%t boolean:%t forwarder:%t", known, booleanInput, forwarder)
+	}
+	known, booleanInput, forwarder = GoCandidateFacts(source, 5, 5)
+	if !known || booleanInput || forwarder {
+		t.Fatalf("non-candidate facts = known:%t boolean:%t forwarder:%t", known, booleanInput, forwarder)
+	}
+	if known, _, _ := GoCandidateFacts("not go", 1, 1); known {
+		t.Fatal("invalid Go source reported deterministic facts")
+	}
+}

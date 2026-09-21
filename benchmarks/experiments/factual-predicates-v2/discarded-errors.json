@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "name": "factual-predicates-v2-discarded-errors",
+  "context": "current",
+  "state_format": "json-object",
+  "signals": {
+    "silent-failure-fallback": [
+      {
+        "ID": "failure-observed",
+        "Instructions": "Does the changed path receive or detect a failure, including an error value that is discarded or ignored?",
+        "Criteria": {
+          "true": "An error, exception, failed parse, invalid state, or non-success result is caught, returned to a blank target, overwritten, or otherwise observed.",
+          "false": "The changed path has no failure signal to inspect or discard."
+        }
+      },
+      {
+        "ID": "failure-hidden",
+        "Instructions": "Does that path continue or return success or fallback data without preserving the failure through an established reporting channel?",
+        "Criteria": {
+          "true": "The failure disappears behind success, empty/default/stale data, or continued execution.",
+          "false": "The failure remains observable to the responsible caller or monitoring contract."
+        }
+      }
+    ]
+  }
+}

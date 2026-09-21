@@ -38,6 +38,67 @@ rule version. This is an experimental decision score, not a joint probability or
 a validated permission cutoff. Overrides never alter the production registry,
 severity, applicability, or thresholds, and cannot be used by the release gate.
 
+Permission experiments may instead mark one signal per rule with
+`"Role": "permission"` and supply `permission.allowed_at_least` plus
+`permission.disallowed_at_most`. The factual score then uses factual signals
+only. The raw permission score is reported separately as `allowed`, `disallowed`,
+or `uncertain`; it never suppresses or boosts the factual score. These boundaries
+are frozen experiment controls, not production calibration.
+`permission-decision-v2/policy-targeted.json` covers authorization and
+validation with targeted Go evidence. `policy-contracts.json` covers fallback,
+cancellation, and assertion task contracts with current diff context.
+When `permission_action` is `suppress-allowed`, only a classified `allowed`
+outcome suppresses the experimental finding. `uncertain` stays visible and the
+factual score remains unchanged.
+`policy-assertion-dev.json` is an explicitly development-only assertion boundary
+experiment. It uses a lower `allowed` boundary after partial-permission fixtures
+separated from exact permission; it is not independent calibration or a default.
+
+`permission-decision-v3` replaces the overloaded permission question with two
+independently scored requirements: the task must authorize the exact changed
+scope, and the implementation must stay within that authorization without
+conflicting preservation requirements. Permission uses the minimum of those
+signals, so every condition must reach the `allowed` boundary before suppression.
+Its targeted policy also distinguishes changed unresolved calls from identical
+unresolved calls on both snapshots. The latter remain disclosed limitations but
+do not alone force an evidence abstention.
+
+`permission-decision-v4` keeps those permission requirements but evaluates them
+in a separate model request so additional factual questions cannot influence the
+permission scores. Its fallback and assertion rules use maximum composition over
+complete violation alternatives: discarded failures, fallback/success conversion,
+and specific assertion-property losses. This remains question-driven semantic
+evaluation; it adds no AST-derived rule facts.
+
+Experiments may select `maximum-of-signals-v1` for a rule through the
+`compositions` map. This is used for cancellation alternatives where either
+detaching caller cancellation or converting cancellation into success is enough;
+production rules retain their existing composition.
+
+Targeted experiments may set `evidence_policy: "require-complete-targeted"`.
+Reports then classify missing, unparseable, unsupported, or budget-truncated
+before/after function evidence as `insufficient-evidence`. Such cases retain
+their raw request records but do not produce findings. Positive abstentions count
+as misses; negative abstentions do not count as confirmed true negatives.
+
+`complete-go-v1` contains syntactically complete paired development fixtures for
+explicitly allowed, explicitly disallowed, and uncertain authorization/validation
+tasks. Each case records its historical predecessor. It remains synthetic
+development evidence and cannot satisfy the independent release gate.
+
+`predicate-dev-v2` contains one matched positive/negative pair for discarded
+errors, cancellation ownership, and assertion specificity. The three
+`factual-predicates-v2` specifications must be run independently against this
+fixed corpus before any combined candidate is proposed.
+
+`permission-edge-v2` contains vague, partial, wrong-operation, and conflicting
+task instructions. These cases retain a factual violation and label permission
+as `disallowed` or `uncertain`; neither outcome may suppress the finding.
+
+`auth-validation-edge-v3` applies the same permission-edge families to complete
+Go authorization and validation fixtures so targeted before/after evidence can
+be assessed without historical fragment parse failures.
+
 `reaper eval --benchmark-dir benchmarks/patches --format json` evaluates labeled
 patches through the same runner as `check`. Every case stores its task, before
 and after code, diff, source path, expected label, rationale, rule, provenance,
@@ -135,6 +196,16 @@ protocol must receive a new protocol version and a separately reviewed baseline.
 extraction that retains leading increment/decrement code. Previous `git-v1`
 results remain historical; do not silently replace their provenance.
 
+`git-v3` additionally binds parser-backed Go candidate selection for boolean
+inputs and single-call forwarders. On parseable Go changes, those advisory rules
+are sent to Jev only when syntax establishes the relevant candidate shape.
+Unsupported languages and unparseable Go retain the previous semantic path.
+
+`git-v4` binds targeted Go evidence protocol `go-functions-v2`, which resolves
+one-hop helpers as before but only treats unresolved direct calls as incomplete
+when the call expression changed between snapshots. Identical unresolved calls
+remain visible to the evaluator and report without automatically abstaining.
+
 ## Controlled question/context experiments
 
 `--benchmark-experiment path.json` accepts a version 1 JSON object with `name`,
@@ -188,7 +259,7 @@ this exits 1 before making provider requests. The checked-in `review: null` is
 intentional: no agent-authored corpus is asserted to have independent human review.
 Normal PR CI and exploratory evaluations continue to work.
 
-After an independent reviewer approves the full corpus and labels, record a
+After an independent reviewer approves the full hidden-test corpus and labels, record a
 review object with `reviewer`, `evidence` (a review record reference),
 `independent: true`, and `corpus_sha256` from that corpus's Git evaluation report.
 The reviewer must be independent of fixture authorship. Software verifies the
@@ -196,8 +267,35 @@ hash binding and attestation fields; it cannot authenticate the person or qualit
 of their review. Any corpus edit invalidates that binding. Review metadata is
 never sent to the evaluator. Select the reviewed corpus directory in the workflow
 when it is ready, without changing these targets to make a failing run pass.
+The quality policy requires every release case to use the `hidden-test` split;
+train or development cases cannot authorize release even if reviewed.
 
 The gate accepts only configured Git evaluations of production rules, rejects
 experiment overrides or missing blocking rules, and recomputes metrics from case
 results. Extraction misses remain in recall. Provider failures already fail the
 evaluation before the gate. Passing an old zero-recall baseline is insufficient.
+
+## Frozen development candidate
+
+`candidates/blocking-v3.json` is the current development candidate. It combines
+the v3 targeted authorization/validation experiment with the v4 question-only
+fallback/assertion decomposition. `blocking-v1.json` and `blocking-v2.json`
+remain historical predecessors. Loading a bundle verifies every artifact
+SHA-256. All are explicitly `release_eligible: false`; changing any bound
+artifact requires a new candidate version and measurements.
+
+## Blinded independent review
+
+Export a label-free review package without provider access:
+
+```sh
+reaper review-pack --benchmark-dir path/to/corpus --output review-pack.json
+```
+
+The package contains task and before/after source, but excludes expected labels,
+rationales, provenance, model scores, and requests. It binds the full source
+corpus, selected source cases, and blinded payload with separate SHA-256 values.
+Use `--limit` and `--seed` for a deterministic mixed pilot. Reviewers fill
+`factual_outcome`, `permission`, `evidence`, and notes using the included rubric.
+Release review still requires an independent attestation bound to the complete
+hidden-test corpus; exporting a package does not create that attestation.

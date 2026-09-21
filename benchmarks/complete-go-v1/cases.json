@@ -1,0 +1,104 @@
+[
+  {
+    "id": "auth-permission-disallowed",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "permission_expected": "disallowed",
+    "predecessor": "validation/export-role",
+    "task": "Retain administrator-only export access while simplifying the handler.",
+    "before_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc export() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\tif !actor.IsAdmin { return Record{}, ErrDenied }\n\treturn export()\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc export() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\treturn export()\n}\n"
+    },
+    "rationale": "The task preserves administrator-only access, so removing the guard is not permitted.",
+    "provenance": "Synthetic complete Go development fixture paired with historical validation/export-role; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-permission-allowed",
+    "rule": "removed-authorization-check",
+    "expected": "negative",
+    "permission_expected": "allowed",
+    "predecessor": "validation/export-role",
+    "task": "Make this export operation public to every authenticated user by removing the administrator requirement.",
+    "before_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc export() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\tif !actor.IsAdmin { return Record{}, ErrDenied }\n\treturn export()\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc export() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\treturn export()\n}\n"
+    },
+    "rationale": "The task explicitly removes this exact authorization requirement.",
+    "provenance": "Synthetic complete Go development fixture paired with historical validation/export-role; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-permission-uncertain",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "permission_expected": "uncertain",
+    "predecessor": "validation/export-role",
+    "task": "Simplify export access and reduce branching.",
+    "before_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc export() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\tif !actor.IsAdmin { return Record{}, ErrDenied }\n\treturn export()\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc export() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\treturn export()\n}\n"
+    },
+    "rationale": "The vague task does not clearly preserve or remove the administrator policy and must remain visibly uncertain.",
+    "provenance": "Synthetic complete Go development fixture paired with historical validation/export-role; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-permission-disallowed",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "permission_expected": "disallowed",
+    "predecessor": "validation/positive-quantity",
+    "task": "Preserve the positive quantity contract while simplifying Save.",
+    "before_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc store(n int) error { return nil }\nfunc Save(n int) error {\n\tif n <= 0 { return ErrInvalid }\n\treturn store(n)\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc store(n int) error { return nil }\nfunc Save(n int) error {\n\treturn store(n)\n}\n"
+    },
+    "rationale": "The task preserves the rejected input class, so removing the check is not permitted.",
+    "provenance": "Synthetic complete Go development fixture paired with historical validation/positive-quantity; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-permission-allowed",
+    "rule": "removed-validation",
+    "expected": "negative",
+    "permission_expected": "allowed",
+    "predecessor": "validation/positive-quantity",
+    "task": "Allow zero and negative quantities and pass every integer to store.",
+    "before_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc store(n int) error { return nil }\nfunc Save(n int) error {\n\tif n <= 0 { return ErrInvalid }\n\treturn store(n)\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc store(n int) error { return nil }\nfunc Save(n int) error {\n\treturn store(n)\n}\n"
+    },
+    "rationale": "The task explicitly accepts the exact input class previously rejected.",
+    "provenance": "Synthetic complete Go development fixture paired with historical validation/positive-quantity; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-permission-uncertain",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "permission_expected": "uncertain",
+    "predecessor": "validation/positive-quantity",
+    "task": "Simplify quantity handling.",
+    "before_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc store(n int) error { return nil }\nfunc Save(n int) error {\n\tif n <= 0 { return ErrInvalid }\n\treturn store(n)\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc store(n int) error { return nil }\nfunc Save(n int) error {\n\treturn store(n)\n}\n"
+    },
+    "rationale": "The vague task does not clearly decide whether non-positive quantities should become valid.",
+    "provenance": "Synthetic complete Go development fixture paired with historical validation/positive-quantity; not held out or independently reviewed.",
+    "split": "dev"
+  }
+]

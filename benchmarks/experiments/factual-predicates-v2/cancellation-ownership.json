@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "name": "factual-predicates-v2-cancellation-ownership",
+  "context": "current",
+  "state_format": "json-object",
+  "compositions": {
+    "swallowed-cancellation": "maximum-of-signals-v1"
+  },
+  "signals": {
+    "swallowed-cancellation": [
+      {
+        "ID": "detaches-caller-cancellation",
+        "Instructions": "Does the change detach the affected main operation from a caller-owned cancellation source?",
+        "Criteria": {
+          "true": "The same caller-owned main operation loses its context, token, signal, or other cancellation source and can outlive the caller.",
+          "false": "Caller cancellation still reaches the operation, only bounded cleanup is detached, or the task explicitly assigns independent ownership."
+        }
+      },
+      {
+        "ID": "cancellation-becomes-success",
+        "Instructions": "Does the change catch, discard, or replace cancellation so that the affected operation returns an ordinary successful result?",
+        "Criteria": {
+          "true": "Cancellation is converted into normal data, nil/success, or another result that no longer reports cancellation.",
+          "false": "Cancellation remains observable, including after bounded cleanup or logging."
+        }
+      }
+    ]
+  }
+}

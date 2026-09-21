@@ -18,6 +18,7 @@ type benchmarkEvaluator struct {
 	mu       sync.Mutex
 	requests []decision.Request
 	score    float64
+	scores   map[string]float64
 	err      error
 }
 
@@ -35,6 +36,7 @@ func TestQualityDevelopmentCorpusRetainsBothLabelsPerLanguage(t *testing.T) {
 			coverage[c.Rule+":"+semantic.Language(name)+":"+c.Expected]++
 		}
 	}
+
 	if len(cases) != 24 || len(coverage) != 24 {
 		t.Fatalf("missing rule/language/label coverage: %v", coverage)
 	}
@@ -73,6 +75,9 @@ func (e *benchmarkEvaluator) Evaluate(_ context.Context, r decision.Request) (de
 	scores := map[string]float64{}
 	for _, q := range r.Questions {
 		scores[q.ID] = e.score
+		if value, ok := e.scores[q.ID]; ok {
+			scores[q.ID] = value
+		}
 	}
 	return decision.Response{Scores: scores}, e.err
 }
@@ -179,5 +184,88 @@ func TestGitBenchmarkProviderFailureCannotBecomeMiss(t *testing.T) {
 	_, err := runGitCase(context.Background(), &benchmarkEvaluator{err: &decision.ContextLimitError{}}, c, config.Defaults(), "isolated")
 	if err == nil || !strings.Contains(err.Error(), "incomplete") {
 		t.Fatalf("provider failure treated as scored result: %v", err)
+	}
+}
+
+func TestCompleteGoCorpusPairsPermissionOutcomesWithParseableEvidence(t *testing.T) {
+	cases, err := LoadGitCases("../../benchmarks/complete-go-v1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	experiment, err := LoadExperiment("../../benchmarks/experiments/permission-decision-v2/policy-targeted.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	outcomes := map[string]int{}
+	for _, c := range cases {
+		if c.Predecessor == "" || c.PermissionExpected == "" {
+			t.Fatalf("case is not paired with permission metadata: %+v", c)
+		}
+		outcomes[c.PermissionExpected]++
+		result, err := runGitCaseExperiment(context.Background(), &benchmarkEvaluator{score: .5}, c, config.Defaults(), "isolated", experiment)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.Decision != "scored" || len(result.Observations) != 1 || result.Observations[0].EvidenceStatus != "complete" {
+			t.Fatalf("case lacks complete evidence: %+v", result)
+		}
+	}
+	if len(cases) != 6 || outcomes["allowed"] != 2 || outcomes["disallowed"] != 2 || outcomes["uncertain"] != 2 {
+		t.Fatalf("permission corpus coverage: %v", outcomes)
+	}
+}
+
+func TestPredicateDevelopmentCorpusHasMatchedLabels(t *testing.T) {
+	cases, err := LoadGitCases("../../benchmarks/predicate-dev-v2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	coverage := map[string]map[string]int{}
+	for _, c := range cases {
+		if coverage[c.Rule] == nil {
+			coverage[c.Rule] = map[string]int{}
+		}
+		coverage[c.Rule][c.Expected]++
+	}
+	for _, rule := range []string{"silent-failure-fallback", "swallowed-cancellation", "weakened-test-assertion"} {
+		if coverage[rule]["positive"] != 1 || coverage[rule]["negative"] != 1 {
+			t.Fatalf("missing matched labels for %s: %v", rule, coverage[rule])
+		}
+	}
+}
+
+func TestPermissionEdgeCorpusCoversAmbiguousAndMismatchedScope(t *testing.T) {
+	cases, err := LoadGitCases("../../benchmarks/permission-edge-v2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	coverage := map[string]int{}
+	for _, c := range cases {
+		coverage[c.PermissionExpected]++
+		if c.Expected != "positive" {
+			t.Fatalf("permission edge must retain the factual violation: %+v", c)
+		}
+	}
+	if len(cases) != 6 || coverage["uncertain"] != 3 || coverage["disallowed"] != 3 {
+		t.Fatalf("permission edge coverage: %v", coverage)
+	}
+}
+
+func TestAuthorizationValidationEdgeCorpusHasCompletePermissionCoverage(t *testing.T) {
+	cases, err := LoadGitCases("../../benchmarks/auth-validation-edge-v3")
+	if err != nil {
+		t.Fatal(err)
+	}
+	coverage := map[string]int{}
+	for _, c := range cases {
+		coverage[c.Rule+":"+c.PermissionExpected]++
+		if c.Predecessor == "" || c.Expected != "positive" {
+			t.Fatalf("invalid authorization/validation edge case: %+v", c)
+		}
+	}
+	for _, rule := range []string{"removed-authorization-check", "removed-validation"} {
+		if coverage[rule+":disallowed"] != 2 || coverage[rule+":uncertain"] != 2 {
+			t.Fatalf("missing permission edges for %s: %v", rule, coverage)
+		}
 	}
 }

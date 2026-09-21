@@ -29,21 +29,26 @@ type Runner struct {
 	BeforeSnapshot  *repogit.SourceSnapshot
 	ContextPatch    string
 	// SignalOverrides is used by frozen benchmark experiments only.
-	SignalOverrides map[string][]rules.Signal
-	IndexSnapshot   *repogit.SourceSnapshot
+	SignalOverrides      map[string][]rules.Signal
+	CompositionOverrides map[string]string
+	IndexSnapshot        *repogit.SourceSnapshot
 	// StateFormat is an experimental representation override; empty preserves legacy text.
-	StateFormat string
-	Observe     func(Observation)
-	GitEnv      []string
-	Root        string
-	Config      config.Config
-	Client      decision.Evaluator
-	Cache       cache.Store
-	Version     string
-	Verbose     VerboseFunc
-	Notice      VerboseFunc
-	Debug       bool
-	Audit       bool
+	StateFormat      string
+	PermissionPolicy *rules.PermissionPolicy
+	PermissionAction string
+	PermissionEval   string
+	EvidencePolicy   string
+	Observe          func(Observation)
+	GitEnv           []string
+	Root             string
+	Config           config.Config
+	Client           decision.Evaluator
+	Cache            cache.Store
+	Version          string
+	Verbose          VerboseFunc
+	Notice           VerboseFunc
+	Debug            bool
+	Audit            bool
 }
 
 type job struct {
@@ -275,6 +280,19 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		}
 		unit = units[0]
 	}
+	evidenceStatus := ""
+	var evidenceReasons []string
+	if r.EvidencePolicy == "require-complete-targeted" {
+		coverage, err := sourceEvidenceCoverage(unit.RelatedEvidence)
+		if err != nil {
+			return result{err: err}
+		}
+		evidenceStatus = "complete"
+		if !coverage.Complete {
+			evidenceStatus = "insufficient"
+			evidenceReasons = coverage.Reasons
+		}
+	}
 	state := buildState(unit, task, r.Audit)
 	retrieved := ""
 	if len(selected) == 1 {
@@ -349,31 +367,59 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		if r.Client == nil {
 			return result{err: fmt.Errorf("an evaluator is required for uncached semantic checks")}
 		}
-		request.Questions = missing
-		response, err := decision.Evaluate(ctx, r.Client, request)
-		if err != nil {
-			if decision.IsContextLimit(err) {
-				return result{
-					skipped: true,
-					skipMessage: fmt.Sprintf(
-						"skip %s:%d: provider token limit exceeded",
-						unit.FilePath, unit.StartLine,
-					),
+		groups := [][]decision.Question{missing}
+		if r.PermissionEval == "separate-request-v1" {
+			permissionIDs := map[string]bool{}
+			for _, rule := range selected {
+				for _, signal := range rule.Signals {
+					if signal.Role == rules.SignalRolePermission {
+						permissionIDs[rule.QuestionID(signal)] = true
+					}
 				}
 			}
-			return result{err: fmt.Errorf("evaluate %s:%d: %w", unit.FilePath, unit.StartLine, err)}
+			var factual, permission []decision.Question
+			for _, question := range missing {
+				if permissionIDs[question.ID] {
+					permission = append(permission, question)
+				} else {
+					factual = append(factual, question)
+				}
+			}
+			groups = nil
+			if len(factual) > 0 {
+				groups = append(groups, factual)
+			}
+			if len(permission) > 0 {
+				groups = append(groups, permission)
+			}
 		}
-		for _, question := range missing {
-			value, ok := response.Scores[question.ID]
-			if !ok {
-				return result{err: fmt.Errorf("evaluator response omitted score for %s", question.ID)}
+		for _, group := range groups {
+			request.Questions = group
+			response, err := decision.Evaluate(ctx, r.Client, request)
+			if err != nil {
+				if decision.IsContextLimit(err) {
+					return result{
+						skipped: true,
+						skipMessage: fmt.Sprintf(
+							"skip %s:%d: provider token limit exceeded",
+							unit.FilePath, unit.StartLine,
+						),
+					}
+				}
+				return result{err: fmt.Errorf("evaluate %s:%d: %w", unit.FilePath, unit.StartLine, err)}
 			}
-			if math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || value > 1 {
-				return result{err: fmt.Errorf("evaluator score for %s outside [0,1]", question.ID)}
-			}
-			signalProbabilities[question.ID] = value
-			if err := r.Cache.Put(cacheKeys[question.ID], value); err != nil {
-				return result{err: err}
+			for _, question := range group {
+				value, ok := response.Scores[question.ID]
+				if !ok {
+					return result{err: fmt.Errorf("evaluator response omitted score for %s", question.ID)}
+				}
+				if math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || value > 1 {
+					return result{err: fmt.Errorf("evaluator score for %s outside [0,1]", question.ID)}
+				}
+				signalProbabilities[question.ID] = value
+				if err := r.Cache.Put(cacheKeys[question.ID], value); err != nil {
+					return result{err: err}
+				}
 			}
 		}
 	}
@@ -390,15 +436,42 @@ func (r *Runner) evaluate(ctx context.Context, unit semantic.Unit, selected []ru
 		if !ok {
 			return result{err: fmt.Errorf("cannot compose probability for %s", rule.ID)}
 		}
+		var permission *PermissionObservation
+		if r.PermissionPolicy != nil {
+			score, signalIDs, ok := rule.ComposePermission(signalProbabilities)
+			if !ok {
+				return result{err: fmt.Errorf("cannot compose permission for %s", rule.ID)}
+			}
+			permission = &PermissionObservation{
+				Score: score, Outcome: r.PermissionPolicy.Classify(score),
+			}
+			for _, signalID := range signalIDs {
+				raw := signalProbabilities[rule.ID+":"+signalID]
+				permission.Signals = append(permission.Signals, PermissionSignalObservation{Signal: signalID, Score: raw})
+			}
+			if len(permission.Signals) == 1 {
+				permission.Signal = permission.Signals[0].Signal
+				permission.Signals = nil
+			}
+		}
 		rc := r.Config.Rules[rule.ID]
 		violation := probability >= rc.Threshold
+		decisionOutcome := "scored"
+		if permission != nil && permission.Outcome == "allowed" && r.PermissionAction == "suppress-allowed" {
+			decisionOutcome = "permission-allowed"
+			violation = false
+		}
+		if evidenceStatus == "insufficient" {
+			decisionOutcome = "insufficient-evidence"
+			violation = false
+		}
 		signals := make([]diagnostics.SignalScore, 0, len(rule.Signals))
 		for _, signal := range rule.Signals {
 			signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: signalProbabilities[rule.QuestionID(signal)], Evidence: signal.Instructions, Negated: signal.Negate})
 		}
 		sort.Slice(signals, func(i, j int) bool { return signals[i].ID < signals[j].ID })
 		out.evaluations = append(out.evaluations, evaluation{
-			observation:     Observation{Rule: rule.ID, File: unit.FilePath, StartLine: unit.StartLine, EndLine: unit.EndLine, Score: probability, Signals: signals, Composition: rule.Composition(), RuleVersion: rule.Version},
+			observation:     Observation{Rule: rule.ID, File: unit.FilePath, StartLine: unit.StartLine, EndLine: unit.EndLine, Score: probability, Signals: signals, Composition: rule.Composition(), RuleVersion: rule.Version, Decision: decisionOutcome, EvidenceStatus: evidenceStatus, EvidenceReasons: evidenceReasons, Permission: permission},
 			contextEvidence: diagnosticEvidence,
 			rule:            rule.ID, file: unit.FilePath, startLine: unit.StartLine,
 			confidence: probability, threshold: rc.Threshold,
@@ -424,6 +497,10 @@ func (r *Runner) ruleSet() []rules.Rule {
 	for i := range selected {
 		if signals, ok := r.SignalOverrides[selected[i].ID]; ok {
 			selected[i].Signals = signals
+			selected[i].Version++
+		}
+		if composition, ok := r.CompositionOverrides[selected[i].ID]; ok {
+			selected[i].CompositionMode = composition
 			selected[i].Version++
 		}
 	}

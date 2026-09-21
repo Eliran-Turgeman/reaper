@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "name": "factual-predicates-v2-assertion-specificity",
+  "context": "current",
+  "state_format": "json-object",
+  "signals": {
+    "weakened-test-assertion": [
+      {
+        "ID": "specific-behavior-lost",
+        "Instructions": "Does the after test stop enforcing a specific behavior that the before assertion rejected?",
+        "Criteria": {
+          "true": "A concrete previously asserted property such as ordering, exact value, multiplicity, tolerance, error type, or error message is no longer enforced.",
+          "false": "The after test visibly enforces the same specific property, including through an equivalent supplied helper."
+        }
+      }
+    ]
+  }
+}

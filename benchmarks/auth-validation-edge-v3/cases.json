@@ -1,0 +1,138 @@
+[
+  {
+    "id": "auth-partial-role-permission",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "permission_expected": "disallowed",
+    "predecessor": "complete-go-v1/auth-permission-disallowed",
+    "task": "Allow editors to export records. Keep all other users blocked.",
+    "before_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool; IsEditor bool }\ntype Record struct{}\nvar ErrDenied error\nfunc exportRecord() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\tif !actor.IsAdmin { return Record{}, ErrDenied }\n\treturn exportRecord()\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool; IsEditor bool }\ntype Record struct{}\nvar ErrDenied error\nfunc exportRecord() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\treturn exportRecord()\n}\n"
+    },
+    "rationale": "The task permits editors, not every user; removing the guard entirely exceeds permission.",
+    "provenance": "Synthetic complete Go authorization permission-edge fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-wrong-operation-permission",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "permission_expected": "disallowed",
+    "predecessor": "complete-go-v1/auth-permission-disallowed",
+    "task": "Make record reading public. Preserve administrator-only export access.",
+    "before_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc exportRecord() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\tif !actor.IsAdmin { return Record{}, ErrDenied }\n\treturn exportRecord()\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc exportRecord() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\treturn exportRecord()\n}\n"
+    },
+    "rationale": "Permission applies to reading, while the changed operation is export.",
+    "provenance": "Synthetic complete Go authorization permission-edge fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-vague-permission",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "permission_expected": "uncertain",
+    "predecessor": "complete-go-v1/auth-permission-uncertain",
+    "task": "Simplify export access and reduce branching.",
+    "before_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc exportRecord() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\tif !actor.IsAdmin { return Record{}, ErrDenied }\n\treturn exportRecord()\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc exportRecord() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\treturn exportRecord()\n}\n"
+    },
+    "rationale": "The task does not clearly preserve or remove the authorization policy.",
+    "provenance": "Synthetic complete Go authorization permission-edge fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "auth-conflicting-permission",
+    "rule": "removed-authorization-check",
+    "expected": "positive",
+    "permission_expected": "uncertain",
+    "predecessor": "complete-go-v1/auth-permission-uncertain",
+    "task": "Make export public to every user, but retain administrator-only export access.",
+    "before_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc exportRecord() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\tif !actor.IsAdmin { return Record{}, ErrDenied }\n\treturn exportRecord()\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\ntype User struct { IsAdmin bool }\ntype Record struct{}\nvar ErrDenied error\nfunc exportRecord() (Record, error) { return Record{}, nil }\nfunc Export(actor User) (Record, error) {\n\treturn exportRecord()\n}\n"
+    },
+    "rationale": "The task directly conflicts about the authorization requirement.",
+    "provenance": "Synthetic complete Go authorization permission-edge fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-partial-input-permission",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "permission_expected": "disallowed",
+    "predecessor": "complete-go-v1/validation-permission-disallowed",
+    "task": "Allow zero quantities, but continue rejecting negative quantities.",
+    "before_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc storeValue(int) error { return nil }\nfunc Save(n int) error {\n\tif n <= 0 { return ErrInvalid }\n\treturn storeValue(n)\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc storeValue(int) error { return nil }\nfunc Save(n int) error {\n\treturn storeValue(n)\n}\n"
+    },
+    "rationale": "The task permits zero only, while removing the check accepts negative quantities too.",
+    "provenance": "Synthetic complete Go validation permission-edge fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-wrong-field-permission",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "permission_expected": "disallowed",
+    "predecessor": "complete-go-v1/validation-permission-disallowed",
+    "task": "Allow an empty optional nickname. Keep the required email check.",
+    "before_files": {
+      "service.go": "package service\n\ntype Input struct { Email string; Nickname string }\nvar ErrInvalid error\nfunc storeInput(Input) error { return nil }\nfunc Save(input Input) error {\n\tif input.Email == \"\" { return ErrInvalid }\n\treturn storeInput(input)\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\ntype Input struct { Email string; Nickname string }\nvar ErrInvalid error\nfunc storeInput(Input) error { return nil }\nfunc Save(input Input) error {\n\treturn storeInput(input)\n}\n"
+    },
+    "rationale": "Permission applies to nickname, while the removed validation protects email.",
+    "provenance": "Synthetic complete Go validation permission-edge fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-vague-permission",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "permission_expected": "uncertain",
+    "predecessor": "complete-go-v1/validation-permission-uncertain",
+    "task": "Simplify quantity handling.",
+    "before_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc storeValue(int) error { return nil }\nfunc Save(n int) error {\n\tif n <= 0 { return ErrInvalid }\n\treturn storeValue(n)\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc storeValue(int) error { return nil }\nfunc Save(n int) error {\n\treturn storeValue(n)\n}\n"
+    },
+    "rationale": "The task does not clearly decide whether non-positive quantities become valid.",
+    "provenance": "Synthetic complete Go validation permission-edge fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "validation-conflicting-permission",
+    "rule": "removed-validation",
+    "expected": "positive",
+    "permission_expected": "uncertain",
+    "predecessor": "complete-go-v1/validation-permission-uncertain",
+    "task": "Accept every integer quantity, but preserve the positive-only contract.",
+    "before_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc storeValue(int) error { return nil }\nfunc Save(n int) error {\n\tif n <= 0 { return ErrInvalid }\n\treturn storeValue(n)\n}\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nvar ErrInvalid error\nfunc storeValue(int) error { return nil }\nfunc Save(n int) error {\n\treturn storeValue(n)\n}\n"
+    },
+    "rationale": "The task directly conflicts about the validation contract.",
+    "provenance": "Synthetic complete Go validation permission-edge fixture; not held out or independently reviewed.",
+    "split": "dev"
+  }
+]

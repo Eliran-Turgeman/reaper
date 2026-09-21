@@ -45,3 +45,19 @@ func TestComposeRejectsMissingSignal(t *testing.T) {
 		t.Fatal("composition succeeded with a missing required signal")
 	}
 }
+
+func TestComposeUsesStrongestAlternativeSignal(t *testing.T) {
+	rule := Rule{
+		ID:              "alternative",
+		CompositionMode: "maximum-of-signals-v1",
+		Signals:         []Signal{{ID: "detached"}, {ID: "success"}, {ID: "permission", Role: SignalRolePermission}},
+	}
+	score, ok := rule.Compose(map[string]float64{
+		"alternative:detached":   .12,
+		"alternative:success":    .91,
+		"alternative:permission": .95,
+	})
+	if !ok || score != .91 || rule.Composition() != "maximum-of-factual-signals-with-separate-permission-v1" {
+		t.Fatalf("alternative composition = %v, %t, %s", score, ok, rule.Composition())
+	}
+}

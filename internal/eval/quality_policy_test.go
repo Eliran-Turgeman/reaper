@@ -38,7 +38,7 @@ func qualityFixture(t *testing.T) (Report, QualityPolicy) {
 			if i < 20 {
 				label, score = "positive", .99
 			}
-			report.Cases = append(report.Cases, ScoredCase{ID: fmt.Sprintf("%s-%d", id, i), Rule: id, Expected: label, Score: score, Evaluated: &evaluated})
+			report.Cases = append(report.Cases, ScoredCase{ID: fmt.Sprintf("%s-%d", id, i), Rule: id, Expected: label, Score: score, Split: "hidden-test", Decision: "scored", Evaluated: &evaluated})
 		}
 	}
 	return report, policy
@@ -113,7 +113,7 @@ func TestAbsoluteQualityGateAcceptsExactApprovedBoundaries(t *testing.T) {
 }
 
 func TestAbsoluteQualityGateRequiresIndependentReviewAndProductionInputs(t *testing.T) {
-	for _, mode := range []string{"unreviewed", "self-reviewed", "stale review", "no provenance", "isolated", "experiment", "legacy cases", "missing blocking rule"} {
+	for _, mode := range []string{"unreviewed", "self-reviewed", "stale review", "no provenance", "isolated", "experiment", "legacy cases", "development split", "insufficient evidence", "missing blocking rule"} {
 		t.Run(mode, func(t *testing.T) {
 			r, p := qualityFixture(t)
 			switch mode {
@@ -131,6 +131,10 @@ func TestAbsoluteQualityGateRequiresIndependentReviewAndProductionInputs(t *test
 				r.Provenance.ExperimentSHA256 = "override"
 			case "legacy cases":
 				r.Cases[0].Evaluated = nil
+			case "development split":
+				r.Cases[0].Split = "dev"
+			case "insufficient evidence":
+				r.Cases[0].Decision = "insufficient-evidence"
 			case "missing blocking rule":
 				delete(p.Rules, "swallowed-cancellation")
 			}

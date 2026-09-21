@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "status": "development candidate before measurement",
+  "purpose": "Test question-only factual decomposition for fallback and assertion without adding AST facts, changing thresholds, or expanding the corpus.",
+  "factual_composition": {
+    "silent-failure-fallback": "Maximum of complete discarded-result, fallback-conversion, and success-conversion violation patterns.",
+    "swallowed-cancellation": "Unchanged maximum of cancellation alternatives.",
+    "weakened-test-assertion": "Maximum of complete ordering, exactness/multiplicity, error-detail, and comparison-strength loss patterns."
+  },
+  "constraints": [
+    "Each factual signal compares the supplied before and after behavior.",
+    "Each factual signal describes a complete violation, so any one may trigger the rule.",
+    "Permission remains separate and uses the minimum of exact-scope and implementation-completeness signals.",
+    "Permission questions are evaluated in a separate request so factual question count and framing cannot influence permission scores.",
+    "Thresholds remain unchanged during this experiment.",
+    "No AST-derived facts or new benchmark cases are introduced."
+  ]
+}

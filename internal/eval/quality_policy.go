@@ -31,9 +31,10 @@ type CorpusReview struct {
 }
 
 type QualityPolicy struct {
-	Version int                           `json:"version"`
-	Rules   map[string]QualityRequirement `json:"rules"`
-	Review  *CorpusReview                 `json:"review"`
+	Version     int                           `json:"version"`
+	CorpusSplit string                        `json:"corpus_split"`
+	Rules       map[string]QualityRequirement `json:"rules"`
+	Review      *CorpusReview                 `json:"review"`
 }
 
 func (p QualityPolicy) CheckConfig(cfg config.Config) error {
@@ -67,6 +68,9 @@ func LoadQualityPolicy(file string) (QualityPolicy, error) {
 func (p QualityPolicy) validate() error {
 	if p.Version != 1 {
 		return fmt.Errorf("quality policy requires version 1")
+	}
+	if p.CorpusSplit != "hidden-test" {
+		return fmt.Errorf("quality policy requires corpus_split hidden-test")
 	}
 	for _, rule := range rules.All() {
 		if rule.DefaultSeverity == rules.SeverityError {
@@ -111,7 +115,7 @@ func CheckQualityPolicy(w io.Writer, report Report, policy QualityPolicy) error 
 	}
 	seen := map[string]bool{}
 	for _, c := range report.Cases {
-		if c.ID == "" || seen[c.ID] || c.Evaluated == nil || (c.Expected != "positive" && c.Expected != "negative") || math.IsNaN(c.Score) || c.Score < 0 || c.Score > 1 {
+		if c.ID == "" || seen[c.ID] || c.Evaluated == nil || c.Split != policy.CorpusSplit || c.Decision == "insufficient-evidence" || (c.Expected != "positive" && c.Expected != "negative") || math.IsNaN(c.Score) || c.Score < 0 || c.Score > 1 {
 			return fmt.Errorf("quality gate: invalid or duplicate scored case %s", c.ID)
 		}
 		seen[c.ID] = true

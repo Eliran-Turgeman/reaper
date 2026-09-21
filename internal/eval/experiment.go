@@ -16,13 +16,18 @@ import (
 
 // Experiment changes benchmark inputs only; it never changes production rules.
 type Experiment struct {
-	Version     int                              `json:"version"`
-	Name        string                           `json:"name"`
-	Context     string                           `json:"context"`
-	Questions   map[string]string                `json:"questions,omitempty"`
-	Criteria    map[string]decision.NoulCriteria `json:"criteria,omitempty"`
-	StateFormat string                           `json:"state_format,omitempty"`
-	Signals     map[string][]rules.Signal        `json:"signals,omitempty"`
+	Version          int                              `json:"version"`
+	Name             string                           `json:"name"`
+	Context          string                           `json:"context"`
+	Questions        map[string]string                `json:"questions,omitempty"`
+	Criteria         map[string]decision.NoulCriteria `json:"criteria,omitempty"`
+	StateFormat      string                           `json:"state_format,omitempty"`
+	Signals          map[string][]rules.Signal        `json:"signals,omitempty"`
+	Compositions     map[string]string                `json:"compositions,omitempty"`
+	Permission       *rules.PermissionPolicy          `json:"permission,omitempty"`
+	PermissionAction string                           `json:"permission_action,omitempty"`
+	PermissionEval   string                           `json:"permission_evaluation,omitempty"`
+	EvidencePolicy   string                           `json:"evidence_policy,omitempty"`
 }
 
 func LoadExperiment(file string) (*Experiment, error) {
@@ -50,12 +55,14 @@ func (e Experiment) validate() error {
 		return fmt.Errorf("experiment requires version 1, a name, and context current, snapshots, matched or targeted")
 	}
 	known := map[string]bool{}
+	permissionSignals := 0
 	for id, signals := range e.Signals {
 		if _, ok := rules.Get(id); !ok || len(signals) == 0 {
 			return fmt.Errorf("invalid experiment signal rule %q", id)
 		}
 		seen := map[string]bool{}
 		supports := 0
+		rulePermissions := 0
 		for _, signal := range signals {
 			if !regexp.MustCompile(`^[a-z][a-z0-9-]*$`).MatchString(signal.ID) || seen[signal.ID] || strings.TrimSpace(signal.Instructions) == "" {
 				return fmt.Errorf("invalid experiment signal %s:%s", id, signal.ID)
@@ -64,6 +71,17 @@ func (e Experiment) validate() error {
 			if !signal.Negate {
 				supports++
 			}
+			if signal.Role != "" && signal.Role != rules.SignalRolePermission {
+				return fmt.Errorf("invalid experiment signal role %s:%s", id, signal.Role)
+			}
+			if signal.Role == rules.SignalRolePermission {
+				if signal.Negate {
+					return fmt.Errorf("permission signal %s:%s must retain its raw orientation", id, signal.ID)
+				}
+				permissionSignals++
+				rulePermissions++
+				supports--
+			}
 			if err := signal.Criteria.Validate(); err != nil {
 				return err
 			}
@@ -71,6 +89,42 @@ func (e Experiment) validate() error {
 		if supports == 0 {
 			return fmt.Errorf("experiment rule %s requires a supporting factual signal", id)
 		}
+	}
+	if e.Permission != nil {
+		if err := e.Permission.Validate(); err != nil {
+			return err
+		}
+		if permissionSignals == 0 {
+			return fmt.Errorf("permission policy requires at least one permission signal")
+		}
+	} else if permissionSignals > 0 {
+		return fmt.Errorf("permission signals require a permission policy")
+	}
+	if e.PermissionAction != "" && e.PermissionAction != "suppress-allowed" {
+		return fmt.Errorf("unsupported permission_action %q", e.PermissionAction)
+	}
+	if e.PermissionAction != "" && e.Permission == nil {
+		return fmt.Errorf("permission_action requires a permission policy")
+	}
+	if e.PermissionEval != "" && e.PermissionEval != "separate-request-v1" {
+		return fmt.Errorf("unsupported permission_evaluation %q", e.PermissionEval)
+	}
+	if e.PermissionEval != "" && e.Permission == nil {
+		return fmt.Errorf("permission_evaluation requires a permission policy")
+	}
+	for id, composition := range e.Compositions {
+		if _, ok := e.Signals[id]; !ok {
+			return fmt.Errorf("composition override requires signal override for %s", id)
+		}
+		if composition != "maximum-of-signals-v1" {
+			return fmt.Errorf("unsupported composition %q for %s", composition, id)
+		}
+	}
+	if e.EvidencePolicy != "" && e.EvidencePolicy != "require-complete-targeted" {
+		return fmt.Errorf("unsupported evidence_policy %q", e.EvidencePolicy)
+	}
+	if e.EvidencePolicy != "" && e.Context != "targeted" {
+		return fmt.Errorf("evidence_policy requires targeted context")
 	}
 	if e.StateFormat != "" && e.StateFormat != "json-text" && e.StateFormat != "json-object" {
 		return fmt.Errorf("unsupported experiment state_format %q", e.StateFormat)
@@ -98,6 +152,10 @@ func (e Experiment) ruleSet(selected []rules.Rule) []rules.Rule {
 	for i := range selected {
 		if signals, ok := e.Signals[selected[i].ID]; ok {
 			selected[i].Signals = signals
+			selected[i].Version++
+		}
+		if composition, ok := e.Compositions[selected[i].ID]; ok {
+			selected[i].CompositionMode = composition
 			selected[i].Version++
 		}
 	}

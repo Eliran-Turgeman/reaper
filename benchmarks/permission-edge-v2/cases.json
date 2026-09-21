@@ -1,0 +1,98 @@
+[
+  {
+    "id": "fallback-vague-resilience",
+    "rule": "silent-failure-fallback",
+    "expected": "positive",
+    "permission_expected": "uncertain",
+    "task": "Make draft loading more resilient.",
+    "before_files": {
+      "draft.ts": "function loadDraft(raw: string): Draft {\n  return schema.parse(JSON.parse(raw));\n}\n"
+    },
+    "after_files": {
+      "draft.ts": "function loadDraft(raw: string): Draft {\n  try {\n    return schema.parse(JSON.parse(raw));\n  } catch {\n    return createEmptyDraft();\n  }\n}\n"
+    },
+    "rationale": "Resilience does not identify which failures may become an empty successful draft, so permission is ambiguous and must not suppress the factual violation.",
+    "provenance": "Synthetic permission-edge development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "fallback-partial-permission",
+    "rule": "silent-failure-fallback",
+    "expected": "positive",
+    "permission_expected": "disallowed",
+    "task": "Return an empty result only for ErrNotFound. Preserve every other storage error.",
+    "before_files": {
+      "service.go": "package service\n\nfunc read() ([]string, error) { return nil, nil }\nfunc Load() ([]string, error) { return read() }\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nfunc read() ([]string, error) { return nil, nil }\nfunc Load() ([]string, error) {\n\titems, err := read()\n\tif err != nil { return []string{}, nil }\n\treturn items, nil\n}\n"
+    },
+    "rationale": "The task permits one named failure only, while the change hides every error.",
+    "provenance": "Synthetic permission-edge development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "cancellation-vague-reliability",
+    "rule": "swallowed-cancellation",
+    "expected": "positive",
+    "permission_expected": "uncertain",
+    "task": "Make the request handler more reliable.",
+    "before_files": {
+      "service.go": "package service\n\nimport \"context\"\nfunc query(context.Context) error { return nil }\nfunc Load(ctx context.Context) error { return query(ctx) }\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nimport \"context\"\nfunc query(context.Context) error { return nil }\nfunc Load(ctx context.Context) error { return query(context.Background()) }\n"
+    },
+    "rationale": "Reliability does not clearly assign an independent lifetime to the main query.",
+    "provenance": "Synthetic permission-edge development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "cancellation-wrong-operation",
+    "rule": "swallowed-cancellation",
+    "expected": "positive",
+    "permission_expected": "disallowed",
+    "task": "Audit delivery may continue independently after request cancellation. Keep the primary database query caller-owned.",
+    "before_files": {
+      "service.go": "package service\n\nimport \"context\"\nfunc query(context.Context) error { return nil }\nfunc Load(ctx context.Context) error { return query(ctx) }\n"
+    },
+    "after_files": {
+      "service.go": "package service\n\nimport \"context\"\nfunc query(context.Context) error { return nil }\nfunc Load(ctx context.Context) error { return query(context.Background()) }\n"
+    },
+    "rationale": "Permission applies to audit delivery, not the primary query changed here.",
+    "provenance": "Synthetic permission-edge development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "assertion-partial-permission",
+    "rule": "weakened-test-assertion",
+    "expected": "positive",
+    "permission_expected": "disallowed",
+    "task": "Key order is unspecified. Remove only the ordering requirement while retaining every expected key and duplicate count.",
+    "before_files": {
+      "keys_test.go": "package service\n\nimport \"testing\"\nfunc TestKeys(t *testing.T) { require.Equal(t, []string{\"a\", \"a\", \"b\"}, keys()) }\n"
+    },
+    "after_files": {
+      "keys_test.go": "package service\n\nimport \"testing\"\nfunc TestKeys(t *testing.T) { require.Contains(t, keys(), \"a\") }\n"
+    },
+    "rationale": "The task permits removing order only, while the change also removes full membership and multiplicity checks.",
+    "provenance": "Synthetic permission-edge development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  },
+  {
+    "id": "assertion-conflicting-task",
+    "rule": "weakened-test-assertion",
+    "expected": "positive",
+    "permission_expected": "uncertain",
+    "task": "Remove the legacy wording assertion, but retain the exact externally documented error message.",
+    "before_files": {
+      "test_parse.py": "def test_parse():\n    with pytest.raises(ValueError, match=\"documented failure\"):\n        parse(value)\n"
+    },
+    "after_files": {
+      "test_parse.py": "def test_parse():\n    with pytest.raises(ValueError):\n        parse(value)\n"
+    },
+    "rationale": "The task gives conflicting instructions about the exact message, so permission must remain uncertain rather than suppressing the finding.",
+    "provenance": "Synthetic permission-edge development fixture; not held out or independently reviewed.",
+    "split": "dev"
+  }
+]

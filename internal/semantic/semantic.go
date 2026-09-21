@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const SchemaVersion = 2
+const SchemaVersion = 4
 
 var sourceLanguagesByExtension = map[string]string{
 	".c":     "c",
@@ -47,18 +47,21 @@ var sourceLanguagesByExtension = map[string]string{
 }
 
 type Unit struct {
-	RelatedEvidence  json.RawMessage
-	FilePath         string
-	Language         string
-	OldContent       string
-	NewContent       string
-	Diff             string
-	SurroundingCode  string
-	StartLine        int
-	EndLine          int
-	IsTest           bool
-	ContainsComments bool
-	ExistingModified bool
+	RelatedEvidence       json.RawMessage
+	FilePath              string
+	Language              string
+	OldContent            string
+	NewContent            string
+	Diff                  string
+	SurroundingCode       string
+	StartLine             int
+	EndLine               int
+	IsTest                bool
+	ContainsComments      bool
+	ExistingModified      bool
+	SyntaxFactsKnown      bool
+	BooleanInputCandidate bool
+	ForwarderCandidate    bool
 }
 
 func Language(path string) string {

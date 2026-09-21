@@ -115,6 +115,10 @@ func UnitsWithSource(input string, contextLines int, readSource func(string) ([]
 			if logical, ok := logicalContext(language, string(source), first, last); ok {
 				surrounding = logical
 			}
+			syntaxKnown, booleanCandidate, forwarderCandidate := false, false, false
+			if language == "go" {
+				syntaxKnown, booleanCandidate, forwarderCandidate = semantic.GoCandidateFacts(string(source), first, last)
+			}
 			units = append(units, semantic.Unit{
 				FilePath: path, Language: language,
 				OldContent: strings.Join(oldLines, "\n"), NewContent: strings.Join(newLines, "\n"),
@@ -122,6 +126,7 @@ func UnitsWithSource(input string, contextLines int, readSource func(string) ([]
 				StartLine: hunk.NewStart, EndLine: max(hunk.NewStart, hunk.NewStart+max(hunk.NewCount, 1)-1),
 				IsTest: semantic.IsTestFile(path), ContainsComments: semantic.ContainsComment(language, addedContent(hunk)),
 				ExistingModified: patch.OldPath != "/dev/null" && (hasPrefix(hunk.Lines, "+") || hasPrefix(hunk.Lines, "-")),
+				SyntaxFactsKnown: syntaxKnown, BooleanInputCandidate: booleanCandidate, ForwarderCandidate: forwarderCandidate,
 			})
 		}
 	}

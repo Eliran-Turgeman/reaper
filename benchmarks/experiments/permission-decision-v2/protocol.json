@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "status": "frozen before measurement",
+  "corpora": [
+    "benchmarks/complete-go-v1 for targeted authorization and validation evidence",
+    "rule-specific development corpora for fallback, cancellation, and assertion contracts"
+  ],
+  "purpose": "Measure factual rule evidence independently from an explicit three-state permission decision.",
+  "permission_outcomes": {
+    "disallowed": "P(yes) <= 0.20",
+    "uncertain": "0.20 < P(yes) < 0.80",
+    "allowed": "P(yes) >= 0.80"
+  },
+  "constraints": [
+    "Permission never lowers or raises the factual rule score.",
+    "An explicitly allowed outcome suppresses the experimental finding; uncertain does not suppress.",
+    "Insufficient targeted evidence is reported separately and cannot produce a finding.",
+    "The boundaries are experiment controls, not production defaults or calibrated probabilities.",
+    "Allowed, disallowed, and uncertain task examples remain visible in the report."
+  ],
+  "development_boundaries": {
+    "policy-contracts.json": "Uses the conservative global 0.80 allowed boundary.",
+    "policy-assertion-dev.json": "Exploratory assertion-only 0.55 allowed boundary selected from development separation; not release calibration."
+  }
+}

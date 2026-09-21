@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "name": "blocking-rules-v2-development-candidate",
+  "status": "development-frozen",
+  "release_eligible": false,
+  "provider": "openrouter",
+  "requested_model": "typesafe/jev-1.13",
+  "resolved_model": "typesafe/jev-1.13-20260917",
+  "git_protocol": "git-v4",
+  "rules": {
+    "removed-authorization-check": {
+      "experiment": "../experiments/permission-decision-v3/policy-targeted.json",
+      "threshold": 0.9,
+      "notes": "Development candidate reached 10/10 conservative recall with 0/5 false positives and no evidence abstentions across three repeats."
+    },
+    "removed-validation": {
+      "experiment": "../experiments/permission-decision-v3/policy-targeted.json",
+      "threshold": 0.87,
+      "notes": "Development candidate reached 10/10 conservative recall with 0/5 false positives and no evidence abstentions across three repeats."
+    },
+    "silent-failure-fallback": {
+      "experiment": "../experiments/permission-decision-v3/policy-contracts.json",
+      "threshold": 0.92,
+      "notes": "Permission-completeness signals classified all three explicitly allowed cases consistently; factual recall remains 7/8."
+    },
+    "swallowed-cancellation": {
+      "experiment": "../experiments/permission-decision-v3/policy-contracts.json",
+      "threshold": 0.93,
+      "notes": "Uses maximum factual composition and multi-condition permission; development recall was 8/8 with 0/8 false positives."
+    },
+    "weakened-test-assertion": {
+      "experiment": "../experiments/permission-decision-v3/policy-contracts.json",
+      "threshold": 0.92,
+      "notes": "Uses the global 0.80 permission boundary without an assertion-specific exception; factual recall remains 4/5."
+    }
+  },
+  "artifacts": {
+    "../experiments/permission-decision-v3/policy-targeted.json": "bb51df4de60b16fde728c8fba65dcf8c2c5a23b7b010f9efa079ab6fa3740b07",
+    "../experiments/permission-decision-v3/policy-contracts.json": "3dfd48effefb1f559129e02a997fad8cfa58f1b7cb10f132301e1303e841fa7b",
+    "../experiments/permission-decision-v3/protocol.json": "5f881866943b269354175cf7f98383b2ec75a912ffde2c8b0014183213fcb35c",
+    "../complete-go-v1/cases.json": "0bf403e0573429467741336053da181ef6708e72575081bab02d706ae80f186e",
+    "../auth-validation-edge-v3/cases.json": "5c638edb8a3f3e9addce789a6921743049fb9c8485d5ac8be3d213d09806490f",
+    "../predicate-dev-v2/cases.json": "dfcba2001c6d1376a5355285e7a4c12abbc6c5124d1117efc2d86298921f8f8d",
+    "../permission-edge-v2/cases.json": "c658c35977c886c5a0cb6f0fd83a9149c1e057020d3a9d02c6c0d81a00706082",
+    "../context-dev/cases.json": "1b54c752af4853cbb3122978d744b6ea60e1d063762d10d5f0110d08e5f470ce",
+    "../contract-dev/cases.json": "fda1136627718890cdc7c7f552b1b0f9da1cf9062a0fa55f43079b629eca4be9",
+    "../validation/cases.json": "6417afe4d279b2fc5b3d31d393621eb538488bf50046ed9aff05bb85efd63b3d",
+    "../experiments/targeted-context-v3/cases/cases.json": "97bd97e7642f209009e67ed98455b2f760cede2e040933ea00687c4f854d5308"
+  }
+}

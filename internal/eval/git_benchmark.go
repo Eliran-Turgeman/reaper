@@ -48,6 +48,12 @@ func LoadGitCases(dir string) ([]GitCase, error) {
 		if c.ID == "" || seen[c.ID] || !known || c.Task == "" || c.Provenance == "" || c.Rationale == "" || (c.Expected != "positive" && c.Expected != "negative") || (c.Split != "dev" && c.Split != "train" && c.Split != "hidden-test") {
 			return nil, fmt.Errorf("invalid or duplicate Git benchmark case %q", c.ID)
 		}
+		if c.PermissionExpected != "" && c.PermissionExpected != "allowed" && c.PermissionExpected != "disallowed" && c.PermissionExpected != "uncertain" {
+			return nil, fmt.Errorf("case %s has invalid permission_expected %q", c.ID, c.PermissionExpected)
+		}
+		if c.Predecessor == c.ID {
+			return nil, fmt.Errorf("case %s cannot reference itself as predecessor", c.ID)
+		}
 		seen[c.ID] = true
 		if c.BeforeFiles == nil && c.AfterFiles == nil {
 			if c.File == "" || c.Before == "" || c.After == "" {
@@ -195,7 +201,7 @@ func RunGitExperiment(ctx context.Context, client decision.Evaluator, dir string
 	if err != nil {
 		return Report{}, err
 	}
-	report := Report{Version: 1, Provider: cfg.Provider, Model: cfg.Model, Mode: "git", Grouping: grouping, Provenance: provenance("git-v2", cases, cfg)}
+	report := Report{Version: 1, Provider: cfg.Provider, Model: cfg.Model, Mode: "git", Grouping: grouping, Provenance: provenance("git-v4", cases, cfg)}
 	if experiment != nil {
 		report.Provenance.ExperimentSHA256 = fingerprint(experiment)
 	}
@@ -245,12 +251,13 @@ func runGitCaseExperiment(ctx context.Context, client decision.Evaluator, c GitC
 		cfg.Rules = map[string]config.RuleConfig{c.Rule: rc}
 	}
 	evaluated := false
+	selectedObservation := false
 	recorder := &recordingEvaluator{Evaluator: client}
 	var evaluator decision.Evaluator = recorder
 	if experiment != nil {
 		evaluator = &experimentEvaluator{Evaluator: recorder, experiment: experiment, evidence: evidence}
 	}
-	scored := ScoredCase{ID: c.ID, Rule: c.Rule, Expected: c.Expected, Split: c.Split, Evaluated: &evaluated}
+	scored := ScoredCase{ID: c.ID, Rule: c.Rule, Expected: c.Expected, Split: c.Split, Predecessor: c.Predecessor, PermissionExpected: c.PermissionExpected, Evaluated: &evaluated}
 	engine := runner.Runner{Root: root, GitEnv: fixtureGitEnv(), Config: cfg, Client: evaluator, Cache: cache.Disabled{}, Observe: func(o runner.Observation) {
 		if experiment != nil {
 			for i, signal := range o.Signals {
@@ -262,14 +269,31 @@ func runGitCaseExperiment(ctx context.Context, client decision.Evaluator, c GitC
 		if o.Rule == c.Rule {
 			evaluated = true
 			scored.Observations = append(scored.Observations, o)
-			if o.Score > scored.Score {
+			if !selectedObservation || o.Score > scored.Score {
+				selectedObservation = true
 				scored.Score = o.Score
+				scored.Decision = o.Decision
+				scored.EvidenceReasons = nil
+				scored.CoverageReason = ""
+				if o.Decision == "insufficient-evidence" {
+					scored.EvidenceReasons = append([]string(nil), o.EvidenceReasons...)
+					scored.CoverageReason = strings.Join(o.EvidenceReasons, "; ")
+				}
+				scored.PermissionOutcome = ""
+				if o.Permission != nil {
+					scored.PermissionOutcome = o.Permission.Outcome
+				}
 			}
 		}
 	}}
 	if experiment != nil {
 		engine.StateFormat = experiment.StateFormat
 		engine.SignalOverrides = experiment.Signals
+		engine.CompositionOverrides = experiment.Compositions
+		engine.PermissionPolicy = experiment.Permission
+		engine.PermissionAction = experiment.PermissionAction
+		engine.PermissionEval = experiment.PermissionEval
+		engine.EvidencePolicy = experiment.EvidencePolicy
 	}
 	result, err := engine.Run(ctx, units, c.Task)
 	if err != nil {
@@ -280,6 +304,8 @@ func runGitCaseExperiment(ctx context.Context, client decision.Evaluator, c GitC
 	}
 	if !evaluated {
 		scored.CoverageReason = "no evaluation of labeled rule after extraction, configuration and applicability checks"
+	} else if scored.Decision == "" {
+		scored.Decision = "scored"
 	}
 	scored.Requests = recorder.Records()
 	return scored, nil

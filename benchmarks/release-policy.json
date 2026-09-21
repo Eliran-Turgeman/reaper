@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "corpus_split": "hidden-test",
   "rules": {
     "removed-authorization-check": {
       "minimum_recall": 0.8,

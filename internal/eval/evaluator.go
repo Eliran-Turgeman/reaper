@@ -35,6 +35,13 @@ type RuleReport struct {
 	FalsePositive        int     `json:"false_positive"`
 	TrueNegative         int     `json:"true_negative"`
 	FalseNegative        int     `json:"false_negative"`
+	AbstainedPositive    int     `json:"abstained_positive,omitempty"`
+	AbstainedNegative    int     `json:"abstained_negative,omitempty"`
+	PermissionExamples   int     `json:"permission_examples,omitempty"`
+	PermissionAllowed    int     `json:"permission_allowed,omitempty"`
+	PermissionDisallowed int     `json:"permission_disallowed,omitempty"`
+	PermissionUncertain  int     `json:"permission_uncertain,omitempty"`
+	PermissionMismatch   int     `json:"permission_mismatch,omitempty"`
 	Precision            float64 `json:"precision"`
 	Recall               float64 `json:"recall"`
 	FalsePositiveRate    float64 `json:"false_positive_rate"`
@@ -143,15 +150,46 @@ func RunExamplesExperiment(ctx context.Context, client decision.Evaluator, dir, 
 			if experiment != nil {
 				evaluator = &experimentEvaluator{Evaluator: recorder, experiment: experiment}
 			}
-			response, err := decision.Evaluate(ctx, evaluator, request)
-			if err != nil {
-				return Report{}, fmt.Errorf("evaluate example %s: %w", example.ID, err)
+			requests := []decision.Request{request}
+			if experiment != nil && experiment.PermissionEval == "separate-request-v1" {
+				permissionIDs := map[string]bool{}
+				for _, signal := range rule.Signals {
+					if signal.Role == rules.SignalRolePermission {
+						permissionIDs[rule.QuestionID(signal)] = true
+					}
+				}
+				factual, permission := request, request
+				factual.Questions = nil
+				permission.Questions = nil
+				for _, question := range request.Questions {
+					if permissionIDs[question.ID] {
+						permission.Questions = append(permission.Questions, question)
+					} else {
+						factual.Questions = append(factual.Questions, question)
+					}
+				}
+				requests = []decision.Request{factual, permission}
+			}
+			response := decision.Response{Scores: map[string]float64{}}
+			for _, grouped := range requests {
+				if len(grouped.Questions) == 0 {
+					continue
+				}
+				part, err := decision.Evaluate(ctx, evaluator, grouped)
+				if err != nil {
+					return Report{}, fmt.Errorf("evaluate example %s: %w", example.ID, err)
+				}
+				for id, score := range part.Scores {
+					response.Scores[id] = score
+				}
+				response.Calls = append(response.Calls, part.Calls...)
 			}
 			score, ok := rule.Compose(response.Scores)
 			if !ok || score < 0 || score > 1 {
 				return Report{}, fmt.Errorf("invalid probability for example %s", example.ID)
 			}
 			var signals []diagnostics.SignalScore
+			decisionOutcome := "scored"
 			for _, signal := range rule.Signals {
 				instructions := signal.Instructions
 				if experiment != nil {
@@ -161,8 +199,29 @@ func RunExamplesExperiment(ctx context.Context, client decision.Evaluator, dir, 
 				}
 				signals = append(signals, diagnostics.SignalScore{ID: signal.ID, Score: response.Scores[rule.QuestionID(signal)], Evidence: instructions, Negated: signal.Negate})
 			}
-			report.Cases = append(report.Cases, ScoredCase{ID: example.ID, Rule: rule.ID, Expected: example.Expected, Score: score, Split: "dev", Requests: recorder.Records(), Observations: []runner.Observation{{Rule: rule.ID, Score: score, Signals: signals, Composition: rule.Composition(), RuleVersion: rule.Version}}})
-			predicted := score >= threshold
+			var permission *runner.PermissionObservation
+			if experiment != nil && experiment.Permission != nil {
+				permissionScore, permissionSignals, ok := rule.ComposePermission(response.Scores)
+				if !ok {
+					return Report{}, fmt.Errorf("cannot compose permission for example %s", example.ID)
+				}
+				permission = &runner.PermissionObservation{Score: permissionScore, Outcome: experiment.Permission.Classify(permissionScore)}
+				for _, signalID := range permissionSignals {
+					permission.Signals = append(permission.Signals, runner.PermissionSignalObservation{
+						Signal: signalID,
+						Score:  response.Scores[rule.ID+":"+signalID],
+					})
+				}
+				if len(permission.Signals) == 1 {
+					permission.Signal = permission.Signals[0].Signal
+					permission.Signals = nil
+				}
+				if permission.Outcome == "allowed" && experiment.PermissionAction == "suppress-allowed" {
+					decisionOutcome = "permission-allowed"
+				}
+			}
+			report.Cases = append(report.Cases, ScoredCase{ID: example.ID, Rule: rule.ID, Expected: example.Expected, Score: score, Split: "dev", Decision: decisionOutcome, PermissionOutcome: permissionOutcome(permission), Requests: recorder.Records(), Observations: []runner.Observation{{Rule: rule.ID, Score: score, Signals: signals, Composition: rule.Composition(), RuleVersion: rule.Version, Decision: decisionOutcome, Permission: permission}}})
+			predicted := score >= threshold && decisionOutcome != "permission-allowed"
 			if example.Expected == "positive" {
 				positives++
 				positiveTotal += score
@@ -171,6 +230,7 @@ func RunExamplesExperiment(ctx context.Context, client decision.Evaluator, dir, 
 				} else {
 					result.FalseNegative++
 				}
+
 			} else {
 				negatives++
 				negativeTotal += score
@@ -194,6 +254,13 @@ func RunExamplesExperiment(ctx context.Context, client decision.Evaluator, dir, 
 		report.Provenance.ExperimentSHA256 = fingerprint(experiment)
 	}
 	return report, nil
+}
+
+func permissionOutcome(permission *runner.PermissionObservation) string {
+	if permission == nil {
+		return ""
+	}
+	return permission.Outcome
 }
 
 func WriteJSON(w io.Writer, report Report) error {
@@ -221,6 +288,12 @@ func WriteText(w io.Writer, report Report) error {
 		fmt.Fprintf(w, "False positive:    %d\n", result.FalsePositive)
 		fmt.Fprintf(w, "True negative:     %d\n", result.TrueNegative)
 		fmt.Fprintf(w, "False negative:    %d\n\n", result.FalseNegative)
+		if result.AbstainedPositive+result.AbstainedNegative > 0 {
+			fmt.Fprintf(w, "Insufficient evidence: %d positive, %d negative\n\n", result.AbstainedPositive, result.AbstainedNegative)
+		}
+		if result.PermissionExamples > 0 {
+			fmt.Fprintf(w, "Permission outcomes: %d allowed, %d disallowed, %d uncertain, %d mismatched\n\n", result.PermissionAllowed, result.PermissionDisallowed, result.PermissionUncertain, result.PermissionMismatch)
+		}
 		fmt.Fprintf(w, "Precision:         %.1f%%\n", result.Precision*100)
 		fmt.Fprintf(w, "Recall:            %.1f%%\n", result.Recall*100)
 		fmt.Fprintf(w, "False positive:    %.1f%%\n", result.FalsePositiveRate*100)

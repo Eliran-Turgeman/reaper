@@ -28,6 +28,33 @@ type Signal struct {
 	Instructions string
 	Criteria     *decision.NoulCriteria `json:",omitempty"`
 	Negate       bool                   `json:",omitempty"`
+	Role         string                 `json:",omitempty"`
+}
+
+const SignalRolePermission = "permission"
+
+type PermissionPolicy struct {
+	AllowedAtLeast   float64 `json:"allowed_at_least"`
+	DisallowedAtMost float64 `json:"disallowed_at_most"`
+}
+
+func (p PermissionPolicy) Validate() error {
+	if math.IsNaN(p.AllowedAtLeast) || math.IsNaN(p.DisallowedAtMost) ||
+		p.DisallowedAtMost < 0 || p.AllowedAtLeast > 1 ||
+		p.DisallowedAtMost >= p.AllowedAtLeast {
+		return fmt.Errorf("permission policy requires 0 <= disallowed_at_most < allowed_at_least <= 1")
+	}
+	return nil
+}
+
+func (p PermissionPolicy) Classify(score float64) string {
+	if score <= p.DisallowedAtMost {
+		return "disallowed"
+	}
+	if score >= p.AllowedAtLeast {
+		return "allowed"
+	}
+	return "uncertain"
 }
 
 type Rule struct {
@@ -36,6 +63,7 @@ type Rule struct {
 	ID                  string
 	Description         string
 	Signals             []Signal
+	CompositionMode     string
 	Message             string
 	Scope               Scope
 	DefaultThreshold    float64
@@ -55,7 +83,15 @@ func (r Rule) Compose(probabilities map[string]float64) (float64, bool) {
 		return 0, false
 	}
 	score := 1.0
+	if r.CompositionMode == "maximum-of-signals-v1" {
+		score = 0
+	}
+	factual := 0
 	for _, signal := range r.Signals {
+		if signal.Role == SignalRolePermission {
+			continue
+		}
+		factual++
 		value, ok := probabilities[r.QuestionID(signal)]
 		if !ok || math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || value > 1 {
 			return 0, false
@@ -63,14 +99,56 @@ func (r Rule) Compose(probabilities map[string]float64) (float64, bool) {
 		if signal.Negate {
 			value = 1 - value
 		}
+		if r.CompositionMode == "maximum-of-signals-v1" && value > score {
+			score = value
+		} else if r.CompositionMode != "maximum-of-signals-v1" && value < score {
+			score = value
+		}
+	}
+	return score, factual > 0
+}
+
+func (r Rule) ComposePermission(probabilities map[string]float64) (float64, []string, bool) {
+	score := 1.0
+	var signals []string
+	for _, signal := range r.Signals {
+		if signal.Role != SignalRolePermission {
+			continue
+		}
+		value, ok := probabilities[r.QuestionID(signal)]
+		if !ok || math.IsNaN(value) || math.IsInf(value, 0) || value < 0 || value > 1 {
+			return 0, nil, false
+		}
+		signals = append(signals, signal.ID)
 		if value < score {
 			score = value
 		}
 	}
-	return score, true
+	return score, signals, len(signals) > 0
 }
 
 func (r Rule) Composition() string {
+	mode := "minimum"
+	if r.CompositionMode == "maximum-of-signals-v1" {
+		mode = "maximum"
+	}
+	for _, signal := range r.Signals {
+		if signal.Role == SignalRolePermission {
+			permissionCount := 0
+			for _, candidate := range r.Signals {
+				if candidate.Role == SignalRolePermission {
+					permissionCount++
+				}
+			}
+			if permissionCount > 1 {
+				return mode + "-of-factual-signals-with-minimum-permission-v2"
+			}
+			return mode + "-of-factual-signals-with-separate-permission-v1"
+		}
+	}
+	if mode == "maximum" {
+		return "maximum-of-signals-v1"
+	}
 	for _, signal := range r.Signals {
 		if signal.Negate {
 			return "minimum-of-oriented-signals-v1"
@@ -148,7 +226,12 @@ var registry = map[string]Rule{
 				Instructions: "Return the probability that the visible forwarding callable adds no meaningful validation, authorization, policy, translation, composition, transaction handling, lifecycle management, observability, compatibility behavior, or error handling. Judge only behavior visible in the supplied region; do not decide whether the callable is architecturally justified elsewhere.",
 			},
 		},
-		Applicable: alwaysApplicable,
+		Applicable: func(u semantic.Unit, _ string) (bool, string) {
+			if u.SyntaxFactsKnown && !u.ForwarderCandidate {
+				return false, "parsed Go change does not contain a single-call forwarding callable"
+			}
+			return true, ""
+		},
 	},
 	"ceremonial-abstraction": {
 		ID: "ceremonial-abstraction", Version: 1, Scope: ScopeHunk,
@@ -186,7 +269,12 @@ var registry = map[string]Rule{
 				Instructions: "Return the probability that the boolean visibly selects between meaningfully different execution modes rather than representing genuine boolean domain data. Do not count clear product policy, security choices, feature state, or naturally boolean values.",
 			},
 		},
-		Applicable: alwaysApplicable,
+		Applicable: func(u semantic.Unit, _ string) (bool, string) {
+			if u.SyntaxFactsKnown && !u.BooleanInputCandidate {
+				return false, "parsed Go change does not introduce a boolean callable input"
+			}
+			return true, ""
+		},
 	},
 	"caller-managed-mechanics": {
 		ID: "caller-managed-mechanics", Version: 1, Scope: ScopeHunk,

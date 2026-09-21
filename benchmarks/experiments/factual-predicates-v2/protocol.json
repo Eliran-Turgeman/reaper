@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "status": "frozen before measurement",
+  "corpus": "benchmarks/predicate-dev-v2",
+  "conditions": [
+    "discarded-errors.json evaluates only silent-failure-fallback",
+    "cancellation-ownership.json evaluates only swallowed-cancellation",
+    "assertion-specificity.json evaluates only weakened-test-assertion"
+  ],
+  "requirements": [
+    "Run each experiment independently with isolated rule grouping.",
+    "Cancellation uses the maximum of detached-cancellation and cancellation-to-success because either path is sufficient.",
+    "Keep the six matched positive/negative fixtures unchanged across conditions.",
+    "Do not combine candidate predicates until each pair has been analyzed.",
+    "This synthetic development corpus cannot authorize production promotion."
+  ]
+}
