@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path"
 	"sort"
+	"strings"
 
 	"github.com/Eliran-Turgeman/reaper/internal/diff"
 	"github.com/Eliran-Turgeman/reaper/internal/evidence"
@@ -72,6 +73,11 @@ func (r *Runner) addRelatedEvidence(ctx context.Context, units []semantic.Unit, 
 		bytesRead, scanned := 0, 0
 		for _, file := range files {
 			if path.Ext(file) != ".go" || !dirs[path.Dir(file)] || !r.matches(rule, file) {
+				continue
+			}
+			// The evidence collector excludes test helpers. Do not let those files
+			// consume the bounded source budget before relevant helpers are read.
+			if strings.HasSuffix(file, "_test.go") && !focal[file] {
 				continue
 			}
 			if scanned >= 128 {

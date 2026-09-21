@@ -142,7 +142,8 @@ Go functions and one-hop same-package helper candidates as structured state to a
 validation rules only. Default checks retain their current context. The before
 source is the index, HEAD for staged checks, or the requested `--diff` reference;
 after source is the working tree or captured index for staged checks. Exclusions
-apply before helper reads. Collection is bounded to 128 source files, 256 KiB per
+apply before helper reads. Test files other than the focal changed file do not
+consume the helper budget. Collection is bounded to 128 source files, 256 KiB per
 file, 1 MiB per side and 16 KiB of resulting evidence. Unsupported languages,
 unresolved calls, omitted functions, and budget limits remain explicit; this is
 lexical evidence, not exhaustive type-checked control-flow analysis. The option
@@ -355,7 +356,7 @@ resolution. Findings include `context_evidence` and `--debug` prints retrieved
 context even below the threshold; keep reports and debug logs
 private because this field can contain additional source code.
 Rules with multiple required signals ask one narrow question per signal and use
-the weakest signal confidence as the final result. A diagnostic therefore fires
+the smallest estimated probability of “yes” as the final result. A diagnostic therefore fires
 only when every required local observation clears the configured threshold.
 JSON diagnostics expose `confidence` (renamed from `probability`) and a sorted
 `signals` array containing each signal's ID, score, and evaluated predicate.

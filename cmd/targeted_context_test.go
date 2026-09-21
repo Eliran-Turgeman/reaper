@@ -60,7 +60,12 @@ func TestTargetedCheckUsesBoundedSnapshotHelpersOnlyForSelectedRules(t *testing.
 	git("init", "--quiet")
 	write("service.go", "package service\nfunc Save(n int) error { if err := validate(n); err != nil { return err }; return store(n) }\n")
 	write("helpers.go", "package service\nfunc validate(n int) error { if n < 0 { return invalid }; return nil }\nfunc allow(n int) error { return nil }\nfunc unrelated() { panic(\"NOISE_MARKER\") }\n")
-	git("add", "service.go", "helpers.go")
+	// These sort before helpers.go and would exhaust the source file budget
+	// if ineligible test helpers were read before filtering them out.
+	for i := 0; i < 129; i++ {
+		write(fmt.Sprintf("a%03d_test.go", i), "package service\n// TEST_ONLY_MARKER\n")
+	}
+	git("add", ".")
 	git("-c", "user.name=Test", "-c", "user.email=test@example.com", "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "before")
 	write("service.go", "package service\nfunc Save(n int) error { if err := allow(n); err != nil { return err }; return store(n) }\n")
 	configuration := fmt.Sprintf("provider: typesafe\nbase_url: %s\ncache:\n  enabled: false\n", server.URL)
@@ -85,6 +90,9 @@ func TestTargetedCheckUsesBoundedSnapshotHelpersOnlyForSelectedRules(t *testing.
 	joined := strings.Join(working, "\n")
 	if !strings.Contains(joined, "func validate(") || !strings.Contains(joined, "func allow(") || strings.Contains(joined, "NOISE_MARKER") {
 		t.Fatal("wrong targeted helper evidence", joined)
+	}
+	if strings.Contains(joined, "source file limit reached") || strings.Contains(joined, "TEST_ONLY_MARKER") {
+		t.Fatal("test helpers consumed production evidence budget", joined)
 	}
 	git("add", "service.go")
 	write("helpers.go", "package service\nfunc allow(n int) error { panic(\"UNSTAGED_MARKER\") }\n")
