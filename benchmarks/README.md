@@ -1,8 +1,9 @@
 # Patch benchmark
 
-The latest [Jev implementation and measurement report](../docs/jev-implementation-results.md)
-summarizes 84 controlled runs, links exact diffs/questions/scores, and explains
-why the measured candidates are not ready to replace production defaults.
+Keep generated reports, API probes and exploratory run output in the Git-ignored
+`.local/` directory. This tree retains reusable fixtures, experiment specifications,
+and the frozen baselines required by tests and release gates. Experimental results
+do not authorize changes to production questions or thresholds.
 
 New request records retain the supplied fixture state separately from scores,
 the requested model and provider-reported resolved model, request/provider ID,
@@ -37,14 +38,6 @@ rule version. This is an experimental decision score, not a joint probability or
 a validated permission cutoff. Overrides never alter the production registry,
 severity, applicability, or thresholds, and cannot be used by the release gate.
 
-Latest: [correctness and targeted-context follow-up](experiments/targeted-context-v3/report.md),
-including the three extraction fixes, repeated helper-context experiments,
-enforcement-focused question candidate, and remaining calibration overlap.
-
-See the [rule-quality experiment report](experiments/rule-quality-report.md) for
-the Git-path measurements, revised-question/context comparisons, per-case scores,
-repeatability results and current release blockers.
-
 `reaper eval --benchmark-dir benchmarks/patches --format json` evaluates labeled
 patches through the same runner as `check`. Every case stores its task, before
 and after code, diff, source path, expected label, rationale, rule, provenance,
@@ -67,11 +60,9 @@ with a 0.02 maximum precision/recall drop. Missing credentials, provider failure
 or missing baseline rules fail the gate; model changes require a reviewed new
 baseline. Provider-side behavior can change even for an unchanged model ID.
 
-See [the calibration review](calibration-review.md) for candidates computed from
-the measured scores without additional inference or changes to defaults.
-The [prospective validation report](validation/report.md) compares those frozen
-candidates on 32 separately authored patches, including hard negatives. It
-records generalization failures and keeps all defaults unchanged.
+The [validation corpus](validation/README.md) contains 32 separately authored
+patches, including hard negatives. Its frozen protocol and recorded baseline
+support reproducible comparison; they do not establish release readiness.
 
 ## Evaluating the real Git path
 
@@ -122,9 +113,9 @@ records, including scores below the reporting threshold. Each record contains
 the requested model, actual grouped questions and scores, a context SHA-256 and
 a request SHA-256. Records follow provider capability splitting; concurrent calls
 are sorted by fingerprint for stable output. Provider-internal retries are not
-separate logical evaluations. Returned model identity is unavailable through the
-current decision endpoint adapter, so the requested ID is not proof of an
-unchanged backend revision.
+separate logical evaluations. Provider-reported resolved model identity is
+retained when available; missing identity remains unknown. The requested model
+ID alone is not proof of an unchanged backend revision.
 
 Report provenance binds the loaded corpus, rule versions/questions, relevant
 configuration and context protocol. Fingerprints hash JSON-encoded input values;
@@ -146,11 +137,13 @@ results remain historical; do not silently replace their provenance.
 
 ## Controlled question/context experiments
 
-`--benchmark-experiment path.json` is restricted to Git benchmarks. It accepts a
-version 1 JSON object with `name`, `context` (`current` or `snapshots`) and optional
-`questions` mapping existing signal IDs to revised instructions. Unknown fields
-and question IDs fail validation. Experiments do not modify `check`, configured
-thresholds, composition, eligibility or rule grouping. Signal evidence and request
+`--benchmark-experiment path.json` accepts a version 1 JSON object with `name`,
+`context` (`current`, `snapshots`, `matched` or `targeted`) and optional `questions`
+mapping signal IDs to revised instructions. Seed evaluations require `current`;
+patch experiments require Git mode. Optional state, criteria and signal controls
+are described above. Unknown fields and question IDs fail validation. Experiments
+do not modify `check`, configured thresholds, eligibility or rule grouping.
+Signal evidence and request
 fingerprints describe the transformed request actually sent to the evaluator.
 The experiment specification has its own provenance hash.
 

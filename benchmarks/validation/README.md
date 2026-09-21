@@ -1,7 +1,7 @@
 # Prospective candidate validation
 
-This separate set evaluates thresholds already selected in the
-[calibration review](../calibration-review.md). `protocol.json` freezes both
+This separate set evaluates thresholds selected from earlier development runs.
+`protocol.json` freezes both
 candidate families and the SHA-256 of `cases.json` (UTF-8, LF line endings)
 before inference. Do not optimize thresholds on the validation scores.
 
@@ -19,10 +19,10 @@ positive rate is deliberately diagnostic and does not estimate production
 precision or prevalence. Language and rule slices are too small for reliable
 generalization. No blocking defaults or release baselines change here.
 
-Reproduce scoring with:
+Create a `.local/` directory, then reproduce scoring with:
 
 ```sh
-go run ./cmd/reaper eval --benchmark-dir benchmarks/validation --provider openrouter --model typesafe/jev-1.13 --format json > benchmarks/validation/results.json
+go run ./cmd/reaper eval --benchmark-dir benchmarks/validation --provider openrouter --model typesafe/jev-1.13 --format json > .local/validation-run.json
 ```
 
 Compare all results at current defaults and both preselected candidate
@@ -30,7 +30,10 @@ thresholds, including failures. Treat any promising result as grounds for
 larger independently labeled validation, not automatic approval to lower a
 blocking threshold.
 
-The [measured comparison](report.md) records all results and candidate errors.
+Store new run output under the Git-ignored `.local/` directory; preserve the
+checked-in `results.json` baseline used by the corpus integrity tests.
+
+The historical baseline records the original results and candidate errors.
 Default thresholds caught 1 of 12 positives; the candidate comparisons exposed
 missed regressions and false positives. These results do not justify a general
 threshold reduction.
