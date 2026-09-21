@@ -1,0 +1,174 @@
+{
+  "purpose": "API capability smoke test only; not rule quality, calibration, or a controlled accuracy comparison.",
+  "date_utc": "2026-09-21T04:26:15.248932+00:00",
+  "endpoint": "https://openrouter.ai/api/alpha/decisions",
+  "repeats": 1,
+  "requests": [
+    {
+      "name": "flat-noul",
+      "request": {
+        "model": "typesafe/jev-1.13",
+        "state": "{\"task\": \"Keep rejecting negative values.\", \"before\": {\"code\": \"func Save(v int) error { if v < 0 { return ErrInvalid }; return store(v) }\"}, \"after\": {\"code\": \"func Save(v int) error { return store(v) }\"}, \"helper\": {\"code\": \"func store(v int) error { values = append(values, v); return nil }\"}}",
+        "questions": {
+          "reaches_store": {
+            "type": "noul",
+            "instructions": "Can a negative value reach store in `after.code`?"
+          }
+        }
+      },
+      "http_status": 200,
+      "elapsed_seconds": 1.062,
+      "response": {
+        "model": "typesafe/jev-1.13-20260917",
+        "answers": {
+          "reaches_store": {
+            "type": "noul",
+            "noul": 0.97
+          }
+        },
+        "usage": {
+          "input_tokens": 364,
+          "output_tokens": 22,
+          "cost": 1.5288e-05
+        },
+        "id": "gen-dec-1789964775-SgVxpCa1Fo896X5iXy27",
+        "provider": "TypeSafe"
+      }
+    },
+    {
+      "name": "structured-noul-criteria",
+      "request": {
+        "model": "typesafe/jev-1.13",
+        "state": {
+          "task": "Keep rejecting negative values.",
+          "before": {
+            "code": "func Save(v int) error { if v < 0 { return ErrInvalid }; return store(v) }"
+          },
+          "after": {
+            "code": "func Save(v int) error { return store(v) }"
+          },
+          "helper": {
+            "code": "func store(v int) error { values = append(values, v); return nil }"
+          }
+        },
+        "questions": {
+          "reaches_store": {
+            "type": "noul",
+            "instructions": "Can a negative value reach store in `after.code`?",
+            "criteria": {
+              "true": "Save calls store with a negative value.",
+              "false": "Save rejects every negative value before calling store."
+            }
+          }
+        }
+      },
+      "http_status": 200,
+      "elapsed_seconds": 0.829,
+      "response": {
+        "model": "typesafe/jev-1.13-20260917",
+        "answers": {
+          "reaches_store": {
+            "type": "noul",
+            "noul": 0.97
+          }
+        },
+        "usage": {
+          "input_tokens": 414,
+          "output_tokens": 22,
+          "cost": 1.7388e-05
+        },
+        "id": "gen-dec-1789964775-Lvg33LVCohw3OPTzKw8k",
+        "provider": "TypeSafe"
+      }
+    },
+    {
+      "name": "structured-mixed-types",
+      "request": {
+        "model": "typesafe/jev-1.13",
+        "state": {
+          "task": "Keep rejecting negative values.",
+          "before": {
+            "code": "func Save(v int) error { if v < 0 { return ErrInvalid }; return store(v) }"
+          },
+          "after": {
+            "code": "func Save(v int) error { return store(v) }"
+          },
+          "helper": {
+            "code": "func store(v int) error { values = append(values, v); return nil }"
+          }
+        },
+        "questions": {
+          "reaches_store": {
+            "type": "noul",
+            "instructions": "Can a negative value reach store in `after.code`?",
+            "criteria": {
+              "true": "Save calls store with a negative value.",
+              "false": "Save rejects every negative value before calling store."
+            }
+          },
+          "task_permission": {
+            "type": "choice",
+            "instructions": "What does `task` require for negative values?",
+            "criteria": {
+              "reject": "Reject negative values.",
+              "accept": "Accept negative values.",
+              "unspecified": "The task gives no requirement for negative values."
+            }
+          },
+          "guard_strength": {
+            "type": "score",
+            "instructions": "How fully does `after.code` reject negative values before store?",
+            "criteria": [
+              "No negative values are rejected.",
+              "Some negative values are rejected.",
+              "All negative values are rejected."
+            ]
+          }
+        }
+      },
+      "http_status": 200,
+      "elapsed_seconds": 0.296,
+      "response": {
+        "model": "typesafe/jev-1.13-20260917",
+        "answers": {
+          "reaches_store": {
+            "type": "noul",
+            "noul": 0.97
+          },
+          "task_permission": {
+            "type": "choice",
+            "choice": "reject",
+            "probabilities": {
+              "unspecified": 0,
+              "accept": 0.02,
+              "reject": 0.98
+            },
+            "confidence": 0.98
+          },
+          "guard_strength": {
+            "type": "score",
+            "score": 0,
+            "legend": {
+              "0": "No negative values are rejected.",
+              "1": "Some negative values are rejected.",
+              "2": "All negative values are rejected."
+            },
+            "probabilities": {
+              "0": 1,
+              "1": 0,
+              "2": 0
+            },
+            "confidence": 1
+          }
+        },
+        "usage": {
+          "input_tokens": 552,
+          "output_tokens": 74,
+          "cost": 2.3184e-05
+        },
+        "id": "gen-dec-1789964776-6J1RpF1BWfYXilusZkcL",
+        "provider": "TypeSafe"
+      }
+    }
+  ]
+}
